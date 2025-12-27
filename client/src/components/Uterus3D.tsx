@@ -207,85 +207,63 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         const scale = 4 / maxDim;
         model.scale.set(scale, scale, scale);
 
-        // Merge all meshes with color preservation from materials
-        const meshesToMerge: Array<{geometry: THREE.BufferGeometry, material: THREE.Material}> = [];
-        
+        // Color mapping based on original material colors
+        const colorMap: {[key: string]: string} = {
+            'yellow': '#FFD700',    // Ovários
+            'blue': '#87CEEB',      // Bexiga
+            'skin': '#D97E8A',      // Útero (rosa)
+            'brown': '#CD8B65',     // Reto
+            'tan': '#C49080'        // Cervix
+        };
+
+        // Apply solid colors to each mesh
         model.traverse((child: any) => {
             if ((child as THREE.Mesh).isMesh && child !== model) {
                 const mesh = child as THREE.Mesh;
-                mesh.updateMatrixWorld();
                 
-                const geometry = (mesh.geometry as THREE.BufferGeometry).clone();
-                geometry.applyMatrix4(mesh.matrixWorld);
-                
-                let material = mesh.material;
-                if (Array.isArray(material)) {
-                    material = material[0];
+                // Get original color to identify organ
+                let originalColor = new THREE.Color(0xffffff);
+                let originalMat = mesh.material;
+                if (Array.isArray(originalMat)) {
+                    originalMat = originalMat[0];
+                }
+                if (originalMat instanceof THREE.MeshStandardMaterial || originalMat instanceof THREE.MeshPhongMaterial) {
+                    originalColor = (originalMat as any).color.clone();
                 }
                 
-                meshesToMerge.push({
-                    geometry,
-                    material: material as THREE.Material
+                // Determine which organ based on original color
+                let newColor = '#D97E8A'; // Default to uterus
+                const r = originalColor.r;
+                const g = originalColor.g;
+                const b = originalColor.b;
+                
+                // Yellow organs = ovaries
+                if (r > 0.8 && g > 0.8 && b < 0.4) {
+                    newColor = '#FFD700';
+                }
+                // Blue = bladder
+                else if (r < 0.4 && g > 0.7 && b > 0.8) {
+                    newColor = '#87CEEB';
+                }
+                // Brown/tan = rectum or cervix
+                else if (r > 0.6 && g > 0.4 && b > 0.3) {
+                    newColor = '#CD8B65';
+                }
+                
+                // Apply MeshPhysicalMaterial with solid color
+                const newMaterial = new THREE.MeshPhysicalMaterial({
+                    color: new THREE.Color(newColor),
+                    roughness: 0.45,
+                    metalness: 0.05,
+                    clearcoat: 0.1,
+                    side: THREE.DoubleSide
                 });
+                
+                mesh.material = newMaterial;
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
             }
         });
-        
-        // Create merged geometry with accurate vertex colors
-        const mergedGeometry = new THREE.BufferGeometry();
-        const allPositions: number[] = [];
-        const allNormals: number[] = [];
-        const allColors: number[] = [];
-        
-        for (const {geometry, material} of meshesToMerge) {
-            const positions = geometry.attributes.position;
-            const normals = geometry.attributes.normal;
-            
-            if (positions) {
-                const pos = positions.array as Float32Array;
-                const norm = normals ? (normals.array as Float32Array) : null;
-                
-                // Extract material color
-                let matColor = new THREE.Color(0xffffff);
-                if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshPhongMaterial) {
-                    matColor = material.color.clone();
-                }
-                
-                // Add vertices with their color
-                for (let i = 0; i < pos.length; i += 3) {
-                    allPositions.push(pos[i], pos[i+1], pos[i+2]);
-                    allColors.push(matColor.r, matColor.g, matColor.b);
-                    
-                    if (norm) {
-                        allNormals.push(norm[i], norm[i+1], norm[i+2]);
-                    }
-                }
-            }
-        }
-        
-        mergedGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(allPositions), 3));
-        mergedGeometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(allColors), 3));
-        if (allNormals.length > 0) {
-            mergedGeometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(allNormals), 3));
-        } else {
-            mergedGeometry.computeVertexNormals();
-        }
-        mergedGeometry.computeBoundingSphere();
-        
-        // Create material with vertex colors enabled - clinical anatomical rendering
-        const mergedMaterial = new THREE.MeshStandardMaterial({
-            vertexColors: true,
-            roughness: 0.55,
-            metalness: 0.05,
-            side: THREE.DoubleSide,
-            flatShading: false
-        });
-        
-        // Clear and add merged mesh
-        model.children = [];
-        const mergedMesh = new THREE.Mesh(mergedGeometry, mergedMaterial);
-        mergedMesh.castShadow = true;
-        mergedMesh.receiveShadow = true;
-        model.add(mergedMesh);
         
         anatomyGroup.add(model);
     }, undefined, (error) => {

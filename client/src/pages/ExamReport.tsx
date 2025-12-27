@@ -175,6 +175,15 @@ export default function ExamReport() {
           <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
             <Button
               size="sm"
+              onClick={() => window.location.href = '/ditado-ia'}
+              className="h-9 gap-2 bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200"
+              variant="outline"
+            >
+              <FileText className="w-4 h-4" />
+              Ditado IA
+            </Button>
+            <Button
+              size="sm"
               className="h-9 gap-2 bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200"
               variant="outline"
             >

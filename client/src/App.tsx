@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import ExamReport from "@/pages/ExamReport";
 import Dashboard from "@/pages/Dashboard";
+import DitadoIA from "@/pages/DitadoIA";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/report" component={ExamReport} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/ditado-ia" component={DitadoIA} />
       <Route component={NotFound} />
     </Switch>
   );

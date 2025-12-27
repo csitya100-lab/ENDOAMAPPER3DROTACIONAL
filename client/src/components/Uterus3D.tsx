@@ -211,16 +211,20 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
                 if (mesh.material) {
                    const mat = mesh.material as THREE.MeshStandardMaterial;
                    
-                   // Check for yellow color (high red/green, low blue) to hide it
-                   // Using a safe threshold for "yellowish" colors
+                   // Check for yellow color (high red/green, low blue) - BLADDER
+                   // User requested to restore this organ ("Bexiga") and ensure it rotates with the block
                    if (mat.color && mat.color.r > 0.5 && mat.color.g > 0.5 && mat.color.b < 0.4) {
-                       mesh.visible = false;
+                       // Ensure it is visible and part of the mesh
+                       mesh.visible = true; 
+                       // Enhance bladder appearance if needed, or keep identical as requested
+                       mat.roughness = 0.3; // Slightly shinier (mucosa/fluid filled)
+                       mat.metalness = 0.1;
                    } else {
-                       // Only apply material overrides to non-yellow (remaining) parts
+                       // Other parts
                        mat.roughness = 0.4;
                        mat.metalness = 0.1;
-                       mat.side = THREE.DoubleSide;
                    }
+                   mat.side = THREE.DoubleSide;
                 }
             }
         });

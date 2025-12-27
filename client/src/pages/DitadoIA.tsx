@@ -19,6 +19,7 @@ interface LaudoData {
     vagina: { descricao: string };
   };
   utero: {
+    posicao: string;
     forma: string;
     contornos: string;
     paredes: string;
@@ -29,6 +30,7 @@ interface LaudoData {
     juncao_endometrio_miometrio: string;
     padrao: string;
     espessura_endometrial: string;
+    miomas: any[];
   };
   ovario_direito: {
     localizacao: string;
@@ -98,16 +100,18 @@ const LAUDO_INICIAL: LaudoData = {
     vagina: { descricao: 'Com características ecográficas normais' },
   },
   utero: {
+    posicao: 'Anteverso flexão, móvel',
     forma: 'Típica',
     contornos: 'Regulares',
     paredes: 'Simétricas',
     miometrio: 'Textura homogênea',
-    biometria: '3.2 x 4.5 x 7.6 cm, volume 59.3 cm³',
+    biometria: '3.8 x 4.5 x 8.0 cm, volume 74.7 cm³',
     eco_endometrial: 'Homogêneo',
     linha_media: 'Linear',
     juncao_endometrio_miometrio: 'Regular',
     padrao: 'Basal',
-    espessura_endometrial: '2.7 mm',
+    espessura_endometrial: '3.7 mm',
+    miomas: [],
   },
   ovario_direito: {
     localizacao: 'Região paratuterina, móvel',
@@ -277,6 +281,7 @@ Técnicas: ${laudo.equipamento.tecnicas}
   VAGINA: ${laudo.estruturas.vagina.descricao}
 
 [ÚTERO]
+  • Posição: ${laudo.utero.posicao}
   • Forma: ${laudo.utero.forma}
   • Contornos: ${laudo.utero.contornos}
   • Paredes: ${laudo.utero.paredes}
@@ -287,6 +292,7 @@ Técnicas: ${laudo.equipamento.tecnicas}
   • Junção Endométrio-Miométrio: ${laudo.utero.juncao_endometrio_miometrio}
   • Padrão: ${laudo.utero.padrao}
   • Espessura Endometrial: ${laudo.utero.espessura_endometrial}
+  • Miomas: ${laudo.utero.miomas && laudo.utero.miomas.length > 0 ? laudo.utero.miomas.map((m: any) => `${m.tipo || 'mioma'} ${m.tamanho || ''} ${m.localizacao || ''}`).join(', ') : 'Nenhum detectado'}
 
 [OVÁRIO DIREITO]
   • Localização: ${laudo.ovario_direito.localizacao}
@@ -294,7 +300,7 @@ Técnicas: ${laudo.equipamento.tecnicas}
   • Limites: ${laudo.ovario_direito.limites}
   • Parênquima: ${laudo.ovario_direito.parenchima}
   • Biometria: ${laudo.ovario_direito.biometria}
-  • Lesões: ${laudo.ovario_direito.lesoes.length > 0 ? laudo.ovario_direito.lesoes.join(', ') : 'Nenhuma detectada'}
+  • Lesões: ${laudo.ovario_direito.lesoes && laudo.ovario_direito.lesoes.length > 0 ? laudo.ovario_direito.lesoes.map((l: any) => typeof l === 'string' ? l : `${l.tipo || ''} ${l.tamanho || ''} ${l.localizacao || ''}`).join(', ') : 'Nenhuma detectada'}
 
 [OVÁRIO ESQUERDO]
   • Localização: ${laudo.ovario_esquerdo.localizacao}
@@ -302,7 +308,7 @@ Técnicas: ${laudo.equipamento.tecnicas}
   • Limites: ${laudo.ovario_esquerdo.limites}
   • Parênquima: ${laudo.ovario_esquerdo.parenchima}
   • Biometria: ${laudo.ovario_esquerdo.biometria}
-  • Lesões: ${laudo.ovario_esquerdo.lesoes.length > 0 ? laudo.ovario_esquerdo.lesoes.join(', ') : 'Nenhuma detectada'}
+  • Lesões: ${laudo.ovario_esquerdo.lesoes && laudo.ovario_esquerdo.lesoes.length > 0 ? laudo.ovario_esquerdo.lesoes.map((l: any) => typeof l === 'string' ? l : `${l.tipo || ''} ${l.tamanho || ''} ${l.localizacao || ''}`).join(', ') : 'Nenhuma detectada'}
 
 [COMPARTIMENTOS]
 

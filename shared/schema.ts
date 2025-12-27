@@ -35,6 +35,7 @@ export const laudoSchema = z.object({
     vagina: z.object({ descricao: z.string().default("") }),
   }),
   utero: z.object({
+    posicao: z.string().default(""),
     forma: z.string().default(""),
     contornos: z.string().default(""),
     paredes: z.string().default(""),
@@ -45,6 +46,7 @@ export const laudoSchema = z.object({
     juncao_endometrio_miometrio: z.string().default(""),
     padrao: z.string().default(""),
     espessura_endometrial: z.string().default(""),
+    miomas: z.array(z.any()).default([]),
   }),
   ovario_direito: z.object({
     localizacao: z.string().default(""),

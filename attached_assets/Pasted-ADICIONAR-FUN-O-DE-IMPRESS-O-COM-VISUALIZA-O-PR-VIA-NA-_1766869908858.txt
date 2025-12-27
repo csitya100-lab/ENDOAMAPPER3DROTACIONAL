@@ -1,0 +1,154 @@
+ADICIONAR FUNÇÃO DE IMPRESSÃO COM VISUALIZAÇÃO PRÉVIA NA PÁGINA "DITADO IA PARA LAUDO":
+
+1) ADICIONAR DOIS BOTÕES na página (abaixo do card "Laudo Atualizado"):
+   - Botão "Visualizar Impressão" (ícone: eye/visualizar, cor: azul claro)
+   - Botão "Imprimir Laudo" (ícone: printer, cor: verde)
+
+2) CRIAR MODAL DE VISUALIZAÇÃO PRÉVIA:
+   Quando clicar em "Visualizar Impressão", abra um modal que mostre:
+   - Simulação de uma página A4 em branco
+   - Toda a estrutura do laudo formatada como em um documento profissional
+   - Scroll interno se necessário
+   - Botões no rodapé: "Fechar", "Imprimir" (que chama a função de impressão do navegador)
+
+3) FORMATAÇÃO PROFISSIONAL DO LAUDO EM A4:
+
+CABEÇALHO (topo da página):
+┌────────────────────────────────────────────────────┐
+│                    [LOGO/CLÍNICA]                  │
+│              ENDOAOLHE - MAPEAMENTO 3D/2D           │
+│                                                    │
+│  ULTRASSONOGRAFIA PARA PESQUISA DE ENDOMETRIOSE   │
+│         COM PREPARO INTESTINAL                    │
+└────────────────────────────────────────────────────┘
+
+DADOS DO PACIENTE E EXAME (espaço dedicado):
+┌────────────────────────────────────────────────────┐
+│  Paciente: Paciente A          Data: 27/12/2025    │
+│  CPF: _______________          Idade: ______       │
+│  Médico: Dra.                  CRM: ____________   │
+│  Equipamento: GE Voluson E10                       │
+│  Técnicas: V.C.I. e 3D HDLIVESTUDIO               │
+└────────────────────────────────────────────────────┘
+
+CORPO DO LAUDO (com seções bem definidas):
+
+═══════════════════════════════════════════════════════
+ESTRUTURAS
+═══════════════════════════════════════════════════════
+URETRA: Retilínea, sem coleções ou cistos peri-uretrais
+BEXIGA: Parcialmente cheia, paredes lisas, sem cálculos ou nódulos
+VAGINA: Com características ecográficas habituais e sem evidências de cistos
+
+═══════════════════════════════════════════════════════
+ÚTERO
+═══════════════════════════════════════════════════════
+Posição: Anteverso flexão, móvel
+Forma: Típica | Contornos: Regulares
+Paredes: Simétricas | Miométrio: Textura homogênea
+Biometria: 3.8 x 4.5 x 8.0 cm, volume 74.7 cm³
+Eco endometrial: Homogêneo, linha média linear
+Junção endométrio-miométrio: Regular
+Padrão: Basal
+Espessura endometrial: 3.7 mm
+Miomas: [se houver, listar com tamanho e localização]
+
+═══════════════════════════════════════════════════════
+OVÁRIOS
+═══════════════════════════════════════════════════════
+OVÁRIO DIREITO:
+  Localização: Região paratuterina, móvel
+  Forma: Típica | Limites: Definidos
+  Parênquima: Ecogenicidade habitual
+  Biometria: 3.1 x 1.7 x 1.9 cm, volume 3.4 cm³
+  Lesões: [listar se houver, ou "Nenhuma detectada"]
+
+OVÁRIO ESQUERDO:
+  Localização: Região paratuterina, móvel
+  Forma: Típica | Limites: Definidos
+  Parênquima: Ecogenicidade habitual
+  Biometria: 2.7 x 1.5 x 1.4 cm, volume 3.2 cm³
+  Lesões: [listar se houver, ou "Nenhuma detectada"]
+
+═══════════════════════════════════════════════════════
+COMPARTIMENTOS PÉLVICOS
+═══════════════════════════════════════════════════════
+ANTERIOR:
+  Parede vesical: Sem nodularidades
+  Espaço vésico-uterino: Livre
+  Sinal de deslizamento anterior: Positivo
+  Endometriose: Não detectada
+
+MEDIAL:
+  Superfície uterina: Normal
+  Ligamentos redondos: Sem sinais de endometriose
+  Tubas uterinas: Normais
+  Ovários: Sem sinais de endometriose
+  Endometriose: Não detectada
+
+POSTERIOR:
+  Septo retovaginal: Sem sinais de endometriose profunda
+  Fórnix vaginal: Normal
+  Retossigmoide: Normal
+  Ligamentos útero-sacros: Sem achados
+  Região retro-cervical: Normal
+  Sinal de deslizamento posterior: Positivo
+  Endometriose: Não detectada
+
+═══════════════════════════════════════════════════════
+RINS E URETERES
+═══════════════════════════════════════════════════════
+Rins: Aspecto ecográfico normal, sem sinais de hidronefrose
+Ureteres terminais: Identificados, sem retrações ou alterações luminais
+
+═══════════════════════════════════════════════════════
+PAREDE ABDOMINAL
+═══════════════════════════════════════════════════════
+Região umbilical: Sem alterações
+Parede abdominal: Sem alterações
+
+═══════════════════════════════════════════════════════
+CONCLUSÃO
+═══════════════════════════════════════════════════════
+Avaliação ecográfica sem sinais de endometriose profunda.
+
+RODAPÉ (abaixo):
+┌────────────────────────────────────────────────────┐
+│                                                    │
+│  _________________________          _______________│
+│  Assinatura do Médico              Data           │
+│  CRM: ________________            Carimbo         │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+4) ESTILO CSS PARA VISUALIZAÇÃO EM A4:
+
+- Tamanho A4: 210mm x 297mm (simular em tela)
+- Margens: 2cm em todos os lados
+- Fonte: Arial ou Segoe UI, 11-12px para corpo, 14-16px para títulos
+- Linha de altura: 1.5
+- Cor do texto: #333 (cinza escuro)
+- Fundo: branco puro
+- Separadores com linhas sólidas (─ ou ═)
+- Títulos em negrito, maiúsculo, azul (#1e40af)
+- Parágrafos alinhados à esquerda
+- Quebras de página automáticas se necessário
+
+5) FUNÇÃO IMPRIMIR:
+
+Ao clicar em "Imprimir Laudo":
+- Chame window.print() do navegador
+- O CSS @media print deve garantir formatação correta na impressão
+- Remova botões de ação da visualização impressa
+- Garanta que seções e dados apareçam corretamente em papel
+
+6) ARMAZENAR METADADOS DE IMPRESSÃO (opcional):
+   - Data e hora da impressão
+   - Quem imprimiu (médico)
+   - Número de páginas geradas
+
+TESTE:
+- Clique em "Visualizar Impressão"
+- Valide se o layout A4 está correto, legível e profissional
+- Clique em "Imprimir"
+- Verifique se a impressão sai formatada corretamente

@@ -83,6 +83,66 @@ interface LaudoData {
   conclusao: string;
 }
 
+// Função para converter números por extenso em dígitos
+const converterNumerosParaDigitos = (texto: string): string => {
+  const numerosPalavra: { [key: string]: string } = {
+    'zero': '0', 'um': '1', 'uma': '1', 'dois': '2', 'duas': '2', 'três': '3', 'tres': '3',
+    'quatro': '4', 'cinco': '5', 'seis': '6', 'sete': '7',
+    'oito': '8', 'nove': '9', 'dez': '10', 'onze': '11',
+    'doze': '12', 'treze': '13', 'quatorze': '14', 'quinze': '15',
+    'dezesseis': '16', 'dezessete': '17', 'dezoito': '18',
+    'dezenove': '19', 'vinte': '20', 'trinta': '30', 'quarenta': '40',
+    'cinquenta': '50', 'sessenta': '60', 'setenta': '70',
+    'oitenta': '80', 'noventa': '90', 'cem': '100', 'cento': '100', 'mil': '1000'
+  };
+
+  let resultado = texto;
+
+  // Substituir "ponto" ou "vírgula" por "."
+  resultado = resultado.replace(/\bponto\b/gi, '.');
+  resultado = resultado.replace(/\bvírgula\b/gi, '.');
+  resultado = resultado.replace(/\bvirgula\b/gi, '.');
+
+  // Substituir "por" ou "vezes" por "x"
+  resultado = resultado.replace(/\bpor\b/gi, 'x');
+  resultado = resultado.replace(/\bvezes\b/gi, 'x');
+
+  // Converter números por extenso em dígitos
+  // Padrão: uma ou mais palavras de números separadas por espaço
+  resultado = resultado.replace(
+    /\b(?:zero|um|uma|dois|duas|três|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|mil)(?:\s+(?:zero|um|uma|dois|duas|três|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|mil))*\b/gi,
+    (match) => {
+      const palavras = match.toLowerCase().split(/\s+/);
+      let valor = 0;
+      
+      for (const palavra of palavras) {
+        if (numerosPalavra[palavra]) {
+          valor += parseInt(numerosPalavra[palavra], 10);
+        }
+      }
+      
+      return valor.toString();
+    }
+  );
+
+  // Normalizar espaços ao redor de "x" (para medidas como "3 x 4 cm")
+  resultado = resultado.replace(/\s*x\s*/gi, ' x ');
+
+  // Substituir "centímetros" e variações por "cm"
+  resultado = resultado.replace(/\bcentímetros\b/gi, 'cm');
+  resultado = resultado.replace(/\bcentímetro\b/gi, 'cm');
+  resultado = resultado.replace(/\bcentimetros\b/gi, 'cm');
+  resultado = resultado.replace(/\bcentimetro\b/gi, 'cm');
+
+  // Substituir "milímetros" e variações por "mm"
+  resultado = resultado.replace(/\bmilímetros\b/gi, 'mm');
+  resultado = resultado.replace(/\bmilímetro\b/gi, 'mm');
+  resultado = resultado.replace(/\bmilimetros\b/gi, 'mm');
+  resultado = resultado.replace(/\bmilimetro\b/gi, 'mm');
+
+  return resultado;
+};
+
 const LAUDO_INICIAL: LaudoData = {
   cabecalho: {
     nome_medico: 'Dra.',
@@ -194,7 +254,9 @@ export default function DitadoIA() {
       recognitionRef.current.onresult = (event: any) => {
         let textoInterino = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcricao = event.results[i][0].transcript;
+          let transcricao = event.results[i][0].transcript;
+          // Aplicar conversão de números por extenso em dígitos
+          transcricao = converterNumerosParaDigitos(transcricao);
           if (event.results[i].isFinal) {
             setTextoDitado((prev) => prev + (prev ? ' ' : '') + transcricao);
           } else {

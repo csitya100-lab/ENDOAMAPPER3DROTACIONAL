@@ -202,21 +202,68 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         const scale = 4 / maxDim;
         model.scale.set(scale, scale, scale);
 
-        model.traverse((child) => {
-            if ((child as THREE.Mesh).isMesh) {
+        // Bake all child transformations into world space and remove hierarchy
+        const meshesToMerge: Array<{geometry: THREE.BufferGeometry, matrix: THREE.Matrix4}> = [];
+        
+        model.traverse((child: any) => {
+            if ((child as THREE.Mesh).isMesh && child !== model) {
                 const mesh = child as THREE.Mesh;
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
-
-                if (mesh.material) {
-                   const mat = mesh.material as THREE.MeshStandardMaterial;
-                   // Apply consistent material properties to ALL meshes including bladder
-                   mat.roughness = 0.4;
-                   mat.metalness = 0.1;
-                   mat.side = THREE.DoubleSide;
-                }
+                
+                // Get the world matrix for this mesh
+                mesh.updateMatrixWorld();
+                const worldMatrix = mesh.matrixWorld.clone();
+                
+                // Get geometry
+                const geometry = mesh.geometry as THREE.BufferGeometry;
+                meshesToMerge.push({ geometry, matrix: worldMatrix });
             }
         });
+        
+        // Create merged geometry with all transformations applied
+        const mergedGeometry = new THREE.BufferGeometry();
+        const positionsArray: number[] = [];
+        const normalsArray: number[] = [];
+        
+        for (const { geometry, matrix } of meshesToMerge) {
+            const positions = geometry.attributes.position;
+            const normals = geometry.attributes.normal;
+            
+            if (positions) {
+                const pos = positions.array as Float32Array;
+                const norm = normals ? (normals.array as Float32Array) : null;
+                
+                for (let i = 0; i < pos.length; i += 3) {
+                    const v = new THREE.Vector3(pos[i], pos[i+1], pos[i+2]);
+                    v.applyMatrix4(matrix);
+                    positionsArray.push(v.x, v.y, v.z);
+                    
+                    if (norm) {
+                        const n = new THREE.Vector3(norm[i], norm[i+1], norm[i+2]);
+                        n.transformDirection(matrix);
+                        normalsArray.push(n.x, n.y, n.z);
+                    }
+                }
+            }
+        }
+        
+        mergedGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positionsArray), 3));
+        if (normalsArray.length > 0) {
+            mergedGeometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normalsArray), 3));
+        }
+        mergedGeometry.computeBoundingSphere();
+        
+        // Clear children and add merged mesh
+        model.children = [];
+        const mergedMaterial = new THREE.MeshStandardMaterial({
+            roughness: 0.4,
+            metalness: 0.1,
+            side: THREE.DoubleSide
+        });
+        
+        const mergedMesh = new THREE.Mesh(mergedGeometry, mergedMaterial);
+        mergedMesh.castShadow = true;
+        mergedMesh.receiveShadow = true;
+        model.add(mergedMesh);
         
         anatomyGroup.add(model);
     }, undefined, (error) => {

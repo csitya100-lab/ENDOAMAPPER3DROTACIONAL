@@ -1,0 +1,172 @@
+OBJETIVO: Fazer o modelo 3D do Replit ter exatamente a mesma aparência visual 
+(cores, sombras, luminosidade, reflexos) do modelo 3D no Lovable.
+
+ANÁLISE COMPARATIVA DO LOVABLE:
+- Fundo: Preto profundo (#000000 ou similar)
+- Iluminação ambiente: Luz quente (~3500K) suave
+- Luz direcional: Lateral, criando profundidade e sombras naturais
+- Temperaturas de cor: Tons quentes (rosas, laranjas, marrons)
+- Acabamento: Semi-mate com reflexos suaves
+- Contraste: Moderado - não muito brilhante, não muito opaco
+
+1. CONFIGURAÇÃO DE ILUMINAÇÃO (CRÍTICA)
+
+Ambient Light:
+- Cor: #FFF5E1 (branco quente, temperatura ~3500K)
+- Intensidade: 0.6 a 0.8 (verifique no Lovable visualmente)
+- Função: Iluminar superfícies não atingidas pela luz direcional
+
+Directional Light (Luz Principal):
+- Posição: (8, 8, 5) ou similar (lateral-superior)
+- Cor: #FFFFFF ou #FFFAF0 (branco ligeiramente quente)
+- Intensidade: 1.2 a 1.5
+- castShadow: true
+- receiveShadow: true
+- shadowMapSize: 2048 ou 4096
+- shadowCameraLeft/Right/Top/Bottom: Ajustado para cobrir todo modelo
+
+Fill Light (Luz de Preenchimento - Opcional):
+- Posição: (-8, 3, 5) (lado oposto, mais fraco)
+- Cor: #D3D3D3 (cinza claro)
+- Intensidade: 0.3 a 0.4
+- Função: Suavizar sombras muito duras
+
+2. AJUSTES DE CORES POR ÓRGÃO (BASEADO NO LOVABLE)
+
+Útero:
+- Cor base: #D97E8A ou #E08A99 (rosa-vermelho vibrante)
+- Ajuste: Se muito escuro, aumentar para #DD8A96; se muito claro, reduzir para #C97080
+
+Ovários:
+- Cor base: #FFD700 (ouro/amarelo)
+- Ajuste: Se muito claro, usar #FFC700; se muito escuro, usar #FFDC32
+- Destacar levemente com reflexo (vide seção 3)
+
+Bexiga:
+- Cor base: #87CEEB (azul claro)
+- Ajuste: Se desbotado, aumentar saturação para #7AC5E0; se muito vibrante, reduzir para #8BDBF8
+
+Reto:
+- Cor base: #CD8B65 ou #D4956F (marrom avermelhado)
+- Ajuste: Deve ter tom similar ao útero mas mais escuro
+
+Cervix:
+- Cor base: #C49080 (rosa-marrom/bege)
+- Ajuste: Tom intermediário entre útero e vagina
+
+Ligamentos (Útero-Sacros, Redondos, Ovarianos):
+- Cores: Variações de rosa (#DDA0B5, #D4A5A5, #E0C0B8)
+- Ajuste: Devem ter LESS saturação que útero/ovários
+- Opacidade: Ligeiramente mais transparentes (alpha ~0.95) se necessário
+
+Vagina:
+- Cor base: #E8B4B8 (rosa claro, mais claro que útero)
+- Ajuste: Mais clara que cervix
+
+3. PROPRIEDADES DE MATERIAL (AJUSTES PBR)
+
+Estruturas Sólidas (Útero, Ovários, Bexiga, Reto):
+{
+  roughness: 0.45,        // Semi-mate (Lovable usa ~0.4-0.5)
+  metalness: 0.05,        // Muito pouco reflexo metálico
+  clearcoat: 0.1,         // Brilho suave superficial
+  envMapIntensity: 0.5    // Reflexos ambientais moderados
+}
+
+Ligamentos (Mais suaves):
+{
+  roughness: 0.55,        // Ligeiramente mais opaco
+  metalness: 0.02,        // Quase nenhum reflexo
+  clearcoat: 0.05,        // Menos brilho
+  envMapIntensity: 0.3
+}
+
+Vagina (Mais macia):
+{
+  roughness: 0.6,         // Mais opaca
+  metalness: 0.0,         // Sem reflexo metálico
+  clearcoat: 0.0,         // Sem brilho
+  envMapIntensity: 0.2
+}
+
+4. SOMBRAS (IMPORTANTE PARA REALISMO)
+
+Shadow Properties:
+- shadowMapSize: 2048 (ou 4096 para qualidade máxima)
+- shadowBias: 0.0001 (evita artefatos)
+- shadowDarkness/shadowDarkness: 0.5-0.7 (sombras não muito pretas)
+- shadowCameraFar: 100 (cobertura suficiente)
+
+Cada mesh:
+- castShadow: true (gera sombra)
+- receiveShadow: true (recebe sombra de outros objetos)
+
+5. FUNDO E AMBIENTE
+
+Background:
+- Cor: #0a0a0a ou #000000 (preto puro como Lovable)
+- Sem skybox/environment map (ou ambiente muito escuro)
+
+Fog (Opcional - NÃO usar se Lovable não tiver):
+- Verificar visualmente se há fog
+- Se não houver, comentar/desabilitar
+
+6. TONALMAPPING E POSTPROCESSING
+
+ToneMapping:
+- THREE.ACESFilmicToneMapping (mais realista)
+- outputEncoding: THREE.sRGBEncoding (cores corretas)
+- exposureControl: 1.0 (ajustar se muito brilhante/escuro)
+
+7. CAMERA POSITION E CONTROLE
+
+Verificar se camera está:
+- Na mesma posição que Lovable
+- Com mesmo FOV (field of view)
+- OrbitControls com mesmo damping/autoRotate
+
+8. VERIFICAÇÃO VISUAL POR VISTA
+
+3D PERSPECTIVE:
+- Útero: Rosa-vermelho vibrante, com sombra suave abaixo
+- Ovários: Amarelo/dourado, refletindo luz
+- Bexiga: Azul claro, menos saturado que útero
+- Todos: Gradiente suave de cor (não cores planas)
+
+SAGITTAL (SIDE):
+- Mostra lateralidade dos órgãos
+- Sombras devem aparecer no lado oposto à luz
+
+CORONAL (FRONT):
+- Simetria bilateral clara
+- Cores consistentes em ambos lados
+
+POSTERIOR (BACK):
+- Ligamentos útero-sacros bem visíveis
+- Cores menos saturadas que órgãos principais
+
+PARÂMETROS FINAIS DE AJUSTE:
+
+Se modelo fica muito BRILHANTE:
+- Reduzir intensidade de luz direcional (1.2 → 1.0)
+- Aumentar roughness em todos materiais (+0.1)
+- Reduzir clearcoat (-0.05)
+
+Se modelo fica muito ESCURO:
+- Aumentar intensidade de luz ambiente (0.6 → 0.8)
+- Aumentar intensidade de luz direcional
+- Adicionar fill light no lado oposto
+
+Se cores parecem DESBOTADAS:
+- Aumentar saturação das cores base (usar hsv)
+- Reduzir roughness (-0.05)
+- Aumentar metalness ligeiramente
+
+Se reflexos muito NATURAIS (não glossy):
+- Keeproughness entre 0.4-0.5
+- Manter metalness baixo (~0.05)
+- Manter clearcoat suave (~0.1)
+
+RESULTADO ESPERADO:
+Modelo 3D com aparência clínica realista, cores vibrantes mas naturais,
+sombras suaves criando profundidade, exatamente como aparece no Lovable.

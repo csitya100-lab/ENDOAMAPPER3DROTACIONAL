@@ -158,29 +158,38 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setScissorTest(true);
     rendererRef.current = renderer;
 
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a0a);
     sceneRef.current = scene;
     
-    // Warm ambient light (3500K clinical lighting)
-    const ambientLight = new THREE.AmbientLight(0xFFB88C, 0.5);
+    // Ambient Light: Warm white (~3500K), intensity 0.7
+    const ambientLight = new THREE.AmbientLight(0xFFF5E1, 0.7);
     scene.add(ambientLight);
 
-    // Main directional light - lateral diffuse for clinical realism
-    const dirLight = new THREE.DirectionalLight(0xFFC9A0, 0.85);
+    // Main Directional Light: Lateral position for clinical realism
+    const dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.3);
     dirLight.position.set(8, 8, 5);
     dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
-    dirLight.shadow.camera.far = 30;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.left = -15;
+    dirLight.shadow.camera.right = 15;
+    dirLight.shadow.camera.top = 15;
+    dirLight.shadow.camera.bottom = -15;
+    dirLight.shadow.camera.far = 100;
+    dirLight.shadow.bias = 0.0001;
     dirLight.shadow.radius = 4;
     scene.add(dirLight);
 
-    // Soft fill light from opposite side
-    const fillLight = new THREE.DirectionalLight(0xF5A96B, 0.35);
-    fillLight.position.set(-6, 5, -8);
+    // Fill Light: Soft light from opposite side
+    const fillLight = new THREE.DirectionalLight(0xD3D3D3, 0.4);
+    fillLight.position.set(-8, 3, 5);
     scene.add(fillLight);
 
     const anatomyGroup = new THREE.Group();
@@ -207,16 +216,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         const scale = 4 / maxDim;
         model.scale.set(scale, scale, scale);
 
-        // Color mapping based on original material colors
-        const colorMap: {[key: string]: string} = {
-            'yellow': '#FFD700',    // Ovários
-            'blue': '#87CEEB',      // Bexiga
-            'skin': '#D97E8A',      // Útero (rosa)
-            'brown': '#CD8B65',     // Reto
-            'tan': '#C49080'        // Cervix
-        };
-
-        // Apply solid colors to each mesh
+        // Identify organ by original color and apply appropriate material
         model.traverse((child: any) => {
             if ((child as THREE.Mesh).isMesh && child !== model) {
                 const mesh = child as THREE.Mesh;
@@ -231,31 +231,51 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
                     originalColor = (originalMat as any).color.clone();
                 }
                 
-                // Determine which organ based on original color
-                let newColor = '#D97E8A'; // Default to uterus
                 const r = originalColor.r;
                 const g = originalColor.g;
                 const b = originalColor.b;
                 
-                // Yellow organs = ovaries
+                // Identify organ type and set color + material properties
+                let newColor = new THREE.Color(0xDD8A96); // Default: Uterus
+                let roughness = 0.45;
+                let metalness = 0.05;
+                let clearcoat = 0.1;
+                let envMapIntensity = 0.5;
+                
+                // Yellow = Ovaries (most vibrant)
                 if (r > 0.8 && g > 0.8 && b < 0.4) {
-                    newColor = '#FFD700';
+                    newColor = new THREE.Color(0xFFD700);
                 }
-                // Blue = bladder
+                // Blue = Bladder
                 else if (r < 0.4 && g > 0.7 && b > 0.8) {
-                    newColor = '#87CEEB';
+                    newColor = new THREE.Color(0x87CEEB);
                 }
-                // Brown/tan = rectum or cervix
-                else if (r > 0.6 && g > 0.4 && b > 0.3) {
-                    newColor = '#CD8B65';
+                // Brown/Red = Rectum (darker, more saturated)
+                else if (r > 0.7 && g > 0.4 && b > 0.3 && r - g > 0.2) {
+                    newColor = new THREE.Color(0xD4956F);
+                }
+                // Tan/Beige = Cervix (intermediate)
+                else if (r > 0.6 && g > 0.4 && b > 0.3 && r - g < 0.3) {
+                    newColor = new THREE.Color(0xC49080);
+                    roughness = 0.50;
+                    clearcoat = 0.08;
+                }
+                // Light pink/white = Ligaments, Vagina (less saturated)
+                else if (r > 0.8 && g < 0.7 && b < 0.7 && r - g < 0.3) {
+                    newColor = new THREE.Color(0xE8B4B8); // Lighter pink
+                    roughness = 0.55;
+                    metalness = 0.02;
+                    clearcoat = 0.05;
+                    envMapIntensity = 0.3;
                 }
                 
-                // Apply MeshPhysicalMaterial with solid color
+                // Apply MeshPhysicalMaterial with optimized properties
                 const newMaterial = new THREE.MeshPhysicalMaterial({
-                    color: new THREE.Color(newColor),
-                    roughness: 0.45,
-                    metalness: 0.05,
-                    clearcoat: 0.1,
+                    color: newColor,
+                    roughness: roughness,
+                    metalness: metalness,
+                    clearcoat: clearcoat,
+                    envMapIntensity: envMapIntensity,
                     side: THREE.DoubleSide
                 });
                 

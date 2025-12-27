@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Uterus3D, Uterus3DRef } from '@/components/Uterus3D';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Circle, RotateCcw, Plus, Info, ChevronRight } from 'lucide-react';
+import { Circle, RotateCcw, Plus, Info, ChevronRight, FileText } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Severity = 'superficial' | 'moderate' | 'deep';
@@ -110,6 +110,16 @@ export default function Home() {
           >
             <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
             Reset
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => window.location.href = '/report'}
+            className="text-xs h-8 border border-border/50"
+          >
+            <FileText className="w-3.5 h-3.5 mr-1.5" />
+            Report
           </Button>
 
           <Tooltip>

@@ -202,25 +202,84 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         const scale = 4 / maxDim;
         model.scale.set(scale, scale, scale);
 
-        // Simply remove any child rotations - freeze hierarchy at root level only
+        // Merge all meshes with color preservation
+        const mergedMaterials: THREE.Material[] = [];
+        const meshesToMerge: Array<{geometry: THREE.BufferGeometry, matrix: THREE.Matrix4, material: THREE.Material}> = [];
+        
         model.traverse((child: any) => {
             if ((child as THREE.Mesh).isMesh && child !== model) {
                 const mesh = child as THREE.Mesh;
+                mesh.updateMatrixWorld();
                 
-                // Freeze local rotation - only position and scale, no rotation
-                mesh.rotation.set(0, 0, 0, 'XYZ');
-                mesh.quaternion.set(0, 0, 0, 1);
+                const geometry = (mesh.geometry as THREE.BufferGeometry).clone();
+                geometry.applyMatrix4(mesh.matrixWorld);
                 
-                if (mesh.material) {
-                    const mat = mesh.material as THREE.MeshStandardMaterial;
-                    mat.roughness = 0.4;
-                    mat.metalness = 0.1;
-                    mat.side = THREE.DoubleSide;
+                let material = mesh.material;
+                if (Array.isArray(material)) {
+                    material = material[0];
                 }
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
+                
+                meshesToMerge.push({
+                    geometry,
+                    matrix: mesh.matrixWorld.clone(),
+                    material: material as THREE.Material
+                });
             }
         });
+        
+        // Create merged geometry preserving vertex colors
+        const mergedGeometry = new THREE.BufferGeometry();
+        const allPositions: number[] = [];
+        const allNormals: number[] = [];
+        const allColors: number[] = [];
+        
+        for (const {geometry, material} of meshesToMerge) {
+            const positions = geometry.attributes.position;
+            const normals = geometry.attributes.normal;
+            const colors = geometry.attributes.color;
+            
+            if (positions) {
+                const pos = positions.array as Float32Array;
+                const norm = normals ? (normals.array as Float32Array) : null;
+                
+                // Get material color
+                let matColor = new THREE.Color(0xffffff);
+                if (material instanceof THREE.MeshStandardMaterial) {
+                    matColor = material.color.clone();
+                }
+                
+                for (let i = 0; i < pos.length; i += 3) {
+                    allPositions.push(pos[i], pos[i+1], pos[i+2]);
+                    allColors.push(matColor.r, matColor.g, matColor.b);
+                    
+                    if (norm) {
+                        allNormals.push(norm[i], norm[i+1], norm[i+2]);
+                    }
+                }
+            }
+        }
+        
+        mergedGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(allPositions), 3));
+        mergedGeometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(allColors), 3));
+        if (allNormals.length > 0) {
+            mergedGeometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(allNormals), 3));
+        }
+        mergedGeometry.computeBoundingSphere();
+        
+        // Create material with vertex colors
+        const mergedMaterial = new THREE.MeshStandardMaterial({
+            vertexColors: true,
+            roughness: 0.4,
+            metalness: 0.1,
+            side: THREE.DoubleSide
+        });
+        
+        // Clear and add merged mesh
+        model.children = [];
+        const mergedMesh = new THREE.Mesh(mergedGeometry, mergedMaterial);
+        mergedMesh.castShadow = true;
+        mergedMesh.receiveShadow = true;
+        model.add(mergedMesh);
         
         anatomyGroup.add(model);
     }, undefined, (error) => {

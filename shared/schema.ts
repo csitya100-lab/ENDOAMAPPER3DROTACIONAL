@@ -46,7 +46,13 @@ export const laudoSchema = z.object({
     juncao_endometrio_miometrio: z.string().default(""),
     padrao: z.string().default(""),
     espessura_endometrial: z.string().default(""),
-    miomas: z.array(z.any()).default([]),
+    miomas: z.array(z.object({
+      tipo: z.string().default("mioma"),
+      localizacao: z.string().default(""),
+      tamanho: z.string().default(""),
+      profundidade: z.string().optional().default(""),
+      figo_classification: z.string().optional().default(""),
+    })).default([]),
   }),
   ovario_direito: z.object({
     localizacao: z.string().default(""),
@@ -54,7 +60,13 @@ export const laudoSchema = z.object({
     limites: z.string().default(""),
     parenchima: z.string().default(""),
     biometria: z.string().default(""),
-    lesoes: z.array(z.any()).default([]),
+    lesoes: z.array(z.object({
+      tipo: z.string().default(""),
+      localizacao: z.string().default(""),
+      tamanho: z.string().default(""),
+      profundidade: z.string().optional().default(""),
+      o_rads: z.string().optional().default(""),
+    })).default([]),
   }),
   ovario_esquerdo: z.object({
     localizacao: z.string().default(""),
@@ -62,7 +74,13 @@ export const laudoSchema = z.object({
     limites: z.string().default(""),
     parenchima: z.string().default(""),
     biometria: z.string().default(""),
-    lesoes: z.array(z.any()).default([]),
+    lesoes: z.array(z.object({
+      tipo: z.string().default(""),
+      localizacao: z.string().default(""),
+      tamanho: z.string().default(""),
+      profundidade: z.string().optional().default(""),
+      o_rads: z.string().optional().default(""),
+    })).default([]),
   }),
   compartimentos: z.object({
     anterior: z.object({

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff, Eye, Printer, X } from 'lucide-react';
+import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff, Eye, Printer, X, ChevronRight } from 'lucide-react';
 
 interface LaudoData {
   cabecalho: {
@@ -143,6 +143,66 @@ const converterNumerosParaDigitos = (texto: string): string => {
   return resultado;
 };
 
+// Funções de detecção de achados clínicos
+interface AchadosDetectados {
+  temEndometrioma: boolean;
+  temMioma: boolean;
+  temProfundidade: boolean;
+  profundidade?: string;
+  localizacao?: string;
+  tamanho?: string;
+  transcricao: string;
+}
+
+const detectarAchados = (texto: string): AchadosDetectados => {
+  const achados: AchadosDetectados = {
+    temEndometrioma: false,
+    temMioma: false,
+    temProfundidade: false,
+    transcricao: texto,
+  };
+
+  // Detectar endometrioma
+  if (/endometrioma/i.test(texto)) {
+    achados.temEndometrioma = true;
+  }
+
+  // Detectar mioma ou fibroma
+  if (/mioma|fibroma/i.test(texto)) {
+    achados.temMioma = true;
+  }
+
+  // Detectar profundidade
+  if (/profund/i.test(texto)) {
+    achados.temProfundidade = true;
+    if (/superficial/i.test(texto)) {
+      achados.profundidade = 'Superficial';
+    } else if (/intermediária|intermediaria/i.test(texto)) {
+      achados.profundidade = 'Intermediária';
+    } else if (/profund/i.test(texto)) {
+      achados.profundidade = 'Profunda';
+    }
+  }
+
+  // Detectar localização (ovário direito/esquerdo)
+  if (/ovário\s*direito|ovário\s*d|OD/i.test(texto)) {
+    achados.localizacao = 'Ovário Direito';
+  } else if (/ovário\s*esquerdo|ovário\s*e|OE/i.test(texto)) {
+    achados.localizacao = 'Ovário Esquerdo';
+  } else if (/ligamento|tuba|útero/i.test(texto)) {
+    const match = texto.match(/ligamento|tuba|útero/i);
+    achados.localizacao = match ? match[0] : undefined;
+  }
+
+  // Detectar tamanho (padrão: número + unidade)
+  const sizeMatch = texto.match(/(\d+[\.,]?\d*)\s*(cm|mm|x)/i);
+  if (sizeMatch) {
+    achados.tamanho = sizeMatch[0].trim();
+  }
+
+  return achados;
+};
+
 const LAUDO_INICIAL: LaudoData = {
   cabecalho: {
     nome_medico: 'Dra.',
@@ -232,6 +292,8 @@ export default function DitadoIA() {
   const [error, setError] = useState<string | null>(null);
   const [gravando, setGravando] = useState(false);
   const [modalVisualizacao, setModalVisualizacao] = useState(false);
+  const [achados, setAchados] = useState<AchadosDetectados | null>(null);
+  const [validationResponse, setValidationResponse] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
 
   const handleImprimir = () => {
@@ -458,7 +520,14 @@ ${laudo.conclusao}
             <div className="flex gap-2 mb-2">
               <textarea
                 value={textoDitado}
-                onChange={(e) => setTextoDitado(e.target.value)}
+                onChange={(e) => {
+                  setTextoDitado(e.target.value);
+                  if (e.target.value.trim()) {
+                    setAchados(detectarAchados(e.target.value));
+                  } else {
+                    setAchados(null);
+                  }
+                }}
                 placeholder="Cole aqui o texto do ditado reconhecido…"
                 className="flex-1 h-32 p-4 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none text-slate-900 placeholder-slate-400"
               />
@@ -476,6 +545,124 @@ ${laudo.conclusao}
                 </Button>
               </div>
             </div>
+
+            {/* Card de Validação Clínica */}
+            {achados && (achados.temEndometrioma || achados.temMioma || achados.temProfundidade || achados.tamanho) && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5 mb-4">
+                <h3 className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  <Check className="w-4 h-4 text-blue-600" />
+                  Validação Clínica da Transcrição
+                </h3>
+
+                {/* Transcrição Detectada */}
+                <div className="mb-4 pb-4 border-b border-blue-200">
+                  <p className="text-xs text-slate-600 font-medium mb-2">Transcrição Detectada:</p>
+                  <p className="text-sm text-slate-700 bg-white rounded px-3 py-2 border border-blue-100">
+                    {achados.transcricao}
+                  </p>
+                </div>
+
+                {/* Achados Reconhecidos */}
+                <div className="mb-4 pb-4 border-b border-blue-200">
+                  <p className="text-xs text-slate-600 font-medium mb-3">Achados Reconhecidos:</p>
+                  <div className="space-y-2">
+                    {achados.temEndometrioma && (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked readOnly className="w-4 h-4 rounded accent-blue-600" />
+                        <span className="text-sm text-slate-700">Tipo de Lesão: <strong>Endometrioma</strong></span>
+                      </label>
+                    )}
+                    {achados.temMioma && (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked readOnly className="w-4 h-4 rounded accent-blue-600" />
+                        <span className="text-sm text-slate-700">Tipo de Lesão: <strong>Mioma</strong></span>
+                      </label>
+                    )}
+                    {achados.localizacao && (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked readOnly className="w-4 h-4 rounded accent-blue-600" />
+                        <span className="text-sm text-slate-700">Localização: <strong>{achados.localizacao}</strong></span>
+                      </label>
+                    )}
+                    {achados.tamanho && (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked readOnly className="w-4 h-4 rounded accent-blue-600" />
+                        <span className="text-sm text-slate-700">Tamanho: <strong>{achados.tamanho}</strong></span>
+                      </label>
+                    )}
+                    {achados.temProfundidade && achados.profundidade && (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked readOnly className="w-4 h-4 rounded accent-blue-600" />
+                        <span className="text-sm text-slate-700">Profundidade: <strong>{achados.profundidade}</strong></span>
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                {/* Pergunta de Validação */}
+                <div className="mb-4 pb-4 border-b border-blue-200">
+                  <p className="text-xs text-slate-600 font-medium mb-3">Falta algum detalhe?</p>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="validation" 
+                        value="correct"
+                        checked={validationResponse === 'correct'}
+                        onChange={(e) => setValidationResponse(e.target.value)}
+                        className="w-4 h-4 accent-green-600"
+                      />
+                      <span className="text-sm text-slate-700">Não, está correto</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="validation" 
+                        value="edit"
+                        checked={validationResponse === 'edit'}
+                        onChange={(e) => setValidationResponse(e.target.value)}
+                        className="w-4 h-4 accent-amber-600"
+                      />
+                      <span className="text-sm text-slate-700">Sim, preciso editar</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="validation" 
+                        value="rerecord"
+                        checked={validationResponse === 'rerecord'}
+                        onChange={(e) => setValidationResponse(e.target.value)}
+                        className="w-4 h-4 accent-red-600"
+                      />
+                      <span className="text-sm text-slate-700">Sim, quero regravar</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Botões de Ação */}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      const textarea = document.querySelector('textarea');
+                      if (textarea) textarea.focus();
+                    }}
+                    variant="outline"
+                    className="flex-1 h-9 gap-1 text-sm bg-white border-blue-300 text-slate-700 hover:bg-slate-100"
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                    Editar Texto
+                  </Button>
+                  <Button
+                    onClick={handleAnalisarDitado}
+                    disabled={loading || !textoDitado.trim()}
+                    className="flex-1 h-9 gap-1 text-sm bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 disabled:opacity-50"
+                  >
+                    Analisar com IA
+                    <ChevronRight className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <Button
               onClick={handleAnalisarDitado}

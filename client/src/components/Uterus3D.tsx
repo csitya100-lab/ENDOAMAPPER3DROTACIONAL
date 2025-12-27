@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 type Severity = 'superficial' | 'moderate' | 'deep';
 
@@ -54,7 +55,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       const r = 1.5;
       
       const x = r * Math.sin(phi) * Math.cos(theta);
-      const y = (r * Math.sin(phi) * Math.sin(theta)) + 0.5;
+      const y = (r * Math.sin(phi) * Math.sin(theta));
       const z = r * Math.cos(phi);
       
       createLesionInStorage({ x, y, z }, currentSeverityRef.current);
@@ -179,75 +180,46 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
 
     const anatomyGroup = new THREE.Group();
     anatomyGroupRef.current = anatomyGroup;
-    
-    const organMaterial = new THREE.MeshPhysicalMaterial({ 
-      color: 0xe8a0a0, 
-      roughness: 0.3, 
-      metalness: 0.1, 
-      clearcoat: 0.3 
-    });
-    const cervixMaterial = new THREE.MeshPhysicalMaterial({ 
-      color: 0xd48888, 
-      roughness: 0.4, 
-      metalness: 0.0 
-    });
-    const ovaryMaterial = new THREE.MeshPhysicalMaterial({ 
-      color: 0xd4c5a0, 
-      roughness: 0.5, 
-      metalness: 0.0 
-    });
-
-    const bodyGeo = new THREE.IcosahedronGeometry(1.5, 2);
-    const uterusBody = new THREE.Mesh(bodyGeo, organMaterial);
-    uterusBody.position.set(0, 0.5, 0);
-    uterusBody.scale.set(1, 1.1, 0.9); 
-    uterusBody.castShadow = true;
-    uterusBody.receiveShadow = true;
-    anatomyGroup.add(uterusBody);
-
-    const cervixGeo = new THREE.CylinderGeometry(0.7, 0.7, 1.5, 32);
-    const cervix = new THREE.Mesh(cervixGeo, cervixMaterial);
-    cervix.position.set(0, -1.2, 0);
-    cervix.castShadow = true;
-    cervix.receiveShadow = true;
-    anatomyGroup.add(cervix);
-
-    const vaginaGeo = new THREE.CylinderGeometry(0.9, 0.8, 1.2, 32, 1, true);
-    const vagina = new THREE.Mesh(vaginaGeo, cervixMaterial);
-    vagina.position.set(0, -2.5, 0);
-    vagina.material = cervixMaterial.clone();
-    vagina.material.side = THREE.DoubleSide;
-    vagina.receiveShadow = true;
-    anatomyGroup.add(vagina);
-
-    function createTube(isRight: boolean) {
-        const xMult = isRight ? 1 : -1;
-        const curve = new THREE.CatmullRomCurve3([
-            new THREE.Vector3(1.2 * xMult, 1.5, 0),
-            new THREE.Vector3(2.0 * xMult, 1.8, 0.2),
-            new THREE.Vector3(2.8 * xMult, 1.2, 0.5),
-            new THREE.Vector3(3.0 * xMult, 0.5, 0),
-        ]);
-        const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 32, 0.15, 8, false), organMaterial);
-        tube.castShadow = true;
-        tube.receiveShadow = true;
-        return tube;
-    }
-    anatomyGroup.add(createTube(true));
-    anatomyGroup.add(createTube(false));
-
-    const ovaryGeo = new THREE.SphereGeometry(0.6, 32, 32);
-    const rightOvary = new THREE.Mesh(ovaryGeo, ovaryMaterial);
-    rightOvary.position.set(3.0, 0.2, 0);
-    rightOvary.castShadow = true;
-    anatomyGroup.add(rightOvary);
-
-    const leftOvary = new THREE.Mesh(ovaryGeo, ovaryMaterial);
-    leftOvary.position.set(-3.0, 0.2, 0);
-    leftOvary.castShadow = true;
-    anatomyGroup.add(leftOvary);
-
     scene.add(anatomyGroup);
+
+    // Load GLB Model
+    const loader = new GLTFLoader();
+    loader.load('/model.glb', (gltf) => {
+        const model = gltf.scene;
+        
+        // Auto-center and scale
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        
+        // Center the model
+        model.position.x += (model.position.x - center.x);
+        model.position.y += (model.position.y - center.y);
+        model.position.z += (model.position.z - center.z);
+        
+        // Scale to fit approx size 4 units
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 4 / maxDim;
+        model.scale.set(scale, scale, scale);
+
+        model.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                // Preserve original material but ensure it reacts to light
+                if ((child as THREE.Mesh).material) {
+                   const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
+                   mat.roughness = 0.4;
+                   mat.metalness = 0.1;
+                   mat.side = THREE.DoubleSide; // Ensure we see inside/outside
+                }
+            }
+        });
+        
+        anatomyGroup.add(model);
+    }, undefined, (error) => {
+        console.error('An error happened loading the model:', error);
+    });
 
     // Initialize marker groups
     for (let i = 0; i < 4; i++) {

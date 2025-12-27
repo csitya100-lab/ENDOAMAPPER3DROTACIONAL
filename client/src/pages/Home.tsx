@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Uterus3D, Uterus3DRef } from '@/components/Uterus3D';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Circle, RotateCcw, Plus, Info, ChevronRight, FileText, LayoutDashboard } from 'lucide-react';
+import { Circle, RotateCcw, Plus, Info, ChevronRight, FileText, LayoutDashboard, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Severity = 'superficial' | 'moderate' | 'deep';
@@ -29,6 +29,62 @@ export default function Home() {
 
   const getLesionCount = (sev: Severity) => lesions.filter(l => l.severity === sev).length;
   const lastLesion = lesions[lesions.length - 1];
+
+  const getMappingStatus = () => {
+    if (lesionCount === 0) return 'Vazio';
+    if (lesionCount < 3) return 'Em andamento';
+    return 'Completo';
+  };
+
+  const getMappingStatusColor = (status: string) => {
+    switch (status) {
+      case 'Em andamento':
+        return 'bg-blue-500/10 text-blue-600 border-blue-300';
+      case 'Completo':
+        return 'bg-green-500/10 text-green-600 border-green-300';
+      case 'Vazio':
+        return 'bg-slate-500/10 text-slate-600 border-slate-300';
+      default:
+        return 'bg-gray-500/10 text-gray-600 border-gray-300';
+    }
+  };
+
+  const getMappingStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Em andamento':
+        return <Clock className="w-3.5 h-3.5" />;
+      case 'Completo':
+        return <CheckCircle className="w-3.5 h-3.5" />;
+      default:
+        return <AlertCircle className="w-3.5 h-3.5" />;
+    }
+  };
+
+  const getLesionStatus = (index: number) => {
+    return index === lesions.length - 1 ? 'Recém adicionada' : 'Mapeada';
+  };
+
+  const getLesionStatusColor = (status: string) => {
+    switch (status) {
+      case 'Recém adicionada':
+        return 'bg-blue-500/10 text-blue-600 border-blue-300';
+      case 'Mapeada':
+        return 'bg-green-500/10 text-green-600 border-green-300';
+      default:
+        return 'bg-gray-500/10 text-gray-600 border-gray-300';
+    }
+  };
+
+  const getLesionStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Recém adicionada':
+        return <Clock className="w-3 h-3" />;
+      case 'Mapeada':
+        return <CheckCircle className="w-3 h-3" />;
+      default:
+        return <AlertCircle className="w-3 h-3" />;
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
@@ -148,9 +204,15 @@ export default function Home() {
         {/* Lesion Details Panel */}
         <aside className="w-72 border-l border-slate-200 bg-white shadow-sm overflow-y-auto">
           <div className="p-4 border-b border-slate-200">
-            <h2 className="text-sm font-bold text-slate-900 tracking-wide mb-3">
-              RESUMO DE LESÕES
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-slate-900 tracking-wide">
+                RESUMO DE MAPEAMENTO
+              </h2>
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-medium ${getMappingStatusColor(getMappingStatus())}`}>
+                {getMappingStatusIcon(getMappingStatus())}
+                {getMappingStatus()}
+              </div>
+            </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 border border-red-200">
                 <span className="text-xs text-slate-600 flex items-center gap-2 font-medium">
@@ -212,31 +274,43 @@ export default function Home() {
                 TODAS AS LESÕES ({lesions.length})
               </h3>
               <div className="space-y-2">
-                {lesions.map((lesion, idx) => (
-                  <div key={lesion.id} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-mono font-bold text-slate-700">#{idx + 1}</span>
-                      <Circle 
-                        className="w-2.5 h-2.5 fill-current" 
-                        color={lesion.severity === 'superficial' ? '#ef4444' : lesion.severity === 'moderate' ? '#f97316' : '#3b82f6'}
-                      />
+                {lesions.map((lesion, idx) => {
+                  const lesionStatus = getLesionStatus(idx);
+                  return (
+                    <div key={lesion.id} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-mono font-bold text-slate-700">#{idx + 1}</span>
+                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-medium ${getLesionStatusColor(lesionStatus)}`}>
+                          {getLesionStatusIcon(lesionStatus)}
+                          {lesionStatus}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Circle 
+                          className="w-2.5 h-2.5 fill-current flex-shrink-0" 
+                          color={lesion.severity === 'superficial' ? '#ef4444' : lesion.severity === 'moderate' ? '#f97316' : '#3b82f6'}
+                        />
+                        <span className="text-[10px] text-slate-600 font-medium capitalize">
+                          {lesion.severity === 'superficial' ? 'Superficial' : lesion.severity === 'moderate' ? 'Moderada' : 'Profunda'}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-600 space-y-0.5 font-mono">
+                        <div className="flex justify-between">
+                          <span>X:</span>
+                          <span className="font-semibold text-slate-900">{lesion.position.x.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Y:</span>
+                          <span className="font-semibold text-slate-900">{lesion.position.y.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Z:</span>
+                          <span className="font-semibold text-slate-900">{lesion.position.z.toFixed(2)}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[10px] text-slate-600 space-y-0.5 font-mono">
-                      <div className="flex justify-between">
-                        <span>X:</span>
-                        <span className="font-semibold text-slate-900">{lesion.position.x.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Y:</span>
-                        <span className="font-semibold text-slate-900">{lesion.position.y.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Z:</span>
-                        <span className="font-semibold text-slate-900">{lesion.position.z.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

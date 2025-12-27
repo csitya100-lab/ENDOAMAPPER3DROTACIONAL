@@ -160,9 +160,17 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
 
     let animationFrameId: number;
     let isMounted = true;
+    let renderer: THREE.WebGLRenderer;
 
     const canvas = canvasRef.current;
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    } catch (e) {
+      console.warn('WebGL not available:', e);
+      return;
+    }
+    
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;

@@ -16,6 +16,22 @@ interface CardData {
   viewName: string;
   title: string;
   description: string;
+  relatedLesions: string[];
+}
+
+interface Lesion {
+  id: string;
+  name: string;
+  location: string;
+  depth: string;
+  color: string;
+}
+
+interface PatientData {
+  name: string;
+  id: string;
+  examiner: string;
+  date: string;
 }
 
 const VIEWS: View[] = [
@@ -25,30 +41,41 @@ const VIEWS: View[] = [
   { id: '4', name: 'Posterior', enabled: true },
 ];
 
+const MOCK_LESIONS: Lesion[] = [
+  { id: 'A', name: 'Lesão A', location: 'Ovário D', depth: 'Profunda', color: 'bg-red-100 text-red-700 border-red-300' },
+  { id: 'B', name: 'Lesão B', location: 'Miométrio anterior', depth: 'Moderada', color: 'bg-orange-100 text-orange-700 border-orange-300' },
+  { id: 'C', name: 'Lesão C', location: 'Septo uterino', depth: 'Superficial', color: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
+  { id: 'D', name: 'Lesão D', location: 'Ovário E', depth: 'Profunda', color: 'bg-pink-100 text-pink-700 border-pink-300' },
+];
+
 const DEFAULT_CARDS: CardData[] = [
   { 
     id: '1', 
     viewName: '3D Perspective', 
     title: 'Visão 3D Geral',
-    description: 'Perspectiva tridimensional mostrando a distribuição geral das lesões. Permite visualizar a profundidade de penetração e a extensão lateral das lesões.' 
+    description: 'Perspectiva tridimensional mostrando a distribuição geral das lesões. Permite visualizar a profundidade de penetração e a extensão lateral das lesões.',
+    relatedLesions: ['A', 'B', 'C', 'D']
   },
   { 
     id: '2', 
     viewName: 'Sagittal (Side)', 
     title: 'Vista Sagital',
-    description: 'Vista lateral mostrando lesões no plano anteroposterior. Útil para avaliar envolvimento da zona de junção e profundidade miometrial.' 
+    description: 'Vista lateral mostrando lesões no plano anteroposterior. Útil para avaliar envolvimento da zona de junção e profundidade miometrial.',
+    relatedLesions: ['A', 'B', 'C']
   },
   { 
     id: '3', 
     viewName: 'Coronal (Front)', 
     title: 'Vista Coronal',
-    description: 'Vista frontal exibindo simetria esquerda-direita e extensão transversal das lesões. Crítica para avaliar acometimento de ambos os cornos.' 
+    description: 'Vista frontal exibindo simetria esquerda-direita e extensão transversal das lesões. Crítica para avaliar acometimento de ambos os cornos.',
+    relatedLesions: ['A', 'B', 'D']
   },
   { 
     id: '4', 
     viewName: 'Posterior', 
     title: 'Vista Posterior',
-    description: 'Análise da superfície posterior. Importante para identificar lesões posteriores e possível envolvimento da flexura retossigmoideia.' 
+    description: 'Análise da superfície posterior. Importante para identificar lesões posteriores e possível envolvimento da flexura retossigmoideia.',
+    relatedLesions: ['C', 'D']
   },
 ];
 
@@ -63,6 +90,12 @@ export default function ExamReport() {
   const [layout, setLayout] = useState<LayoutType>('2x2');
   const [views, setViews] = useState(VIEWS);
   const [cards, setCards] = useState(DEFAULT_CARDS);
+  const [patientData, setPatientData] = useState<PatientData>({
+    name: 'Paciente A - ID: 12345',
+    id: 'MRN: 2024-001',
+    examiner: 'Dr. Silva',
+    date: new Date().toLocaleDateString('pt-BR'),
+  });
 
   const toggleView = (viewId: string) => {
     setViews(views.map(v => v.id === viewId ? { ...v, enabled: !v.enabled } : v));
@@ -77,11 +110,20 @@ export default function ExamReport() {
     setCards(cards.map(c => c.id === cardId ? { ...c, [field]: value } : c));
   };
 
+  const updatePatientData = (field: keyof PatientData, value: string) => {
+    setPatientData({ ...patientData, [field]: value });
+  };
+
   const enabledViews = views.filter(v => v.enabled);
   const visibleCards = cards.filter(card => enabledViews.some(v => v.name === card.viewName));
 
   const layoutConfig = LAYOUT_CONFIGS[layout];
   const cardsToShow = visibleCards.slice(0, layoutConfig.count);
+
+  const getLesionForCard = (cardId: string) => {
+    const card = cards.find(c => c.id === cardId);
+    return card ? MOCK_LESIONS.filter(l => card.relatedLesions.includes(l.id)) : [];
+  };
 
   return (
     <div className="flex flex-col h-screen bg-slate-950 overflow-hidden">
@@ -189,6 +231,20 @@ export default function ExamReport() {
               {enabledViews.length} vista{enabledViews.length !== 1 ? 's' : ''} selecionada{enabledViews.length !== 1 ? 's' : ''}
             </p>
           </div>
+
+          {/* Lesions Summary */}
+          <div className="mt-6 pt-4 border-t border-white/10">
+            <h3 className="text-xs font-bold text-white mb-3 tracking-wide">LESÕES ENCONTRADAS</h3>
+            <div className="space-y-2">
+              {MOCK_LESIONS.map(lesion => (
+                <div key={lesion.id} className={`text-xs p-2 rounded border ${lesion.color}`}>
+                  <div className="font-bold">{lesion.name}</div>
+                  <div className="text-[10px] opacity-80">{lesion.location}</div>
+                  <div className="text-[10px] opacity-80">{lesion.depth}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </aside>
 
         {/* Main Preview Area */}
@@ -202,50 +258,116 @@ export default function ExamReport() {
               boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
             }}
           >
-            {/* Report Header */}
+            {/* Clinical Header - Fixed */}
+            <div className="mb-6 pb-4 border-2 border-slate-400 bg-slate-50 p-4 rounded-lg">
+              <div className="grid grid-cols-3 gap-4 mb-3">
+                {/* Patient Name/ID */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block mb-1">Paciente</label>
+                  <input
+                    type="text"
+                    value={patientData.name}
+                    onChange={(e) => updatePatientData('name', e.target.value)}
+                    className="w-full text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                  />
+                </div>
+
+                {/* Medical Record Number */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block mb-1">ID/Prontuário</label>
+                  <input
+                    type="text"
+                    value={patientData.id}
+                    onChange={(e) => updatePatientData('id', e.target.value)}
+                    className="w-full text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                  />
+                </div>
+
+                {/* Examiner */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block mb-1">Examinador</label>
+                  <input
+                    type="text"
+                    value={patientData.examiner}
+                    onChange={(e) => updatePatientData('examiner', e.target.value)}
+                    className="w-full text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Date */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Data do Exame:</label>
+                <input
+                  type="text"
+                  value={patientData.date}
+                  onChange={(e) => updatePatientData('date', e.target.value)}
+                  className="flex-1 text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Report Title */}
             <div className="mb-6 pb-4 border-b-2 border-slate-300">
-              <h1 className="text-4xl font-bold text-slate-900 mb-2">Exame de Endometriose</h1>
+              <h1 className="text-3xl font-bold text-slate-900 mb-1">Relatório de Endometriose</h1>
               <p className="text-sm text-slate-600 font-sans">
-                Data: {new Date().toLocaleDateString('pt-BR')} | Vistas: {enabledViews.length}
+                Mapeamento 3D/2D | {enabledViews.length} vista{enabledViews.length !== 1 ? 's' : ''} | {MOCK_LESIONS.filter(l => visibleCards.some(c => c.relatedLesions.includes(l.id))).length} lesão{MOCK_LESIONS.filter(l => visibleCards.some(c => c.relatedLesions.includes(l.id))).length !== 1 ? 's' : ''} mapeada{MOCK_LESIONS.filter(l => visibleCards.some(c => c.relatedLesions.includes(l.id))).length !== 1 ? 's' : ''}
               </p>
             </div>
 
             {/* Cards Grid */}
             {cardsToShow.length > 0 ? (
               <div className={`grid ${layoutConfig.grid} gap-5`}>
-                {cardsToShow.map((card) => (
-                  <div
-                    key={card.id}
-                    className="border-2 border-slate-300 rounded-lg overflow-hidden flex flex-col bg-white"
-                  >
-                    {/* Image Placeholder */}
-                    <div className="h-40 bg-gradient-to-br from-slate-200 via-slate-300 to-slate-200 flex items-center justify-center border-b-2 border-slate-300">
-                      <div className="text-slate-500 text-xs font-mono text-center px-4">
-                        <div className="mb-1">📐 {card.viewName}</div>
-                        <div className="text-[10px] text-slate-400">[Espaço para imagem]</div>
+                {cardsToShow.map((card) => {
+                  const relatedLesions = getLesionForCard(card.id);
+                  return (
+                    <div
+                      key={card.id}
+                      className="border-2 border-slate-300 rounded-lg overflow-hidden flex flex-col bg-white hover:shadow-lg transition-shadow"
+                    >
+                      {/* Image Placeholder */}
+                      <div className="h-40 bg-gradient-to-br from-slate-200 via-slate-300 to-slate-200 flex items-center justify-center border-b-2 border-slate-300">
+                        <div className="text-slate-500 text-xs font-mono text-center px-4">
+                          <div className="mb-1">📐 {card.viewName}</div>
+                          <div className="text-[10px] text-slate-400">[Espaço para imagem]</div>
+                        </div>
+                      </div>
+
+                      {/* Content Area */}
+                      <div className="flex-1 flex flex-col p-3">
+                        {/* Title Field */}
+                        <input
+                          type="text"
+                          value={card.title}
+                          onChange={(e) => updateCard(card.id, 'title', e.target.value)}
+                          className="text-sm font-bold text-slate-900 mb-2 bg-white border-b-2 border-slate-200 focus:border-blue-400 outline-none px-1 py-0.5"
+                        />
+
+                        {/* Related Lesions Chips */}
+                        {relatedLesions.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            {relatedLesions.map(lesion => (
+                              <div
+                                key={lesion.id}
+                                className={`inline-block text-[10px] px-2 py-1 rounded-full border font-medium whitespace-nowrap ${lesion.color}`}
+                              >
+                                {lesion.name} – {lesion.location}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Description Field */}
+                        <textarea
+                          value={card.description}
+                          onChange={(e) => updateCard(card.id, 'description', e.target.value)}
+                          className="text-xs text-slate-700 leading-tight bg-white border border-slate-200 rounded p-2 flex-1 resize-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                          placeholder="Descreva os achados e lesões vistos nesta vista..."
+                        />
                       </div>
                     </div>
-
-                    {/* Content Area */}
-                    <div className="flex-1 flex flex-col p-3">
-                      {/* Title Field */}
-                      <input
-                        type="text"
-                        value={card.title}
-                        onChange={(e) => updateCard(card.id, 'title', e.target.value)}
-                        className="text-sm font-bold text-slate-900 mb-2 bg-white border-b-2 border-slate-200 focus:border-blue-400 outline-none px-1 py-0.5"
-                      />
-
-                      {/* Description Field */}
-                      <textarea
-                        value={card.description}
-                        onChange={(e) => updateCard(card.id, 'description', e.target.value)}
-                        className="text-xs text-slate-700 leading-tight bg-white border border-slate-200 rounded p-2 flex-1 resize-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
-                        placeholder="Descreva os achados e lesões vistos nesta vista..."
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="h-48 flex items-center justify-center border-2 border-dashed border-slate-300 rounded-lg">

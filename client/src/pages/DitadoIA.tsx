@@ -670,23 +670,26 @@ ${laudo.conclusao}
                 </div>
               </div>
             </div>
-            <div className="flex gap-2 p-4 border-t border-slate-200">
+            <div className="flex gap-3 p-4 border-t border-slate-200 bg-slate-50">
               <Button
                 onClick={() => setModalVisualizacao(false)}
                 variant="outline"
-                className="flex-1"
+                className="flex-1 h-11 gap-2 bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                data-testid="button-voltar-sem-imprimir"
               >
-                Fechar
+                <ChevronLeft className="w-4 h-4" />
+                Voltar sem Imprimir
               </Button>
               <Button
                 onClick={() => {
                   setModalVisualizacao(false);
                   setTimeout(handleImprimir, 100);
                 }}
-                className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                className="flex-1 h-11 gap-2 bg-green-600 text-white hover:bg-green-700"
+                data-testid="button-imprimir-e-fechar"
               >
-                <Printer className="w-4 h-4 mr-2" />
-                Imprimir
+                <Printer className="w-4 h-4" />
+                Imprimir e Fechar
               </Button>
             </div>
           </div>

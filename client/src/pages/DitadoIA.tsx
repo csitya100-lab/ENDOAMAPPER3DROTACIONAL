@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff, Eye, Printer, X, ChevronRight, RotateCw } from 'lucide-react';
+import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff, Eye, Printer, X, ChevronRight, RotateCw, Shield } from 'lucide-react';
 
 interface LaudoData {
   cabecalho: {
@@ -285,6 +285,31 @@ const LAUDO_INICIAL: LaudoData = {
 };
 
 type EstadoMicrofone = 'inativo' | 'gravando' | 'processando' | 'concluido';
+type SuporteBrowser = 'suportado' | 'parcial' | 'nao-suportado';
+
+// Função para detectar navegador e suporte
+const detectarNavegadorESuporte = (): { navegador: string; suporte: SuporteBrowser; mensagem: string } => {
+  const ua = navigator.userAgent.toLowerCase();
+  
+  // Detecção de navegador
+  if (ua.includes('chrome') && !ua.includes('edge')) {
+    return { navegador: 'Chrome', suporte: 'suportado', mensagem: 'Chrome: Suporte completo' };
+  }
+  if (ua.includes('edg')) {
+    return { navegador: 'Edge', suporte: 'suportado', mensagem: 'Edge: Suporte completo' };
+  }
+  if (ua.includes('safari') && !ua.includes('chrome')) {
+    return { navegador: 'Safari', suporte: 'parcial', mensagem: 'Safari: Suporte parcial (sem transcrição ao vivo)' };
+  }
+  if (ua.includes('firefox')) {
+    return { navegador: 'Firefox', suporte: 'nao-suportado', mensagem: 'Firefox: Sem suporte nativo - use digitação manual' };
+  }
+  if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
+    return { navegador: 'Mobile', suporte: 'suportado', mensagem: 'Mobile: Usando microfone do sistema operacional' };
+  }
+  
+  return { navegador: 'Desconhecido', suporte: 'nao-suportado', mensagem: 'Navegador não identificado' };
+};
 
 export default function DitadoIA() {
   const [textoDitado, setTextoDitado] = useState('');
@@ -299,6 +324,10 @@ export default function DitadoIA() {
   const [estadoMicrofone, setEstadoMicrofone] = useState<EstadoMicrofone>('inativo');
   const [contadorTempo, setContadorTempo] = useState(0);
   const [alturaOndas, setAlturaOndas] = useState<number[]>([50, 50, 50, 50, 50]);
+  const [suporteMicrofone, setSuporteMicrofone] = useState<SuporteBrowser>('suportado');
+  const [modalPrivacidade, setModalPrivacidade] = useState(false);
+  const [microfoneAtivo, setMicrofoneAtivo] = useState(false);
+  const [infoNavegador, setInfoNavegador] = useState<{ navegador: string; suporte: SuporteBrowser; mensagem: string } | null>(null);
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const ondaRef = useRef<NodeJS.Timeout | null>(null);
@@ -313,65 +342,89 @@ export default function DitadoIA() {
   };
 
   useEffect(() => {
+    // Detectar navegador e suporte
+    const info = detectarNavegadorESuporte();
+    setInfoNavegador(info);
+
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'pt-BR';
-
-      recognitionRef.current.onresult = (event: any) => {
-        let textoInterino = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          let transcricao = event.results[i][0].transcript;
-          // Aplicar conversão de números por extenso em dígitos
-          transcricao = converterNumerosParaDigitos(transcricao);
-          if (event.results[i].isFinal) {
-            setTextoDitado((prev) => prev + (prev ? ' ' : '') + transcricao);
-          } else {
-            textoInterino += transcricao;
-          }
-        }
-      };
-
-      recognitionRef.current.onerror = (event: any) => {
-        setError(`Erro de reconhecimento: ${event.error}`);
-        setGravando(false);
-      };
-
-      recognitionRef.current.onend = () => {
-        setGravando(false);
-      };
+    
+    if (!SpeechRecognition) {
+      setSuporteMicrofone('nao-suportado');
+      setError(`${info.mensagem} - Digitação manual ativada`);
+      return;
     }
+
+    // Mostrar modal de privacidade primeira vez
+    const privacidadeAceita = localStorage.getItem('privacidade_microfone_aceita');
+    if (!privacidadeAceita) {
+      setModalPrivacidade(true);
+    }
+
+    setSuporteMicrofone(info.suporte);
+
+    recognitionRef.current = new SpeechRecognition();
+    recognitionRef.current.continuous = true;
+    recognitionRef.current.interimResults = true;
+    recognitionRef.current.lang = 'pt-BR';
+
+    recognitionRef.current.onstart = () => {
+      setMicrofoneAtivo(true);
+    };
+
+    recognitionRef.current.onresult = (event: any) => {
+      let textoInterino = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        let transcricao = event.results[i][0].transcript;
+        transcricao = converterNumerosParaDigitos(transcricao);
+        if (event.results[i].isFinal) {
+          setTextoDitado((prev) => prev + (prev ? ' ' : '') + transcricao);
+        } else {
+          textoInterino += transcricao;
+        }
+      }
+    };
+
+    recognitionRef.current.onerror = (event: any) => {
+      setError(`Erro de reconhecimento: ${event.error}`);
+      setGravando(false);
+      setMicrofoneAtivo(false);
+    };
+
+    recognitionRef.current.onend = () => {
+      setGravando(false);
+      setMicrofoneAtivo(false);
+    };
   }, []);
 
   const iniciarGravacao = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.start();
-      setGravando(true);
-      setEstadoMicrofone('gravando');
-      setContadorTempo(0);
-      setError(null);
-
-      // Iniciar contador de tempo
-      timerRef.current = setInterval(() => {
-        setContadorTempo((prev) => {
-          if (prev >= 300) {
-            // 5 minutos máximo
-            pararGravacao();
-            return prev;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-
-      // Iniciar animação de ondas sonoras
-      ondaRef.current = setInterval(() => {
-        setAlturaOndas(Array(5).fill(0).map(() => Math.random() * 80 + 20));
-      }, 100);
-    } else {
-      setError('Reconhecimento de voz não disponível neste navegador');
+    // Verificar se suporte é nenhum
+    if (suporteMicrofone === 'nao-suportado' || !recognitionRef.current) {
+      setError(`Seu navegador não suporta gravação de voz. Digite manualmente ou use Chrome, Edge ou Safari.`);
+      return;
     }
+
+    recognitionRef.current.start();
+    setGravando(true);
+    setEstadoMicrofone('gravando');
+    setContadorTempo(0);
+    setError(null);
+    setMicrofoneAtivo(true);
+
+    // Iniciar contador de tempo
+    timerRef.current = setInterval(() => {
+      setContadorTempo((prev) => {
+        if (prev >= 300) {
+          pararGravacao();
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+
+    // Iniciar animação de ondas sonoras
+    ondaRef.current = setInterval(() => {
+      setAlturaOndas(Array(5).fill(0).map(() => Math.random() * 80 + 20));
+    }, 100);
   };
 
   const pararGravacao = () => {
@@ -379,12 +432,11 @@ export default function DitadoIA() {
       recognitionRef.current.stop();
       setGravando(false);
       setEstadoMicrofone('concluido');
+      setMicrofoneAtivo(false);
 
-      // Limpar timers
       if (timerRef.current) clearInterval(timerRef.current);
       if (ondaRef.current) clearInterval(ondaRef.current);
 
-      // Voltar ao estado inativo após 2 segundos
       setTimeout(() => {
         setEstadoMicrofone('inativo');
       }, 2000);
@@ -531,6 +583,14 @@ ${laudo.conclusao}
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
+      {/* Indicador de Microfone Ativo */}
+      {microfoneAtivo && (
+        <div className="bg-red-500 text-white px-4 py-2 flex items-center gap-2 text-sm font-semibold z-30 animate-pulse-micro">
+          <Mic className="w-4 h-4" />
+          Microfone ativo - gravando...
+        </div>
+      )}
+
       {/* Header */}
       <header className="flex-none bg-white border-b border-slate-200 shadow-sm px-8 py-6 flex items-center justify-between z-20">
         <div className="flex items-center gap-4">
@@ -1031,6 +1091,67 @@ ${laudo.conclusao}
                 <Printer className="w-4 h-4" />
                 Imprimir e Fechar
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Privacidade */}
+      {modalPrivacidade && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <Shield className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">⚠️ PERMISSÃO DE MICROFONE</h3>
+                  <p className="text-xs text-slate-500 mt-1">Este app solicita acesso ao seu microfone</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-6 bg-slate-50 rounded-lg p-4">
+                <div className="flex items-start gap-2">
+                  <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-slate-700">Seus dados de voz <strong>NÃO são armazenados</strong></p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-slate-700">Apenas <strong>texto</strong> é enviado para análise</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-slate-700">Cumpre <strong>LGPD</strong> e regulações médicas</p>
+                </div>
+              </div>
+
+              {infoNavegador && infoNavegador.suporte === 'nao-suportado' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
+                  <p className="text-xs text-yellow-800">
+                    <strong>⚠️ Aviso:</strong> {infoNavegador.mensagem}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setModalPrivacidade(false);
+                  }}
+                  variant="outline"
+                  className="flex-1 h-10 border-slate-300 text-slate-700 hover:bg-slate-50"
+                >
+                  Recusar
+                </Button>
+                <Button
+                  onClick={() => {
+                    localStorage.setItem('privacidade_microfone_aceita', 'true');
+                    setModalPrivacidade(false);
+                  }}
+                  className="flex-1 h-10 bg-green-600 text-white hover:bg-green-700"
+                >
+                  Permitir
+                </Button>
+              </div>
             </div>
           </div>
         </div>

@@ -1,0 +1,67 @@
+CORRIGIR A PÁGINA "Ditado IA para Laudo":
+
+1) TROCAR O JSON DE LAUDO para este (específico de endometriose):
+{
+  "paciente": {
+    "nome": "Paciente A",
+    "idade": 0,
+    "cpf": ""
+  },
+  "exame": {
+    "data": "27/12/2025",
+    "tipo": "Ultrassom - Endometriose",
+    "ecografista": "",
+    "equipamento": ""
+  },
+  "utero": {
+    "tamanho": "Normal",
+    "forma": "Anecoico",
+    "ecotextura": "Normal",
+    "adenomiose": "Não detectada"
+  },
+  "ovario_direito": {
+    "tamanho": "Não informado",
+    "lesoes": []
+  },
+  "ovario_esquerdo": {
+    "tamanho": "Não informado",
+    "lesoes": []
+  },
+  "compartimentos": {
+    "ligamento_redondo_d": {
+      "achados": "Lesão endomtriósica medindo 2.0 x 3.0 cm"
+    },
+    "ligamento_redondo_e": {
+      "achados": "Sem achados"
+    },
+    "bolsa_ovariana_d": {
+      "achados": "Sem achados"
+    },
+    "bolsa_ovariana_e": {
+      "achados": "Sem achados"
+    }
+  },
+  "conclusao": "A análise está em progresso..."
+}
+
+2) MUDAR A POSIÇÃO DO LAUDO ATUALIZADO:
+   - REMOVER o laudo do painel lateral direito
+   - ADICIONAR um NOVO CARD GRANDE embaixo do botão "Analisar Ditado com IA"
+   - Esse card deve ter:
+     * Título: "Laudo Atualizado"
+     * Fundo branco com borda suave
+     * Texto formatado em seções (PACIENTE, EXAME, ÚTERO, OVÁRIOS, COMPARTIMENTOS, CONCLUSÃO)
+     * Fonte monoespacial para melhor legibilidade
+     * Altura automática conforme conteúdo
+
+3) VERIFICAR A CHAMADA DO GEMINI:
+   - Garantir que o prompt enviado ao Gemini seja exatamente este:
+   "Você é um especialista em diagnóstico de endometriose por ultrassom.
+   Recebe um ditado em linguagem natural do médico e um JSON estruturado de laudo.
+   Analise o ditado, extraia achados clínicos, lesões, medidas e localizações.
+   Retorne APENAS um JSON com operacoes para atualizar o laudo:
+   [{ acao: 'update'|'add'|'remove', caminho: 'campo.subcampo', valor: ... }]
+   Use terminologia médica formal. Nunca invente achados. Estruture lesões com: tipo, tamanho, localização, profundidade."
+
+4) TESTAR COM ESTE DITADO:
+   "Útero normal, tamanho habitual. Ovário direito apresenta endometrioma típico medindo 6 centímetros. Ligamento redondo direito com lesão endomtriósica de 2 pontos 0 por 3 pontos 0 centímetros, superficial. Bolsas ovarianas sem achados anormais. Conclusão: achados compatíveis com endometriose superficial estádio um."

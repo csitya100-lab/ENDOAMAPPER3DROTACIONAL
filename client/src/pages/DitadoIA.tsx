@@ -2,12 +2,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 
-interface Operation {
-  acao: string;
-  caminho: string;
-  valor: string;
-}
-
 interface LaudoData {
   paciente: { nome: string; idade: number; cpf: string };
   exame: { data: string; tipo: string; ecografista: string; equipamento: string };
@@ -25,17 +19,17 @@ interface LaudoData {
 
 const LAUDO_INICIAL: LaudoData = {
   paciente: { nome: 'Paciente A', idade: 0, cpf: '' },
-  exame: { data: new Date().toLocaleDateString('pt-BR'), tipo: 'Ultrassom - Endometriose', ecografista: '', equipamento: '' },
-  utero: { tamanho: '', forma: '', ecotextura: '', adenomiose: '' },
-  ovario_direito: { tamanho: '', lesoes: [] },
-  ovario_esquerdo: { tamanho: '', lesoes: [] },
+  exame: { data: '27/12/2025', tipo: 'Ultrassom - Endometriose', ecografista: '', equipamento: '' },
+  utero: { tamanho: 'Normal', forma: 'Anecoico', ecotextura: 'Normal', adenomiose: 'Não detectada' },
+  ovario_direito: { tamanho: 'Não informado', lesoes: [] },
+  ovario_esquerdo: { tamanho: 'Não informado', lesoes: [] },
   compartimentos: {
-    ligamento_redondo_d: { achados: '' },
-    ligamento_redondo_e: { achados: '' },
-    bolsa_ovariana_d: { achados: '' },
-    bolsa_ovariana_e: { achados: '' },
+    ligamento_redondo_d: { achados: 'Lesão endometriósica medindo 2.0 x 3.0 cm' },
+    ligamento_redondo_e: { achados: 'Sem achados' },
+    bolsa_ovariana_d: { achados: 'Sem achados' },
+    bolsa_ovariana_e: { achados: 'Sem achados' },
   },
-  conclusao: '',
+  conclusao: 'A análise está em progresso...',
 };
 
 export default function DitadoIA() {
@@ -162,86 +156,81 @@ ${laudo.conclusao || 'A análise está em progresso...'}
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto p-8">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-6">
-          {/* Left: Input */}
-          <div>
-            {/* Ditado Input */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
-                Transcrição do Ditado
-              </label>
-              <textarea
-                value={textoDitado}
-                onChange={(e) => setTextoDitado(e.target.value)}
-                placeholder="Cole aqui o texto do ditado reconhecido…"
-                className="w-full h-32 p-4 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none text-slate-900 placeholder-slate-400"
-              />
+        <div className="max-w-3xl mx-auto">
+          {/* Ditado Input */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+            <label className="block text-sm font-semibold text-slate-900 mb-2">
+              Transcrição do Ditado
+            </label>
+            <textarea
+              value={textoDitado}
+              onChange={(e) => setTextoDitado(e.target.value)}
+              placeholder="Cole aqui o texto do ditado reconhecido…"
+              className="w-full h-32 p-4 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none text-slate-900 placeholder-slate-400"
+            />
 
-              <Button
-                onClick={handleAnalisarDitado}
-                disabled={loading || !textoDitado.trim()}
-                className="w-full h-10 gap-2 mt-4 bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:from-pink-600 hover:to-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Analisando...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4" />
-                    Analisar Ditado com IA
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {/* Mensagens */}
-            {error && (
-              <div className="bg-red-50 border border-red-300 rounded-lg p-4 mb-6 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
-            )}
-
-            {sucesso && (
-              <div className="bg-green-50 border border-green-300 rounded-lg p-4 mb-6 flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-green-800">Laudo atualizado com sucesso!</p>
-              </div>
-            )}
-
-            {/* Ações */}
-            <div className="flex gap-2">
-              <Button
-                onClick={handleLimpar}
-                variant="outline"
-                className="flex-1 h-10 gap-2 bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Limpar e Novo
-              </Button>
-              <Button
-                className="flex-1 h-10 gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200"
-                variant="outline"
-              >
-                <Download className="w-4 h-4" />
-                Salvar Laudo
-              </Button>
-            </div>
+            <Button
+              onClick={handleAnalisarDitado}
+              disabled={loading || !textoDitado.trim()}
+              className="w-full h-10 gap-2 mt-4 bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:from-pink-600 hover:to-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Analisando...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Analisar Ditado com IA
+                </>
+              )}
+            </Button>
           </div>
 
-          {/* Right: Laudo Preview */}
-          <div>
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 h-full overflow-y-auto">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-600" />
-                Laudo Atualizado
-              </h2>
-              <pre className="text-xs text-slate-700 font-mono whitespace-pre-wrap break-words leading-relaxed">
-                {formatarLaudo()}
-              </pre>
+          {/* Mensagens */}
+          {error && (
+            <div className="bg-red-50 border border-red-300 rounded-lg p-4 mb-6 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-800">{error}</p>
             </div>
+          )}
+
+          {sucesso && (
+            <div className="bg-green-50 border border-green-300 rounded-lg p-4 mb-6 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-green-800">Laudo atualizado com sucesso!</p>
+            </div>
+          )}
+
+          {/* Laudo Atualizado Card */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Check className="w-5 h-5 text-green-600" />
+              Laudo Atualizado
+            </h2>
+            <pre className="text-xs text-slate-700 font-mono whitespace-pre-wrap break-words leading-relaxed max-h-96 overflow-y-auto">
+              {formatarLaudo()}
+            </pre>
+          </div>
+
+          {/* Ações */}
+          <div className="flex gap-2">
+            <Button
+              onClick={handleLimpar}
+              variant="outline"
+              className="flex-1 h-10 gap-2 bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Limpar e Novo
+            </Button>
+            <Button
+              className="flex-1 h-10 gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200"
+              variant="outline"
+            >
+              <Download className="w-4 h-4" />
+              Salvar Laudo
+            </Button>
           </div>
         </div>
       </div>

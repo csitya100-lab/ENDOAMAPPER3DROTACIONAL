@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff, Eye, Printer, X, ChevronRight } from 'lucide-react';
+import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff, Eye, Printer, X, ChevronRight, RotateCw } from 'lucide-react';
 
 interface LaudoData {
   cabecalho: {
@@ -284,6 +284,8 @@ const LAUDO_INICIAL: LaudoData = {
   conclusao: 'Avaliação ecográfica sem sinais de endometriose profunda.',
 };
 
+type EstadoMicrofone = 'inativo' | 'gravando' | 'processando' | 'concluido';
+
 export default function DitadoIA() {
   const [textoDitado, setTextoDitado] = useState('');
   const [laudo, setLaudo] = useState<LaudoData>(LAUDO_INICIAL);
@@ -294,7 +296,12 @@ export default function DitadoIA() {
   const [modalVisualizacao, setModalVisualizacao] = useState(false);
   const [achados, setAchados] = useState<AchadosDetectados | null>(null);
   const [validationResponse, setValidationResponse] = useState<string | null>(null);
+  const [estadoMicrofone, setEstadoMicrofone] = useState<EstadoMicrofone>('inativo');
+  const [contadorTempo, setContadorTempo] = useState(0);
+  const [alturaOndas, setAlturaOndas] = useState<number[]>([50, 50, 50, 50, 50]);
   const recognitionRef = useRef<any>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const ondaRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleImprimir = () => {
     window.print();
@@ -342,7 +349,26 @@ export default function DitadoIA() {
     if (recognitionRef.current) {
       recognitionRef.current.start();
       setGravando(true);
+      setEstadoMicrofone('gravando');
+      setContadorTempo(0);
       setError(null);
+
+      // Iniciar contador de tempo
+      timerRef.current = setInterval(() => {
+        setContadorTempo((prev) => {
+          if (prev >= 300) {
+            // 5 minutos máximo
+            pararGravacao();
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+
+      // Iniciar animação de ondas sonoras
+      ondaRef.current = setInterval(() => {
+        setAlturaOndas(Array(5).fill(0).map(() => Math.random() * 80 + 20));
+      }, 100);
     } else {
       setError('Reconhecimento de voz não disponível neste navegador');
     }
@@ -352,6 +378,16 @@ export default function DitadoIA() {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       setGravando(false);
+      setEstadoMicrofone('concluido');
+
+      // Limpar timers
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (ondaRef.current) clearInterval(ondaRef.current);
+
+      // Voltar ao estado inativo após 2 segundos
+      setTimeout(() => {
+        setEstadoMicrofone('inativo');
+      }, 2000);
     }
   };
 
@@ -398,7 +434,19 @@ export default function DitadoIA() {
     setLaudo(LAUDO_INICIAL);
     setError(null);
     setSucesso(false);
+    setAchados(null);
+    setValidationResponse(null);
+    setEstadoMicrofone('inativo');
+    setContadorTempo(0);
   };
+
+  // Limpar timers ao desmontar
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (ondaRef.current) clearInterval(ondaRef.current);
+    };
+  }, []);
 
   const formatarLaudo = () => {
     return `
@@ -531,18 +579,61 @@ ${laudo.conclusao}
                 placeholder="Cole aqui o texto do ditado reconhecido…"
                 className="flex-1 h-32 p-4 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none text-slate-900 placeholder-slate-400"
               />
-              <div className="flex flex-col gap-2">
-                <Button
-                  onClick={gravando ? pararGravacao : iniciarGravacao}
-                  className={`h-14 w-14 rounded-lg flex items-center justify-center transition-all ${
-                    gravando
-                      ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg animate-pulse'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
-                  }`}
-                  title={gravando ? 'Parar gravação' : 'Iniciar gravação de voz'}
-                >
-                  {gravando ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                </Button>
+              <div className="flex flex-col gap-2 items-center">
+                {/* Estados do Botão de Microfone */}
+                {estadoMicrofone === 'inativo' && (
+                  <Button
+                    onClick={iniciarGravacao}
+                    className="h-14 w-14 rounded-lg flex items-center justify-center transition-all bg-pink-500 hover:bg-pink-600 text-white shadow-md hover:shadow-lg"
+                    title="Iniciar gravação de voz"
+                  >
+                    <Mic className="w-5 h-5" />
+                  </Button>
+                )}
+                {estadoMicrofone === 'gravando' && (
+                  <>
+                    <Button
+                      onClick={pararGravacao}
+                      className="h-14 w-14 rounded-lg flex items-center justify-center transition-all bg-red-600 text-white shadow-lg animate-pulse-micro"
+                      title="Parar gravação"
+                    >
+                      <Mic className="w-5 h-5" />
+                    </Button>
+                    {/* Animação de Onda Sonora */}
+                    <div className="flex items-end gap-1 h-10 justify-center">
+                      {alturaOndas.map((altura, i) => (
+                        <div
+                          key={i}
+                          className="w-1 bg-red-600 rounded-full transition-all"
+                          style={{ height: `${altura}%` }}
+                        />
+                      ))}
+                    </div>
+                    {/* Contador de Tempo */}
+                    <div className="text-xs font-semibold text-red-600 font-mono">
+                      {String(Math.floor(contadorTempo / 60)).padStart(2, '0')}:
+                      {String(contadorTempo % 60).padStart(2, '0')}
+                    </div>
+                  </>
+                )}
+                {estadoMicrofone === 'processando' && (
+                  <Button
+                    disabled
+                    className="h-14 w-14 rounded-lg flex items-center justify-center transition-all bg-blue-500 text-white shadow-md"
+                    title="Processando..."
+                  >
+                    <RotateCw className="w-5 h-5 animate-spin-smooth" />
+                  </Button>
+                )}
+                {estadoMicrofone === 'concluido' && (
+                  <Button
+                    onClick={iniciarGravacao}
+                    className="h-14 w-14 rounded-lg flex items-center justify-center transition-all bg-green-500 hover:bg-green-600 text-white shadow-lg"
+                    title="Regravar"
+                  >
+                    <Check className="w-5 h-5" />
+                  </Button>
+                )}
               </div>
             </div>
 

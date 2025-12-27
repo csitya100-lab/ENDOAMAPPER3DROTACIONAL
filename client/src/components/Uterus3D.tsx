@@ -202,46 +202,15 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         const scale = 4 / maxDim;
         model.scale.set(scale, scale, scale);
 
-        // Lock the hierarchy - apply all transformations and keep meshes but prevent independent rotation
-        const meshesToLock: THREE.Mesh[] = [];
-        const parentMatrices: Map<THREE.Mesh, THREE.Matrix4> = new Map();
-        
+        // Simply remove any child rotations - freeze hierarchy at root level only
         model.traverse((child: any) => {
             if ((child as THREE.Mesh).isMesh && child !== model) {
                 const mesh = child as THREE.Mesh;
-                mesh.updateMatrixWorld();
                 
-                // Store world matrix for each mesh
-                parentMatrices.set(mesh, mesh.matrixWorld.clone());
-                meshesToLock.push(mesh);
-            }
-        });
-        
-        // Move all meshes to the model root but keep their world positions
-        for (const mesh of meshesToLock) {
-            const worldMatrix = parentMatrices.get(mesh)!;
-            
-            // Remove from parent
-            mesh.parent?.remove(mesh);
-            
-            // Add to model root with world transformation applied
-            model.add(mesh);
-            
-            // Apply the world transformation as local transformation
-            const position = new THREE.Vector3();
-            const quaternion = new THREE.Quaternion();
-            const scale = new THREE.Vector3();
-            worldMatrix.decompose(position, quaternion, scale);
-            
-            mesh.position.copy(position);
-            mesh.quaternion.copy(quaternion);
-            mesh.scale.copy(scale);
-        }
-        
-        // Ensure all materials are proper
-        model.traverse((child: any) => {
-            if ((child as THREE.Mesh).isMesh) {
-                const mesh = child as THREE.Mesh;
+                // Freeze local rotation - only position and scale, no rotation
+                mesh.rotation.set(0, 0, 0, 'XYZ');
+                mesh.quaternion.set(0, 0, 0, 1);
+                
                 if (mesh.material) {
                     const mat = mesh.material as THREE.MeshStandardMaterial;
                     mat.roughness = 0.4;

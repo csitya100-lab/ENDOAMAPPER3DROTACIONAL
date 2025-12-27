@@ -4,9 +4,16 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 type Severity = 'superficial' | 'moderate' | 'deep';
 
+interface Lesion {
+  id: string;
+  position: { x: number; y: number; z: number };
+  severity: Severity;
+}
+
 interface Uterus3DProps {
   severity: Severity;
   onLesionCountChange: (count: number) => void;
+  onLesionsUpdate: (lesions: Lesion[]) => void;
 }
 
 export interface Uterus3DRef {
@@ -20,74 +27,123 @@ const COLORS = {
   deep: 0x3b82f6        // Blue
 };
 
-export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLesionCountChange }, ref) => {
+export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLesionCountChange, onLesionsUpdate }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewMainRef = useRef<HTMLDivElement>(null);
   const viewSagittalRef = useRef<HTMLDivElement>(null);
   const viewCoronalRef = useRef<HTMLDivElement>(null);
   const viewPosteriorRef = useRef<HTMLDivElement>(null);
   
-  // Refs to hold Three.js objects so we can access them in methods/effects
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const lesionGroupRef = useRef<THREE.Group | null>(null);
+  // Global lesion storage with 3D positions
+  const lesionsRef = useRef<Lesion[]>([]);
   const currentSeverityRef = useRef(severity);
   const viewsRef = useRef<any[]>([]);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const markerGroupsRef = useRef<{ [key: number]: THREE.Group }>({});
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const anatomyGroupRef = useRef<THREE.Group | null>(null);
 
-  // Update ref when prop changes
   useEffect(() => {
     currentSeverityRef.current = severity;
   }, [severity]);
 
   useImperativeHandle(ref, () => ({
     addTestLesion: () => {
-      if (!lesionGroupRef.current) return;
-      
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.random() * Math.PI;
-      const r = 1.5; // Approx radius
+      const r = 1.5;
       
       const x = r * Math.sin(phi) * Math.cos(theta);
-      const y = (r * Math.sin(phi) * Math.sin(theta)) + 0.5; // +0.5 is uterus y offset
+      const y = (r * Math.sin(phi) * Math.sin(theta)) + 0.5;
       const z = r * Math.cos(phi);
       
-      createLesionMesh(new THREE.Vector3(x, y, z), currentSeverityRef.current);
+      createLesionInStorage({ x, y, z }, currentSeverityRef.current);
     },
     clearLesions: () => {
-      if (!lesionGroupRef.current) return;
-      while(lesionGroupRef.current.children.length > 0){ 
-        lesionGroupRef.current.remove(lesionGroupRef.current.children[0]); 
-      }
+      lesionsRef.current = [];
+      updateAllMarkers();
       updateStatus();
     }
   }));
 
-  const createLesionMesh = (position: THREE.Vector3, sev: Severity) => {
-    if (!lesionGroupRef.current) return;
-    
-    const geometry = new THREE.SphereGeometry(0.15, 16, 16);
-    const material = new THREE.MeshStandardMaterial({ 
-      color: COLORS[sev],
-      roughness: 0.2,
-      metalness: 0.5,
-      emissive: COLORS[sev],
-      emissiveIntensity: 0.2
-    });
-    
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.copy(position);
-    
-    // Add some random scale variation
-    const scale = 0.8 + Math.random() * 0.4;
-    mesh.scale.set(scale, scale, scale);
-    
-    lesionGroupRef.current.add(mesh);
+  const createLesionInStorage = (position: { x: number; y: number; z: number }, sev: Severity) => {
+    const lesion: Lesion = {
+      id: `lesion-${Date.now()}-${Math.random()}`,
+      position,
+      severity: sev
+    };
+    lesionsRef.current.push(lesion);
+    updateAllMarkers();
     updateStatus();
   };
 
   const updateStatus = () => {
-    if (lesionGroupRef.current) {
-      onLesionCountChange(lesionGroupRef.current.children.length);
+    onLesionCountChange(lesionsRef.current.length);
+    onLesionsUpdate([...lesionsRef.current]);
+  };
+
+  const updateAllMarkers = () => {
+    if (!sceneRef.current) return;
+    
+    // Clear all marker groups
+    Object.values(markerGroupsRef.current).forEach(group => {
+      while(group.children.length > 0) {
+        group.remove(group.children[0]);
+      }
+    });
+
+    // Recreate all markers for each view
+    lesionsRef.current.forEach(lesion => {
+      viewsRef.current.forEach((view, viewIdx) => {
+        createMarkerForView(lesion, viewIdx, view);
+      });
+    });
+  };
+
+  const createMarkerForView = (lesion: Lesion, viewIdx: number, view: any) => {
+    if (!markerGroupsRef.current[viewIdx]) {
+      markerGroupsRef.current[viewIdx] = new THREE.Group();
+      sceneRef.current?.add(markerGroupsRef.current[viewIdx]);
+    }
+
+    const markerGroup = markerGroupsRef.current[viewIdx];
+    
+    // Create a small sphere marker
+    const markerGeometry = new THREE.SphereGeometry(0.18, 12, 12);
+    const markerMaterial = new THREE.MeshStandardMaterial({
+      color: COLORS[lesion.severity],
+      roughness: 0.2,
+      metalness: 0.6,
+      emissive: COLORS[lesion.severity],
+      emissiveIntensity: 0.4
+    });
+    
+    const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+    marker.position.set(lesion.position.x, lesion.position.y, lesion.position.z);
+    markerGroup.add(marker);
+
+    // Add a glow ring for orthogonal views
+    if (viewIdx > 0) {
+      const ringGeometry = new THREE.BufferGeometry();
+      const ringPositions = [];
+      const ringSegments = 32;
+      for (let i = 0; i <= ringSegments; i++) {
+        const angle = (i / ringSegments) * Math.PI * 2;
+        ringPositions.push(
+          lesion.position.x + Math.cos(angle) * 0.25,
+          lesion.position.y + Math.sin(angle) * 0.25,
+          lesion.position.z
+        );
+      }
+      ringGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(ringPositions), 3));
+      const ringMaterial = new THREE.LineBasicMaterial({
+        color: COLORS[lesion.severity],
+        linewidth: 2,
+        transparent: true,
+        opacity: 0.7
+      });
+      const ring = new THREE.Line(ringGeometry, ringMaterial);
+      markerGroup.add(ring);
     }
   };
 
@@ -97,18 +153,16 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
     let animationFrameId: number;
     let isMounted = true;
 
-    // --- INITIALIZATION ---
     const canvas = canvasRef.current;
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
-    renderer.setScissorTest(true); // Critical for multiple views
+    renderer.setScissorTest(true);
     rendererRef.current = renderer;
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     
-    // LIGHTS
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
 
@@ -123,10 +177,9 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
     backLight.position.set(-5, 2, -10);
     scene.add(backLight);
 
-    // ANATOMY GROUP
     const anatomyGroup = new THREE.Group();
+    anatomyGroupRef.current = anatomyGroup;
     
-    // Materials
     const organMaterial = new THREE.MeshPhysicalMaterial({ 
       color: 0xe8a0a0, 
       roughness: 0.3, 
@@ -144,7 +197,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       metalness: 0.0 
     });
 
-    // 1. Uterus Body
     const bodyGeo = new THREE.IcosahedronGeometry(1.5, 2);
     const uterusBody = new THREE.Mesh(bodyGeo, organMaterial);
     uterusBody.position.set(0, 0.5, 0);
@@ -153,7 +205,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
     uterusBody.receiveShadow = true;
     anatomyGroup.add(uterusBody);
 
-    // 2. Cervix
     const cervixGeo = new THREE.CylinderGeometry(0.7, 0.7, 1.5, 32);
     const cervix = new THREE.Mesh(cervixGeo, cervixMaterial);
     cervix.position.set(0, -1.2, 0);
@@ -161,7 +212,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
     cervix.receiveShadow = true;
     anatomyGroup.add(cervix);
 
-    // 3. Vagina
     const vaginaGeo = new THREE.CylinderGeometry(0.9, 0.8, 1.2, 32, 1, true);
     const vagina = new THREE.Mesh(vaginaGeo, cervixMaterial);
     vagina.position.set(0, -2.5, 0);
@@ -170,7 +220,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
     vagina.receiveShadow = true;
     anatomyGroup.add(vagina);
 
-    // 4. Tubes
     function createTube(isRight: boolean) {
         const xMult = isRight ? 1 : -1;
         const curve = new THREE.CatmullRomCurve3([
@@ -187,7 +236,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
     anatomyGroup.add(createTube(true));
     anatomyGroup.add(createTube(false));
 
-    // 5. Ovaries
     const ovaryGeo = new THREE.SphereGeometry(0.6, 32, 32);
     const rightOvary = new THREE.Mesh(ovaryGeo, ovaryMaterial);
     rightOvary.position.set(3.0, 0.2, 0);
@@ -201,17 +249,16 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
 
     scene.add(anatomyGroup);
 
-    // LESION GROUP
-    const lesionGroup = new THREE.Group();
-    scene.add(lesionGroup);
-    lesionGroupRef.current = lesionGroup;
+    // Initialize marker groups
+    for (let i = 0; i < 4; i++) {
+      markerGroupsRef.current[i] = new THREE.Group();
+      scene.add(markerGroupsRef.current[i]);
+    }
 
-    // --- VIEW SETUP ---
     const views: any[] = [];
     viewsRef.current = views;
 
-    // Helper to setup views
-    function setupView(element: HTMLDivElement, cameraType: 'perspective' | 'orthographic', camPos: number[], upVec: number[], fov = 45) {
+    function setupView(element: HTMLDivElement, cameraType: 'perspective' | 'orthographic', camPos: number[], upVec: number[], viewIdx: number, fov = 45) {
       let camera, controls;
       
       if (cameraType === 'perspective') {
@@ -233,7 +280,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         camera.position.set(camPos[0], camPos[1], camPos[2]);
         camera.zoom = 1;
         controls = new OrbitControls(camera, element);
-        controls.enableRotate = false; // 2D Views usually don't rotate freely
+        controls.enableRotate = false;
         controls.enableZoom = true;
         controls.enablePan = true;
       }
@@ -242,81 +289,90 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       camera.lookAt(0, 0, 0);
       controls.update();
 
-      return { element, camera, controls };
+      return { element, camera, controls, viewIdx, viewType: cameraType };
     }
 
-    views.push(setupView(viewMainRef.current, 'perspective', [5, 2, 6], [0, 1, 0]));
-    views.push(setupView(viewSagittalRef.current, 'orthographic', [10, 0, 0], [0, 1, 0]));
-    views.push(setupView(viewCoronalRef.current, 'orthographic', [0, 0, 10], [0, 1, 0]));
-    views.push(setupView(viewPosteriorRef.current, 'orthographic', [0, 0, -10], [0, 1, 0]));
+    views.push(setupView(viewMainRef.current, 'perspective', [5, 2, 6], [0, 1, 0], 0));
+    views.push(setupView(viewSagittalRef.current, 'orthographic', [10, 0, 0], [0, 1, 0], 1));
+    views.push(setupView(viewCoronalRef.current, 'orthographic', [0, 0, 10], [0, 1, 0], 2));
+    views.push(setupView(viewPosteriorRef.current, 'orthographic', [0, 0, -10], [0, 1, 0], 3));
 
-    // Enable rotation for Posterior view (Back view needs rotation? or just fixed back?)
-    // The snippet says "POSTERIOR (BACK)" and likely wants it fixed.
-    // However, let's keep it consistent with the snippet which likely disabled rotation for orthographic views.
-    
-    // Allow rotation on Main View
     views[0].controls.enableRotate = true;
 
-    // --- RAYCASTER SETUP (Only for Main View) ---
+    // === UNIFIED RAYCASTING FOR ALL VIEWS ===
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
-    function onPointerDown(event: PointerEvent) {
-        // Only handle clicks on the Main View
-        if (event.target !== viewMainRef.current) return;
+    function convertScreenToWorldCoords(event: PointerEvent, viewIdx: number): THREE.Vector3 | null {
+      const view = views[viewIdx];
+      const rect = view.element.getBoundingClientRect();
+      
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, view.camera);
+
+      if (view.viewType === 'orthographic') {
+        // For orthographic views, use the raycaster direction with a point on the camera plane
+        const direction = raycaster.ray.direction;
         
-        // Prevent adding lesion if we are dragging (orbiting)
-        // Simple check: minimal movement between down and up
-        // For now, let's just use click.
-        
-        const rect = viewMainRef.current!.getBoundingClientRect();
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-        raycaster.setFromCamera(mouse, views[0].camera);
-
-        const intersects = raycaster.intersectObjects(anatomyGroup.children, true);
-
-        if (intersects.length > 0) {
-            const hit = intersects[0];
-            createLesionMesh(hit.point, currentSeverityRef.current);
+        // Create a plane at Z=0 for Sagittal, Y=0 for Coronal, Z=0 for Posterior
+        let plane: THREE.Plane;
+        if (viewIdx === 1) { // Sagittal (X=10, looking at YZ plane)
+          plane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
+        } else if (viewIdx === 2) { // Coronal (Z=10, looking at XY plane)
+          plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+        } else { // Posterior (Z=-10, looking at XY plane)
+          plane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
         }
+
+        const intersection = new THREE.Vector3();
+        raycaster.ray.intersectPlane(plane, intersection);
+        return intersection;
+      } else {
+        // For perspective view, cast a ray and hit the anatomy
+        const intersects = raycaster.intersectObjects(anatomyGroup.children, true);
+        if (intersects.length > 0) {
+          return intersects[0].point;
+        }
+      }
+      return null;
     }
 
-    // Attach listener to Main View container
-    if (viewMainRef.current) {
-        viewMainRef.current.addEventListener('pointerdown', onPointerDown);
-    }
+    // Multiple pointerdown handlers for each view
+    const handleViewClick = (viewIdx: number) => (event: PointerEvent) => {
+      const worldPos = convertScreenToWorldCoords(event, viewIdx);
+      if (worldPos) {
+        createLesionInStorage(
+          { x: worldPos.x, y: worldPos.y, z: worldPos.z },
+          currentSeverityRef.current
+        );
+      }
+    };
 
+    viewMainRef.current?.addEventListener('pointerdown', handleViewClick(0));
+    viewSagittalRef.current?.addEventListener('pointerdown', handleViewClick(1));
+    viewCoronalRef.current?.addEventListener('pointerdown', handleViewClick(2));
+    viewPosteriorRef.current?.addEventListener('pointerdown', handleViewClick(3));
 
-    // --- ANIMATION LOOP ---
+    // === ANIMATION LOOP ===
     function animate() {
       if (!isMounted) return;
       
       animationFrameId = requestAnimationFrame(animate);
 
-      // Render each view
       views.forEach(view => {
         const rect = view.element.getBoundingClientRect();
         
-        // Check if view is offscreen (optional optimization)
         if (rect.bottom < 0 || rect.top > renderer.domElement.clientHeight ||
             rect.right < 0 || rect.left > renderer.domElement.clientWidth) {
             return;
         }
 
-        // Set viewport relative to the canvas
-        // The canvas is full screen fixed, but the 'views' are grid cells.
-        // We need to map the element's position to the canvas coordinate system.
-        // Since canvas is absolute 0,0 and matches window/container, we can use rect directly
-        // IF the canvas matches the window size.
-        // However, we are in a container.
-        
-        // Get canvas bounding rect to calculate relative position
         const canvasRect = renderer.domElement.getBoundingClientRect();
         
         const left = rect.left - canvasRect.left;
-        const bottom = canvasRect.bottom - rect.bottom; // glViewport measures from bottom-left
+        const bottom = canvasRect.bottom - rect.bottom;
         const width = rect.width;
         const height = rect.height;
 
@@ -325,7 +381,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
 
         view.camera.aspect = width / height;
         if (view.camera.isOrthographicCamera) {
-            // Update frustum for ortho
             const frustumSize = 8;
             const aspect = width / height;
             view.camera.left = -frustumSize * aspect / 2;
@@ -341,39 +396,37 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
     
     animate();
 
-    // --- RESIZE HANDLER ---
     const handleResize = () => {
        if (!canvas || !canvas.parentElement) return;
        const parent = canvas.parentElement;
        if(parent) {
            const width = parent.clientWidth;
            const height = parent.clientHeight;
-           renderer.setSize(width, height, false); // false = don't set style, we assume 100% css
+           renderer.setSize(width, height, false);
        }
     };
     
     window.addEventListener('resize', handleResize);
-    handleResize(); // Init size
+    handleResize();
 
-    // Cleanup
     return () => {
       isMounted = false;
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
-      if (viewMainRef.current) viewMainRef.current.removeEventListener('pointerdown', onPointerDown);
+      viewMainRef.current?.removeEventListener('pointerdown', handleViewClick(0));
+      viewSagittalRef.current?.removeEventListener('pointerdown', handleViewClick(1));
+      viewCoronalRef.current?.removeEventListener('pointerdown', handleViewClick(2));
+      viewPosteriorRef.current?.removeEventListener('pointerdown', handleViewClick(3));
       renderer.dispose();
-      // Dispose materials/geometries if needed
     };
 
-  }, []); // Run once on mount
+  }, []);
 
   return (
     <div className="relative w-full h-full bg-slate-950">
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block z-0" />
       
-      {/* Grid Layout for Views */}
       <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-[2px] p-[2px] pointer-events-none">
-        {/* Main Perspective View */}
         <div ref={viewMainRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden group">
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-pink-400 select-none z-10 backdrop-blur-sm">
              3D PERSPECTIVE
@@ -383,24 +436,30 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
            </div>
         </div>
 
-        {/* Sagittal View */}
-        <div ref={viewSagittalRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden">
+        <div ref={viewSagittalRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden group">
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-blue-400 select-none z-10 backdrop-blur-sm">
              SAGITTAL (SIDE)
            </div>
-        </div>
-
-        {/* Coronal View */}
-        <div ref={viewCoronalRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden">
-           <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-green-400 select-none z-10 backdrop-blur-sm">
-             CORONAL (FRONT)
+           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+              <span className="text-[10px] text-white/30 font-mono tracking-widest bg-black/40 px-2 py-1 rounded">CLICK TO ADD LESION</span>
            </div>
         </div>
 
-        {/* Posterior View */}
-        <div ref={viewPosteriorRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden">
+        <div ref={viewCoronalRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden group">
+           <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-green-400 select-none z-10 backdrop-blur-sm">
+             CORONAL (FRONT)
+           </div>
+           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+              <span className="text-[10px] text-white/30 font-mono tracking-widest bg-black/40 px-2 py-1 rounded">CLICK TO ADD LESION</span>
+           </div>
+        </div>
+
+        <div ref={viewPosteriorRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden group">
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-yellow-400 select-none z-10 backdrop-blur-sm">
              POSTERIOR (BACK)
+           </div>
+           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+              <span className="text-[10px] text-white/30 font-mono tracking-widest bg-black/40 px-2 py-1 rounded">CLICK TO ADD LESION</span>
            </div>
         </div>
       </div>

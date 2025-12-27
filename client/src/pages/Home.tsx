@@ -1,16 +1,22 @@
 import { useRef, useState } from 'react';
 import { Uterus3D, Uterus3DRef } from '@/components/Uterus3D';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Circle, RotateCcw, Plus, Info } from 'lucide-react';
+import { Circle, RotateCcw, Plus, Info, ChevronRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Severity = 'superficial' | 'moderate' | 'deep';
 
+interface Lesion {
+  id: string;
+  position: { x: number; y: number; z: number };
+  severity: Severity;
+}
+
 export default function Home() {
   const [severity, setSeverity] = useState<Severity>('superficial');
   const [lesionCount, setLesionCount] = useState(0);
+  const [lesions, setLesions] = useState<Lesion[]>([]);
   const uterusRef = useRef<Uterus3DRef>(null);
 
   const handleAddTestLesion = () => {
@@ -20,6 +26,9 @@ export default function Home() {
   const handleClearLesions = () => {
     uterusRef.current?.clearLesions();
   };
+
+  const getLesionCount = (sev: Severity) => lesions.filter(l => l.severity === sev).length;
+  const lastLesion = lesions[lesions.length - 1];
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
@@ -110,25 +119,133 @@ export default function Home() {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Click on the 3D Perspective view to add lesions manually.</p>
+              <p>Click on any view to add lesions. All views sync in real-time!</p>
             </TooltipContent>
           </Tooltip>
         </div>
       </header>
 
-      {/* Main Viewport */}
-      <main className="flex-1 relative bg-background">
-        <Uterus3D 
-          ref={uterusRef}
-          severity={severity}
-          onLesionCountChange={setLesionCount}
-        />
-        
-        {/* Overlay Info (Optional) */}
-        <div className="absolute bottom-4 right-4 pointer-events-none opacity-50 text-[10px] text-muted-foreground font-mono">
-          RENDERER: WEBGL 2.0 • ANTIALIAS: 4X
-        </div>
-      </main>
+      {/* Main Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* 3D Viewport */}
+        <main className="flex-1 relative">
+          <Uterus3D 
+            ref={uterusRef}
+            severity={severity}
+            onLesionCountChange={setLesionCount}
+            onLesionsUpdate={setLesions}
+          />
+        </main>
+
+        {/* Lesion Details Panel */}
+        <aside className="w-64 border-l border-border bg-card/50 backdrop-blur-md overflow-y-auto">
+          <div className="p-4 border-b border-border/50">
+            <h2 className="text-sm font-semibold text-foreground tracking-wide mb-3">
+              LESION SUMMARY
+            </h2>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-2 rounded bg-red-500/5 border border-red-500/20">
+                <span className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Circle className="w-2.5 h-2.5 fill-red-500 text-red-500" />
+                  Superficial
+                </span>
+                <span className="text-xs font-mono font-bold text-red-400">{getLesionCount('superficial')}</span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded bg-orange-500/5 border border-orange-500/20">
+                <span className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Circle className="w-2.5 h-2.5 fill-orange-500 text-orange-500" />
+                  Moderate
+                </span>
+                <span className="text-xs font-mono font-bold text-orange-400">{getLesionCount('moderate')}</span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded bg-blue-500/5 border border-blue-500/20">
+                <span className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Circle className="w-2.5 h-2.5 fill-blue-500 text-blue-500" />
+                  Deep
+                </span>
+                <span className="text-xs font-mono font-bold text-blue-400">{getLesionCount('deep')}</span>
+              </div>
+              <div className="pt-2 border-t border-border/50 mt-2">
+                <span className="text-xs text-muted-foreground">Total Lesions</span>
+                <span className="text-lg font-bold text-foreground block">{lesionCount}</span>
+              </div>
+            </div>
+          </div>
+
+          {lastLesion && (
+            <div className="p-4 border-b border-border/50 bg-primary/5">
+              <h3 className="text-xs font-semibold text-foreground tracking-wide mb-2">
+                LAST LESION
+              </h3>
+              <div className="space-y-1.5 text-xs font-mono">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Type:</span>
+                  <span className="text-foreground capitalize">{lastLesion.severity}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">X:</span>
+                  <span className="text-foreground">{lastLesion.position.x.toFixed(3)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Y:</span>
+                  <span className="text-foreground">{lastLesion.position.y.toFixed(3)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Z:</span>
+                  <span className="text-foreground">{lastLesion.position.z.toFixed(3)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {lesions.length > 0 && (
+            <div className="p-4">
+              <h3 className="text-xs font-semibold text-foreground tracking-wide mb-3">
+                ALL LESIONS ({lesions.length})
+              </h3>
+              <div className="space-y-2">
+                {lesions.map((lesion, idx) => (
+                  <div key={lesion.id} className="p-2 rounded border border-border/50 bg-black/20 hover:bg-black/40 transition-colors">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-mono text-muted-foreground">#{idx + 1}</span>
+                      <Circle 
+                        className="w-2.5 h-2.5 fill-current" 
+                        color={lesion.severity === 'superficial' ? '#ef4444' : lesion.severity === 'moderate' ? '#f97316' : '#3b82f6'}
+                      />
+                    </div>
+                    <div className="text-[10px] text-muted-foreground space-y-0.5">
+                      <div className="flex justify-between">
+                        <span>X:</span>
+                        <span className="font-mono text-foreground">{lesion.position.x.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Y:</span>
+                        <span className="font-mono text-foreground">{lesion.position.y.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Z:</span>
+                        <span className="font-mono text-foreground">{lesion.position.z.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {lesions.length === 0 && (
+            <div className="p-4 text-center">
+              <div className="text-muted-foreground text-xs space-y-2">
+                <p>No lesions yet.</p>
+                <p>Click on any view or use the</p>
+                <p className="flex items-center justify-center gap-1">
+                  Test Lesion <ChevronRight className="w-3 h-3" /> button
+                </p>
+              </div>
+            </div>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }

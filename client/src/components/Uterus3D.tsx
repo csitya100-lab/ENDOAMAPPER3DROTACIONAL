@@ -202,68 +202,56 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         const scale = 4 / maxDim;
         model.scale.set(scale, scale, scale);
 
-        // Bake all child transformations into world space and remove hierarchy
-        const meshesToMerge: Array<{geometry: THREE.BufferGeometry, matrix: THREE.Matrix4}> = [];
+        // Lock the hierarchy - apply all transformations and keep meshes but prevent independent rotation
+        const meshesToLock: THREE.Mesh[] = [];
+        const parentMatrices: Map<THREE.Mesh, THREE.Matrix4> = new Map();
         
         model.traverse((child: any) => {
             if ((child as THREE.Mesh).isMesh && child !== model) {
                 const mesh = child as THREE.Mesh;
-                
-                // Get the world matrix for this mesh
                 mesh.updateMatrixWorld();
-                const worldMatrix = mesh.matrixWorld.clone();
                 
-                // Get geometry
-                const geometry = mesh.geometry as THREE.BufferGeometry;
-                meshesToMerge.push({ geometry, matrix: worldMatrix });
+                // Store world matrix for each mesh
+                parentMatrices.set(mesh, mesh.matrixWorld.clone());
+                meshesToLock.push(mesh);
             }
         });
         
-        // Create merged geometry with all transformations applied
-        const mergedGeometry = new THREE.BufferGeometry();
-        const positionsArray: number[] = [];
-        const normalsArray: number[] = [];
-        
-        for (const { geometry, matrix } of meshesToMerge) {
-            const positions = geometry.attributes.position;
-            const normals = geometry.attributes.normal;
+        // Move all meshes to the model root but keep their world positions
+        for (const mesh of meshesToLock) {
+            const worldMatrix = parentMatrices.get(mesh)!;
             
-            if (positions) {
-                const pos = positions.array as Float32Array;
-                const norm = normals ? (normals.array as Float32Array) : null;
-                
-                for (let i = 0; i < pos.length; i += 3) {
-                    const v = new THREE.Vector3(pos[i], pos[i+1], pos[i+2]);
-                    v.applyMatrix4(matrix);
-                    positionsArray.push(v.x, v.y, v.z);
-                    
-                    if (norm) {
-                        const n = new THREE.Vector3(norm[i], norm[i+1], norm[i+2]);
-                        n.transformDirection(matrix);
-                        normalsArray.push(n.x, n.y, n.z);
-                    }
+            // Remove from parent
+            mesh.parent?.remove(mesh);
+            
+            // Add to model root with world transformation applied
+            model.add(mesh);
+            
+            // Apply the world transformation as local transformation
+            const position = new THREE.Vector3();
+            const quaternion = new THREE.Quaternion();
+            const scale = new THREE.Vector3();
+            worldMatrix.decompose(position, quaternion, scale);
+            
+            mesh.position.copy(position);
+            mesh.quaternion.copy(quaternion);
+            mesh.scale.copy(scale);
+        }
+        
+        // Ensure all materials are proper
+        model.traverse((child: any) => {
+            if ((child as THREE.Mesh).isMesh) {
+                const mesh = child as THREE.Mesh;
+                if (mesh.material) {
+                    const mat = mesh.material as THREE.MeshStandardMaterial;
+                    mat.roughness = 0.4;
+                    mat.metalness = 0.1;
+                    mat.side = THREE.DoubleSide;
                 }
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
             }
-        }
-        
-        mergedGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positionsArray), 3));
-        if (normalsArray.length > 0) {
-            mergedGeometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normalsArray), 3));
-        }
-        mergedGeometry.computeBoundingSphere();
-        
-        // Clear children and add merged mesh
-        model.children = [];
-        const mergedMaterial = new THREE.MeshStandardMaterial({
-            roughness: 0.4,
-            metalness: 0.1,
-            side: THREE.DoubleSide
         });
-        
-        const mergedMesh = new THREE.Mesh(mergedGeometry, mergedMaterial);
-        mergedMesh.castShadow = true;
-        mergedMesh.receiveShadow = true;
-        model.add(mergedMesh);
         
         anatomyGroup.add(model);
     }, undefined, (error) => {

@@ -173,7 +173,6 @@ export default function DitadoIA() {
   const [gravando, setGravando] = useState(false);
   const [modalVisualizacao, setModalVisualizacao] = useState(false);
   const recognitionRef = useRef<any>(null);
-  const printRef = useRef<HTMLDivElement>(null);
 
   const handleImprimir = () => {
     window.print();
@@ -520,7 +519,6 @@ ${laudo.conclusao}
             </div>
             <div className="flex-1 overflow-auto p-6 bg-slate-100">
               <div
-                ref={printRef}
                 className="bg-white shadow-lg mx-auto print-area"
                 style={{
                   width: '210mm',

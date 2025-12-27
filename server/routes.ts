@@ -2,9 +2,16 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage, aplicarOperacoes } from "./storage";
 import { laudoSchema, operacaoSchema, type Laudo, type Operacao } from "@shared/schema";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+// Usando Replit AI Integrations para Gemini
+const ai = new GoogleGenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  httpOptions: {
+    apiVersion: "",
+    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+  },
+});
 
 const PROMPT_SISTEMA = `Você é um agente de análise de laudos de ultrassom ginecológico para endometriose.
 Recebe um texto de ditado em linguagem natural e um JSON de laudo estruturado.
@@ -32,9 +39,6 @@ export async function registerRoutes(
       // Validar estrutura do laudo
       const laudoValidado = laudoSchema.parse(laudoAtual);
 
-      // Chamar Gemini
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
       const prompt = `${PROMPT_SISTEMA}
 
 JSON do Laudo Atual:
@@ -49,8 +53,12 @@ Retorne APENAS um JSON válido com array de operações. Exemplo:
   { "acao": "update", "caminho": "utero.tamanho", "valor": "aumentado" }
 ]`;
 
-      const response = await model.generateContent(prompt);
-      const texto = response.response.text();
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+      });
+      
+      const texto = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
       // Extrair JSON da resposta
       const jsonMatch = texto.match(/\[[\s\S]*\]/);

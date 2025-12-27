@@ -1,0 +1,171 @@
+IMPLEMENTAR E MELHORAR O SISTEMA DE VOZ E TRANSCRIÇÃO MÉDICA:
+
+1) ADICIONAR BOTÃO DE COMANDO DE VOZ:
+   - Botão com ícone de microfone (🎤) ao lado do campo "Transcrição do Ditado"
+   - Label: "Iniciar Gravação" (quando inativo) / "Parar Gravação" (quando ativo)
+   - Cor: rosa/magenta em padrão, vermelho quando gravando
+   - Implementar Web Speech API (navegador nativo)
+
+2) FUNCIONALIDADE DE GRAVAÇÃO DE VOZ:
+   
+   A) USAR JAVASCRIPT WEB SPEECH API:
+      - SpeechRecognition API do navegador (funciona em Chrome, Edge, Safari)
+      - Usar idioma: "pt-BR" (português brasileiro)
+      - Modo contínuo (interim results enquanto fala)
+      - Timeout automático se silêncio > 3 segundos
+   
+   B) FLUXO DE GRAVAÇÃO:
+      - Usuário clica em "Iniciar Gravação"
+      - Navegador pede permissão de microfone (primeira vez)
+      - Botão fica vermelho, mostra "Gravando..."
+      - Exibe transcrição em tempo real no campo (texto muda conforme fala)
+      - Usuário clica "Parar Gravação" ou espera timeout
+      - Transcrição final popula o campo "Transcrição do Ditado"
+      - Botão volta ao rosa, pronto para novo ditado
+
+   C) FEEDBACK VISUAL DURANTE GRAVAÇÃO:
+      - Onda sonora animada (animação de linhas pulsantes)
+      - Contador de tempo: "00:15" (15 segundos)
+      - Indicador de volume (barra de som)
+      - Mensagem: "Gravando... Fale livremente"
+
+3) MELHORAR RECONHECIMENTO DE VOZ MÉDICO:
+
+   A) ADICIONAR DICIONÁRIO CUSTOMIZADO:
+      Termos médicos que a IA deve reconhecer corretamente:
+      - Endometrioma / endometriose
+      - Mioma / miomatose
+      - Adenomiose / adenomiótico
+      - Ligamento redondo / ligamentos redondos
+      - Ovário / ovários
+      - Septo retovaginal / compartimento posterior
+      - Lesão endomtriósica (não "lesão indo metric")
+      - O-RADS / FIGO / ENZIAN / BI-RADS
+      - Profundo / profunda / profundidade
+      - Superficial / intermediária
+      - Hipoecóico / isoecóico / hiperecóico
+      - Parede anterior / lateral / posterior
+      - Nódulo / nodularidade
+      - Ascite / efusão / derrame
+      - Retrações / retração peritoneal
+      - Sinal de deslizamento
+      - Vascularização / Doppler
+      - Infiltrativo / infiltração
+      - Fórnix / culdossaco
+      - Reto-sigmóide / retossigmoide
+      - Ligamento útero-sacro
+      - Zona juncional
+      - Calcificação / degeneração / cisto
+      - Biometria / medidas
+      - Centímetros / milímetros (e variações: "cm", "mm", "por", "x", "vezes")
+
+   B) CORREÇÃO PÓS-TRANSCRIÇÃO (FUNÇÃO DE LIMPEZA):
+      Após a IA transcrever, executar função de "correção médica" que:
+      - Substitui "indo metric" → "endomtriósica"
+      - Substitui "endométrio" isolado → "endometrial"
+      - Corrige números ditados: "dois pontos zero por três" → "2.0 x 3.0"
+      - Substitui "cedeh" → "Cadê" ou remove se erro
+      - Padroniza unidades: "centímetros" → "cm", "milímetros" → "mm"
+      - Corrige abreviações: "endometriose" + "cadê" → remove "cadê"
+
+4) INTERFACE MELHORADA:
+
+   A) CAMPO DE TRANSCRIÇÃO COM FEEDBACK:
+      - Texto em tempo real durante gravação (cor cinza clara/placeholder)
+      - Após parar: transcrição final em texto normal
+      - Indicador visual: ⭕ (roxo/gravando) → ✅ (verde/finalizado)
+      - Mostrar duração da gravação: "(15 segundos)"
+
+   B) BOTÕES AUXILIARES:
+      - "Limpar Transcrição" (X): reseta o campo
+      - "Repetir Último Ditado": regravar se não ficou bom
+      - "Editar Manualmente": permite correção rápida de erros pré-análise
+      - "Pronunciar Ditado" (🔊): repete em voz alta o que foi transcrito (text-to-speech)
+
+   C) TOOLTIP COM INSTRUÇÕES:
+      Hovering no botão de microfone mostra:
+      "Dite livremente em português. A IA entende terminologia médica especializada.
+      Exemplo: 'Endometrioma 5 centímetros ovário direito, lesão profunda ligamento útero-sacro direito 3 centímetros'"
+
+5) TRATAMENTO DE ERROS DE TRANSCRIÇÃO:
+
+   A) SE TRANSCRIÇÃO FICAR VAZIA:
+      - Mostrar mensagem: "Nenhuma voz detectada. Tente novamente."
+      - Ofertar opção de "Tentar de novo" ou "Digitar manualmente"
+
+   B) SE QUALIDADE FOR RUIM (muito barulho):
+      - Avisar: "Áudio de baixa qualidade detectado. Resultado pode estar impreciso."
+      - Sugerir: "Reduza ruído de fundo e tente novamente"
+
+   C) SUGESTÕES INTELIGENTES:
+      Se transcrição contiver erros óbvios detectados:
+      - "Detectei 'endómetrio' - você quis dizer 'endometriose'?"
+      - "Detectei 'mioza' - você quis dizer 'mioma'?"
+      - Botões: "Sim" / "Não" / "Deixar como está"
+
+6) ARMAZENAR HISTÓRICO DE GRAVAÇÕES:
+
+   A) SESSÃO LOCAL:
+      - Guardar últimos 5 ditados da sessão (para "repetir" ou "desfazer")
+      - Cada ditado tem: texto, timestamp, arquivo de áudio (opcional)
+
+   B) PERMITIR REVERTER:
+      - Botão "Desfazer": volta ao ditado anterior
+      - Botão "Refazer": volta ao ditado descartado
+
+7) OTIMIZAÇÕES DE PERFORMANCE:
+
+   A) CARREGAR RECOGNIÇÃO LAZY:
+      - Só ativar Web Speech API quando usuário clica em "Iniciar"
+      - Não carregar se navegador não suporta (fallback: "Digite manualmente")
+
+   B) TIMEOUT INTELIGENTE:
+      - Se silêncio > 3 segundos, parar automaticamente
+      - Se fala contínua > 5 minutos, avisar: "Deseja continuar gravando?"
+
+   C) COMPRESSÃO DE ÁUDIO:
+      - Se armazenar áudio, comprimir para Opus/WebM
+      - Enviar apenas texto transcrito para backend (não áudio)
+
+8) COMPATIBILIDADE ENTRE NAVEGADORES:
+
+   A) CHROME / EDGE: Nativo (Web Speech API completa)
+   
+   B) FIREFOX: Usar fallback (Google Cloud Speech-to-Text via API)
+   
+   C) SAFARI: Nativo (web Speech API, um pouco limitado)
+   
+   D) MOBILE (iOS/Android): Usar nativo do sistema
+   
+   E) NAVEGADORES NÃO SUPORTADOS:
+      - Desabilitar botão de microfone
+      - Mostrar mensagem: "Seu navegador não suporta gravação de voz. Digite manualmente."
+
+9) SEGURANÇA E PRIVACIDADE:
+
+   A) PERMISSÕES:
+      - Pedir permissão de microfone explicitamente
+      - Nunca armazenar áudio no servidor (só texto)
+      - Permitir usuário revogar permissão a qualquer hora
+
+   B) DADOS:
+      - Transcrição é sensível (saúde) → encrypt em trânsito (HTTPS)
+      - Não compartilhar com terceiros
+
+10) INSTRUÇÕES NO TOOLTIP DO BOTÃO:
+
+   "🎤 DITE SEU LAUDO
+   ━━━━━━━━━━━━━━━━━━━━
+   ✓ Fale natural e livremente
+   ✓ Use termos médicos: endometrioma, mioma, adenomiose, etc.
+   ✓ Exemplo: 'Útero normal, ovário direito endometrioma 5 centímetros, 
+              ligamento redondo direito lesão superficial 2 centímetros'
+   ✓ Você pode pausar, o app vai entender
+   ✓ Edite manualmente após se necessário
+   
+   Clique para começar a gravar →"
+
+═══════════════════════════════════════════════════════════════════════════════
+
+IMPLEMENTAÇÃO TÉCNICA (PSEUDO-CÓDIGO):
+

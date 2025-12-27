@@ -247,6 +247,146 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
     leftOvary.castShadow = true;
     anatomyGroup.add(leftOvary);
 
+    // === ADDITIONAL PELVIC STRUCTURES ===
+
+    // 6. BLADDER
+    const bladderMaterial = new THREE.MeshPhysicalMaterial({ 
+      color: 0xf0e8d8, 
+      roughness: 0.4, 
+      metalness: 0.0 
+    });
+    const bladderGeo = new THREE.SphereGeometry(0.6, 24, 24);
+    const bladder = new THREE.Mesh(bladderGeo, bladderMaterial);
+    bladder.position.set(0, 2.0, -0.5);
+    bladder.scale.set(1, 1.2, 0.9);
+    bladder.castShadow = true;
+    bladder.receiveShadow = true;
+    anatomyGroup.add(bladder);
+
+    // 7. RECTUM
+    const rectumMaterial = new THREE.MeshPhysicalMaterial({ 
+      color: 0xb8a090, 
+      roughness: 0.4, 
+      metalness: 0.0 
+    });
+    const rectumCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, -0.5, 1.5),
+      new THREE.Vector3(0.1, -1.2, 1.8),
+      new THREE.Vector3(0, -2.0, 1.5),
+      new THREE.Vector3(-0.1, -3.0, 1.0),
+    ]);
+    const rectum = new THREE.Mesh(new THREE.TubeGeometry(rectumCurve, 20, 0.2, 8, false), rectumMaterial);
+    rectum.castShadow = true;
+    rectum.receiveShadow = true;
+    anatomyGroup.add(rectum);
+
+    // 8. SIGMOID
+    const sigmoidMaterial = new THREE.MeshPhysicalMaterial({ 
+      color: 0xc4a088, 
+      roughness: 0.4, 
+      metalness: 0.0 
+    });
+    const sigmoidCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, -3.0, 1.0),
+      new THREE.Vector3(0.3, -2.5, 0.8),
+      new THREE.Vector3(0.2, -1.8, 0.5),
+      new THREE.Vector3(0, -0.8, 0.2),
+    ]);
+    const sigmoid = new THREE.Mesh(new THREE.TubeGeometry(sigmoidCurve, 20, 0.18, 8, false), sigmoidMaterial);
+    sigmoid.castShadow = true;
+    sigmoid.receiveShadow = true;
+    anatomyGroup.add(sigmoid);
+
+    // 9. ROUND LIGAMENTS (2x)
+    const ligamentMaterial = new THREE.MeshPhysicalMaterial({ 
+      color: 0xd48888, 
+      roughness: 0.3, 
+      metalness: 0.0 
+    });
+    function createRoundLigament(isRight: boolean) {
+      const xMult = isRight ? 1 : -1;
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.8 * xMult, 0.8, -0.2),
+        new THREE.Vector3(1.5 * xMult, 1.2, 0.1),
+        new THREE.Vector3(2.2 * xMult, 1.0, 0.3),
+      ]);
+      const lig = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.08, 6, false), ligamentMaterial);
+      lig.castShadow = true;
+      return lig;
+    }
+    anatomyGroup.add(createRoundLigament(true));
+    anatomyGroup.add(createRoundLigament(false));
+
+    // 10. UTEROSACRAL LIGAMENTS (2x)
+    const uterosacrMaterial = new THREE.MeshPhysicalMaterial({ 
+      color: 0xc87878, 
+      roughness: 0.3, 
+      metalness: 0.0 
+    });
+    function createUterosacrLigament(isRight: boolean) {
+      const xMult = isRight ? 1 : -1;
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.3 * xMult, -1.2, 0.1),
+        new THREE.Vector3(0.8 * xMult, -1.8, 0.5),
+        new THREE.Vector3(0.5 * xMult, -2.5, 1.2),
+      ]);
+      const lig = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.1, 6, false), uterosacrMaterial);
+      lig.castShadow = true;
+      return lig;
+    }
+    anatomyGroup.add(createUterosacrLigament(true));
+    anatomyGroup.add(createUterosacrLigament(false));
+
+    // 11. BROAD LIGAMENTS (2x) - Lateral planes
+    const broadLigMaterial = new THREE.MeshPhysicalMaterial({ 
+      color: 0xe0c0c0, 
+      roughness: 0.5, 
+      metalness: 0.0,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.4
+    });
+    function createBroadLigament(isRight: boolean) {
+      const xPos = isRight ? 2.0 : -2.0;
+      const geometry = new THREE.PlaneGeometry(2.5, 2.0);
+      const lig = new THREE.Mesh(geometry, broadLigMaterial.clone());
+      lig.position.set(xPos, 0.2, 0.3);
+      lig.rotation.z = isRight ? Math.PI / 8 : -Math.PI / 8;
+      lig.castShadow = true;
+      lig.receiveShadow = true;
+      return lig;
+    }
+    anatomyGroup.add(createBroadLigament(true));
+    anatomyGroup.add(createBroadLigament(false));
+
+    // 12. PELVIC BONES (simplified) - Anterior pubis
+    const boneMaterial = new THREE.MeshPhysicalMaterial({ 
+      color: 0xd4a574, 
+      roughness: 0.6, 
+      metalness: 0.1 
+    });
+    const pubisGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.4, 16);
+    const pubis = new THREE.Mesh(pubisGeo, boneMaterial);
+    pubis.position.set(0, -2.2, -1.5);
+    pubis.castShadow = true;
+    pubis.receiveShadow = true;
+    anatomyGroup.add(pubis);
+
+    // Iliac bones (sides)
+    const iliacGeo = new THREE.BoxGeometry(0.6, 1.0, 0.5);
+    const iliacMaterial = boneMaterial.clone();
+    const rightIliac = new THREE.Mesh(iliacGeo, iliacMaterial);
+    rightIliac.position.set(3.5, 1.5, 0.5);
+    rightIliac.castShadow = true;
+    rightIliac.receiveShadow = true;
+    anatomyGroup.add(rightIliac);
+
+    const leftIliac = new THREE.Mesh(iliacGeo, iliacMaterial.clone());
+    leftIliac.position.set(-3.5, 1.5, 0.5);
+    leftIliac.castShadow = true;
+    leftIliac.receiveShadow = true;
+    anatomyGroup.add(leftIliac);
+
     scene.add(anatomyGroup);
 
     // Initialize marker groups

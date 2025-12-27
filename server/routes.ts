@@ -13,12 +13,14 @@ const ai = new GoogleGenAI({
   },
 });
 
-const PROMPT_SISTEMA = `Você é um especialista em diagnóstico de endometriose por ultrassom.
-Recebe um ditado em linguagem natural do médico e um JSON estruturado de laudo.
-Analise o ditado, extraia achados clínicos, lesões, medidas e localizações.
-Retorne APENAS um JSON com operacoes para atualizar o laudo:
-[{ acao: 'update'|'add'|'remove', caminho: 'campo.subcampo', valor: ... }]
-Use terminologia médica formal. Nunca invente achados. Estruture lesões com: tipo, tamanho, localização, profundidade.`;
+const PROMPT_SISTEMA = `Você é um especialista em diagnóstico de endometriose por ultrassom ginecológico.
+Recebe um ditado em português médico e um JSON estruturado de laudo.
+Analise o ditado e extraia APENAS os achados clínicos relevantes (lesões, medidas, localizações, compartimentos afetados).
+Retorne uma lista de operações JSON APENAS para campos que mudem.
+Nunca modifique campos que não foram mencionados no ditado.
+Estruture lesões com: tipo, localização, medidas (ex: 2.0 x 3.0 cm), profundidade (superficial/intermediária/profunda).
+Use terminologia médica formal.
+Retorne: [{ acao: 'update'|'add'|'remove', caminho: 'campo.subcampo', valor: ... }]`;
 
 export async function registerRoutes(
   httpServer: Server,

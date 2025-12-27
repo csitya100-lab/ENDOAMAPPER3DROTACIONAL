@@ -1,0 +1,154 @@
+CORRIGIR E REESTRUTURAR O JSON DE LAUDO CONFORME MODELO CLÍNICO REAL:
+
+O laudo deve ser compartimentado conforme o modelo anexado. Substitua o estado laudoAtual por este JSON estruturado:
+
+{
+  "cabecalho": {
+    "nome_medico": "Dra.",
+    "data": "27/12/2025",
+    "tipo_exame": "ULTRASSONOGRAFIA PARA PESQUISA DE ENDOMETRIOSE COM PREPARO INTESTINAL"
+  },
+  "equipamento": {
+    "nome": "GE Voluson E10",
+    "vias": "Abdominal e Transvaginal",
+    "tecnicas": "V.C.I. e 3D HDLIVESTUDIO"
+  },
+  "estruturas": {
+    "uretra": {
+      "descricao": "Retilínea, sem coleções ou cistos peri-uretrais"
+    },
+    "bexiga": {
+      "descricao": "Parcialmente cheia, paredes lisas, sem cálculos ou nódulos"
+    },
+    "vagina": {
+      "descricao": "Com características ecográficas normais"
+    }
+  },
+  "utero": {
+    "forma": "Típica",
+    "contornos": "Regulares",
+    "paredes": "Simétricas",
+    "miometrio": "Textura homogênea",
+    "biometria": "3.2 x 4.5 x 7.6 cm, volume 59.3 cm³",
+    "eco_endometrial": "Homogêneo",
+    "linha_media": "Linear",
+    "juncao_endometrio_miometrio": "Regular",
+    "padrao": "Basal",
+    "espessura_endometrial": "2.7 mm"
+  },
+  "ovario_direito": {
+    "localizacao": "Região paratuterina, móvel",
+    "forma": "Típica",
+    "limites": "Definidos",
+    "parenchima": "Ecogenicidade habitual",
+    "biometria": "3.1 x 1.7 x 1.9 cm, volume 3.4 cm³",
+    "lesoes": []
+  },
+  "ovario_esquerdo": {
+    "localizacao": "Região paratuterina, móvel",
+    "forma": "Típica",
+    "limites": "Definidos",
+    "parenchima": "Ecogenicidade habitual",
+    "biometria": "2.7 x 1.5 x 1.4 cm, volume 3.2 cm³",
+    "lesoes": []
+  },
+  "compartimentos": {
+    "anterior": {
+      "parede_vesical": "Sem nodularidades",
+      "espaco_vesico_uterino": "Livre",
+      "sinal_deslizamento_anterior": "Positivo",
+      "achados_endometriose": "Não"
+    },
+    "medial": {
+      "superficie_uterina": "Normal",
+      "ligamentos_redondos": "Sem sinais de endometriose",
+      "tubas_uterinas": "Normais",
+      "ovarios": "Sem sinais de endometriose",
+      "achados_endometriose": "Não"
+    },
+    "posterior": {
+      "septo_retovaginal": "Sem sinais de endometriose profunda",
+      "frnice_vaginal": "Normal",
+      "retossigmoide": "Normal",
+      "ligamentos_utero_sacros": "Sem achados",
+      "regiao_retro_cervical": "Normal",
+      "sinal_deslizamento_posterior": "Positivo",
+      "achados_endometriose": "Não"
+    }
+  },
+  "rins_ureteres": {
+    "rins": "Aspecto ecográfico normal, sem sinais de hidronefrose",
+    "ureteres_terminais": "Identificados, sem retrações ou alterações luminais"
+  },
+  "parede_abdominal": {
+    "regiao_umbilical": "Sem alterações",
+    "parede_abdominal": "Sem alterações"
+  },
+  "conclusao": "Avaliação ecográfica sem sinais de endometriose profunda."
+}
+
+AGORA, REFORMATAR A EXIBIÇÃO DO LAUDO ATUALIZADO:
+
+1) Na página "Ditado IA para Laudo", o card "Laudo Atualizado" deve exibir o laudo em seções claramente identificadas:
+
+[CABEÇALHO]
+Data: 27/12/2025
+Tipo: ULTRASSONOGRAFIA PARA PESQUISA DE ENDOMETRIOSE COM PREPARO INTESTINAL
+Equipamento: GE Voluson E10
+
+[ESTRUTURAS]
+• URETRA: Descrição...
+• BEXIGA: Descrição...
+• VAGINA: Descrição...
+
+[ÚTERO]
+• Forma: Típica
+• Contornos: Regulares
+• Biometria: 3.2 x 4.5 x 7.6 cm, volume 59.3 cm³
+• (etc, seguindo estrutura)
+
+[OVÁRIO DIREITO]
+• Biometria: 3.1 x 1.7 x 1.9 cm, volume 3.4 cm³
+• Lesões: Nenhuma detectada
+
+[OVÁRIO ESQUERDO]
+• Biometria: 2.7 x 1.5 x 1.4 cm, volume 3.2 cm³
+• Lesões: Nenhuma detectada
+
+[COMPARTIMENTOS]
+ANTERIOR:
+• Parede vesical: Sem nodularidades
+• Sinal de deslizamento anterior: Positivo
+• Endometriose: Não detectada
+
+MEDIAL:
+• Ligamentos redondos: Sem sinais
+• Tubas: Normais
+• Endometriose: Não detectada
+
+POSTERIOR:
+• Septo retovaginal: Normal
+• Sinal de deslizamento posterior: Positivo
+• Endometriose: Não detectada
+
+[RINS E URETERES]
+Aspecto normal, sem hidronefrose
+
+[CONCLUSÃO]
+Avaliação ecográfica sem sinais de endometriose profunda.
+
+2) O CSS/estilo deve ter:
+- Títulos em negrito/maiúscula para cada seção
+- Indentação para subitens
+- Separadores visuais entre seções
+- Fundo branco, texto cinza escuro, fonte legível (13-14px)
+- Altura automática, com scroll se necessário
+- Margem interna generosa
+
+3) Quando o Gemini retornar operações, o laudo deve atualizar exatamente nos campos estruturados acima, mantendo o formato visual.
+
+4) PROMPT DO GEMINI (REVISADO):
+"Você é um especialista em diagnóstico de endometriose por ultrassom ginecológico. Recebe um ditado em português médico e um JSON estruturado de laudo. Analise o ditado e extraia APENAS os achados clínicos relevantes (lesões, medidas, localizações, compartimentos afetados). Retorne uma lista de operações JSON APENAS para campos que mudem. Nunca modifique campos que não foram mencionados no ditado. Estruture lesões com: tipo, localização, medidas (ex: 2.0 x 3.0 cm), profundidade (superficial/intermediária/profunda). Use terminologia médica formal. Retorne: [{ acao: 'update'|'add'|'remove', caminho: 'campo.subcampo', valor: ... }]"
+
+Implemente tudo isso e teste com este ditado de exemplo:
+"Útero de forma típica, contornos regulares, miométrio homogêneo, biometria 3.2 por 4.5 por 7.6 centímetros. Ovário direito com endometrioma típico medindo 6 centímetros. Ovário esquerdo normal. Ligamento redondo direito com lesão endomtriósica medindo 2 pontos 0 por 3 pontos 0 centímetros, superficial. Bolsa ovariana direita com achados compatíveis. Conclusão: achados sugestivos de endometriose superficial e intermediária."

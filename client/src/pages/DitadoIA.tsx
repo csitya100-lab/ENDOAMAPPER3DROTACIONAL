@@ -3,33 +3,161 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff } from 'lucide-react';
 
 interface LaudoData {
-  paciente: { nome: string; idade: number; cpf: string };
-  exame: { data: string; tipo: string; ecografista: string; equipamento: string };
-  utero: { tamanho: string; forma: string; ecotextura: string; adenomiose: string };
-  ovario_direito: { tamanho: string; lesoes: any[] };
-  ovario_esquerdo: { tamanho: string; lesoes: any[] };
+  cabecalho: {
+    nome_medico: string;
+    data: string;
+    tipo_exame: string;
+  };
+  equipamento: {
+    nome: string;
+    vias: string;
+    tecnicas: string;
+  };
+  estruturas: {
+    uretra: { descricao: string };
+    bexiga: { descricao: string };
+    vagina: { descricao: string };
+  };
+  utero: {
+    forma: string;
+    contornos: string;
+    paredes: string;
+    miometrio: string;
+    biometria: string;
+    eco_endometrial: string;
+    linha_media: string;
+    juncao_endometrio_miometrio: string;
+    padrao: string;
+    espessura_endometrial: string;
+  };
+  ovario_direito: {
+    localizacao: string;
+    forma: string;
+    limites: string;
+    parenchima: string;
+    biometria: string;
+    lesoes: any[];
+  };
+  ovario_esquerdo: {
+    localizacao: string;
+    forma: string;
+    limites: string;
+    parenchima: string;
+    biometria: string;
+    lesoes: any[];
+  };
   compartimentos: {
-    ligamento_redondo_d: { achados: string };
-    ligamento_redondo_e: { achados: string };
-    bolsa_ovariana_d: { achados: string };
-    bolsa_ovariana_e: { achados: string };
+    anterior: {
+      parede_vesical: string;
+      espaco_vesico_uterino: string;
+      sinal_deslizamento_anterior: string;
+      achados_endometriose: string;
+    };
+    medial: {
+      superficie_uterina: string;
+      ligamentos_redondos: string;
+      tubas_uterinas: string;
+      ovarios: string;
+      achados_endometriose: string;
+    };
+    posterior: {
+      septo_retovaginal: string;
+      frnice_vaginal: string;
+      retossigmoide: string;
+      ligamentos_utero_sacros: string;
+      regiao_retro_cervical: string;
+      sinal_deslizamento_posterior: string;
+      achados_endometriose: string;
+    };
+  };
+  rins_ureteres: {
+    rins: string;
+    ureteres_terminais: string;
+  };
+  parede_abdominal: {
+    regiao_umbilical: string;
+    parede_abdominal: string;
   };
   conclusao: string;
 }
 
 const LAUDO_INICIAL: LaudoData = {
-  paciente: { nome: 'Paciente A', idade: 0, cpf: '' },
-  exame: { data: '27/12/2025', tipo: 'Ultrassom - Endometriose', ecografista: '', equipamento: '' },
-  utero: { tamanho: 'Normal', forma: 'Anecoico', ecotextura: 'Normal', adenomiose: 'Não detectada' },
-  ovario_direito: { tamanho: 'Não informado', lesoes: [] },
-  ovario_esquerdo: { tamanho: 'Não informado', lesoes: [] },
-  compartimentos: {
-    ligamento_redondo_d: { achados: 'Lesão endometriósica medindo 2.0 x 3.0 cm' },
-    ligamento_redondo_e: { achados: 'Sem achados' },
-    bolsa_ovariana_d: { achados: 'Sem achados' },
-    bolsa_ovariana_e: { achados: 'Sem achados' },
+  cabecalho: {
+    nome_medico: 'Dra.',
+    data: '27/12/2025',
+    tipo_exame: 'ULTRASSONOGRAFIA PARA PESQUISA DE ENDOMETRIOSE COM PREPARO INTESTINAL',
   },
-  conclusao: 'A análise está em progresso...',
+  equipamento: {
+    nome: 'GE Voluson E10',
+    vias: 'Abdominal e Transvaginal',
+    tecnicas: 'V.C.I. e 3D HDLIVESTUDIO',
+  },
+  estruturas: {
+    uretra: { descricao: 'Retilínea, sem coleções ou cistos peri-uretrais' },
+    bexiga: { descricao: 'Parcialmente cheia, paredes lisas, sem cálculos ou nódulos' },
+    vagina: { descricao: 'Com características ecográficas normais' },
+  },
+  utero: {
+    forma: 'Típica',
+    contornos: 'Regulares',
+    paredes: 'Simétricas',
+    miometrio: 'Textura homogênea',
+    biometria: '3.2 x 4.5 x 7.6 cm, volume 59.3 cm³',
+    eco_endometrial: 'Homogêneo',
+    linha_media: 'Linear',
+    juncao_endometrio_miometrio: 'Regular',
+    padrao: 'Basal',
+    espessura_endometrial: '2.7 mm',
+  },
+  ovario_direito: {
+    localizacao: 'Região paratuterina, móvel',
+    forma: 'Típica',
+    limites: 'Definidos',
+    parenchima: 'Ecogenicidade habitual',
+    biometria: '3.1 x 1.7 x 1.9 cm, volume 3.4 cm³',
+    lesoes: [],
+  },
+  ovario_esquerdo: {
+    localizacao: 'Região paratuterina, móvel',
+    forma: 'Típica',
+    limites: 'Definidos',
+    parenchima: 'Ecogenicidade habitual',
+    biometria: '2.7 x 1.5 x 1.4 cm, volume 3.2 cm³',
+    lesoes: [],
+  },
+  compartimentos: {
+    anterior: {
+      parede_vesical: 'Sem nodularidades',
+      espaco_vesico_uterino: 'Livre',
+      sinal_deslizamento_anterior: 'Positivo',
+      achados_endometriose: 'Não',
+    },
+    medial: {
+      superficie_uterina: 'Normal',
+      ligamentos_redondos: 'Sem sinais de endometriose',
+      tubas_uterinas: 'Normais',
+      ovarios: 'Sem sinais de endometriose',
+      achados_endometriose: 'Não',
+    },
+    posterior: {
+      septo_retovaginal: 'Sem sinais de endometriose profunda',
+      frnice_vaginal: 'Normal',
+      retossigmoide: 'Normal',
+      ligamentos_utero_sacros: 'Sem achados',
+      regiao_retro_cervical: 'Normal',
+      sinal_deslizamento_posterior: 'Positivo',
+      achados_endometriose: 'Não',
+    },
+  },
+  rins_ureteres: {
+    rins: 'Aspecto ecográfico normal, sem sinais de hidronefrose',
+    ureteres_terminais: 'Identificados, sem retrações ou alterações luminais',
+  },
+  parede_abdominal: {
+    regiao_umbilical: 'Sem alterações',
+    parede_abdominal: 'Sem alterações',
+  },
+  conclusao: 'Avaliação ecográfica sem sinais de endometriose profunda.',
 };
 
 export default function DitadoIA() {
@@ -136,43 +264,80 @@ export default function DitadoIA() {
 
   const formatarLaudo = () => {
     return `
-RELATÓRIO DE ULTRASSOM - ENDOMETRIOSE
+[CABEÇALHO]
+Data: ${laudo.cabecalho.data}
+Tipo: ${laudo.cabecalho.tipo_exame}
+Equipamento: ${laudo.equipamento.nome}
+Vias: ${laudo.equipamento.vias}
+Técnicas: ${laudo.equipamento.tecnicas}
 
-PACIENTE:
-Nome: ${laudo.paciente.nome}
-Idade: ${laudo.paciente.idade || '-'}
-CPF: ${laudo.paciente.cpf || '-'}
+[ESTRUTURAS]
+  URETRA: ${laudo.estruturas.uretra.descricao}
+  BEXIGA: ${laudo.estruturas.bexiga.descricao}
+  VAGINA: ${laudo.estruturas.vagina.descricao}
 
-EXAME:
-Data: ${laudo.exame.data}
-Tipo: ${laudo.exame.tipo}
-Ecografista: ${laudo.exame.ecografista || '-'}
-Equipamento: ${laudo.exame.equipamento || '-'}
+[ÚTERO]
+  • Forma: ${laudo.utero.forma}
+  • Contornos: ${laudo.utero.contornos}
+  • Paredes: ${laudo.utero.paredes}
+  • Miométrio: ${laudo.utero.miometrio}
+  • Biometria: ${laudo.utero.biometria}
+  • Eco Endometrial: ${laudo.utero.eco_endometrial}
+  • Linha Média: ${laudo.utero.linha_media}
+  • Junção Endométrio-Miométrio: ${laudo.utero.juncao_endometrio_miometrio}
+  • Padrão: ${laudo.utero.padrao}
+  • Espessura Endometrial: ${laudo.utero.espessura_endometrial}
 
-ACHADOS:
+[OVÁRIO DIREITO]
+  • Localização: ${laudo.ovario_direito.localizacao}
+  • Forma: ${laudo.ovario_direito.forma}
+  • Limites: ${laudo.ovario_direito.limites}
+  • Parênquima: ${laudo.ovario_direito.parenchima}
+  • Biometria: ${laudo.ovario_direito.biometria}
+  • Lesões: ${laudo.ovario_direito.lesoes.length > 0 ? laudo.ovario_direito.lesoes.join(', ') : 'Nenhuma detectada'}
 
-ÚTERO:
-• Tamanho: ${laudo.utero.tamanho || 'Não informado'}
-• Forma: ${laudo.utero.forma || 'Não informado'}
-• Ecotextura: ${laudo.utero.ecotextura || 'Não informado'}
-• Adenomiose: ${laudo.utero.adenomiose || 'Não detectada'}
+[OVÁRIO ESQUERDO]
+  • Localização: ${laudo.ovario_esquerdo.localizacao}
+  • Forma: ${laudo.ovario_esquerdo.forma}
+  • Limites: ${laudo.ovario_esquerdo.limites}
+  • Parênquima: ${laudo.ovario_esquerdo.parenchima}
+  • Biometria: ${laudo.ovario_esquerdo.biometria}
+  • Lesões: ${laudo.ovario_esquerdo.lesoes.length > 0 ? laudo.ovario_esquerdo.lesoes.join(', ') : 'Nenhuma detectada'}
 
-OVÁRIO DIREITO:
-• Tamanho: ${laudo.ovario_direito.tamanho || 'Não informado'}
-• Lesões: ${laudo.ovario_direito.lesoes.length > 0 ? laudo.ovario_direito.lesoes.join(', ') : 'Nenhuma lesão detectada'}
+[COMPARTIMENTOS]
 
-OVÁRIO ESQUERDO:
-• Tamanho: ${laudo.ovario_esquerdo.tamanho || 'Não informado'}
-• Lesões: ${laudo.ovario_esquerdo.lesoes.length > 0 ? laudo.ovario_esquerdo.lesoes.join(', ') : 'Nenhuma lesão detectada'}
+ANTERIOR:
+  • Parede Vesical: ${laudo.compartimentos.anterior.parede_vesical}
+  • Espaço Vésico-Uterino: ${laudo.compartimentos.anterior.espaco_vesico_uterino}
+  • Sinal de Deslizamento Anterior: ${laudo.compartimentos.anterior.sinal_deslizamento_anterior}
+  • Endometriose: ${laudo.compartimentos.anterior.achados_endometriose}
 
-COMPARTIMENTOS:
-• Ligamento Redondo D: ${laudo.compartimentos.ligamento_redondo_d.achados || 'Sem achados'}
-• Ligamento Redondo E: ${laudo.compartimentos.ligamento_redondo_e.achados || 'Sem achados'}
-• Bolsa Ovariana D: ${laudo.compartimentos.bolsa_ovariana_d.achados || 'Sem achados'}
-• Bolsa Ovariana E: ${laudo.compartimentos.bolsa_ovariana_e.achados || 'Sem achados'}
+MEDIAL:
+  • Superfície Uterina: ${laudo.compartimentos.medial.superficie_uterina}
+  • Ligamentos Redondos: ${laudo.compartimentos.medial.ligamentos_redondos}
+  • Tubas Uterinas: ${laudo.compartimentos.medial.tubas_uterinas}
+  • Ovários: ${laudo.compartimentos.medial.ovarios}
+  • Endometriose: ${laudo.compartimentos.medial.achados_endometriose}
 
-CONCLUSÃO:
-${laudo.conclusao || 'A análise está em progresso...'}
+POSTERIOR:
+  • Septo Retovaginal: ${laudo.compartimentos.posterior.septo_retovaginal}
+  • Fírnix Vaginal: ${laudo.compartimentos.posterior.frnice_vaginal}
+  • Retossigmoide: ${laudo.compartimentos.posterior.retossigmoide}
+  • Ligamentos Útero-Sacros: ${laudo.compartimentos.posterior.ligamentos_utero_sacros}
+  • Região Retro-Cervical: ${laudo.compartimentos.posterior.regiao_retro_cervical}
+  • Sinal de Deslizamento Posterior: ${laudo.compartimentos.posterior.sinal_deslizamento_posterior}
+  • Endometriose: ${laudo.compartimentos.posterior.achados_endometriose}
+
+[RINS E URETERES]
+  • Rins: ${laudo.rins_ureteres.rins}
+  • Ureteres Terminais: ${laudo.rins_ureteres.ureteres_terminais}
+
+[PAREDE ABDOMINAL]
+  • Região Umbilical: ${laudo.parede_abdominal.regiao_umbilical}
+  • Parede Abdominal: ${laudo.parede_abdominal.parede_abdominal}
+
+[CONCLUSÃO]
+${laudo.conclusao}
     `.trim();
   };
 
@@ -197,9 +362,9 @@ ${laudo.conclusao || 'A análise está em progresso...'}
 
         <div className="flex items-center gap-4 pr-4 border-r border-slate-200">
           <div className="text-right">
-            <p className="text-sm font-semibold text-slate-900">{laudo.paciente.nome}</p>
-            <p className="text-xs text-slate-600">Exame de Endometriose</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">{laudo.exame.data}</p>
+            <p className="text-sm font-semibold text-slate-900">Exame</p>
+            <p className="text-xs text-slate-600">Endometriose</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">{laudo.cabecalho.data}</p>
           </div>
         </div>
       </header>
@@ -274,9 +439,9 @@ ${laudo.conclusao || 'A análise está em progresso...'}
               <Check className="w-5 h-5 text-green-600" />
               Laudo Atualizado
             </h2>
-            <pre className="text-xs text-slate-700 font-mono whitespace-pre-wrap break-words leading-relaxed max-h-96 overflow-y-auto">
+            <div className="bg-slate-50 rounded-lg p-6 text-sm text-slate-800 font-mono whitespace-pre-wrap break-words leading-relaxed max-h-96 overflow-y-auto">
               {formatarLaudo()}
-            </pre>
+            </div>
           </div>
 
           {/* Ações */}

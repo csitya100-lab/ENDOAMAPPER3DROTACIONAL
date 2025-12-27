@@ -204,14 +204,23 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
 
         model.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-                // Preserve original material but ensure it reacts to light
-                if ((child as THREE.Mesh).material) {
-                   const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
-                   mat.roughness = 0.4;
-                   mat.metalness = 0.1;
-                   mat.side = THREE.DoubleSide; // Ensure we see inside/outside
+                const mesh = child as THREE.Mesh;
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+
+                if (mesh.material) {
+                   const mat = mesh.material as THREE.MeshStandardMaterial;
+                   
+                   // Check for yellow color (high red/green, low blue) to hide it
+                   // Using a safe threshold for "yellowish" colors
+                   if (mat.color && mat.color.r > 0.5 && mat.color.g > 0.5 && mat.color.b < 0.4) {
+                       mesh.visible = false;
+                   } else {
+                       // Only apply material overrides to non-yellow (remaining) parts
+                       mat.roughness = 0.4;
+                       mat.metalness = 0.1;
+                       mat.side = THREE.DoubleSide;
+                   }
                 }
             }
         });

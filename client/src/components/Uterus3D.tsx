@@ -353,30 +353,18 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
 
       raycaster.setFromCamera(mouse, view.camera);
 
-      if (view.viewType === 'orthographic') {
-        // For orthographic views, use the raycaster direction with a point on the camera plane
-        const direction = raycaster.ray.direction;
-        
-        // Create a plane at Z=0 for Sagittal, Y=0 for Coronal, Z=0 for Posterior
-        let plane: THREE.Plane;
-        if (viewIdx === 1) { // Sagittal (X=10, looking at YZ plane)
-          plane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
-        } else if (viewIdx === 2) { // Coronal (Z=10, looking at XY plane)
-          plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-        } else { // Posterior (Z=-10, looking at XY plane)
-          plane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
-        }
-
-        const intersection = new THREE.Vector3();
-        raycaster.ray.intersectPlane(plane, intersection);
-        return intersection;
-      } else {
-        // For perspective view, cast a ray and hit the anatomy
-        const intersects = raycaster.intersectObjects(anatomyGroup.children, true);
-        if (intersects.length > 0) {
-          return intersects[0].point;
-        }
+      // Use actual model intersection for ALL views to ensure correct depth
+      // This solves the issue of posterior clicks mapping to anterior surfaces
+      // because the ray originates from the specific camera position (e.g., behind the model)
+      const intersects = raycaster.intersectObjects(anatomyGroup.children, true);
+      
+      if (intersects.length > 0) {
+        // Return the first hit point (closest to camera)
+        // For posterior view, this will be the back surface
+        // For anterior view, this will be the front surface
+        return intersects[0].point;
       }
+      
       return null;
     }
 

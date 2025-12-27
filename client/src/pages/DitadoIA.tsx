@@ -328,6 +328,8 @@ export default function DitadoIA() {
   const [modalPrivacidade, setModalPrivacidade] = useState(false);
   const [microfoneAtivo, setMicrofoneAtivo] = useState(false);
   const [infoNavegador, setInfoNavegador] = useState<{ navegador: string; suporte: SuporteBrowser; mensagem: string } | null>(null);
+  const [sugestoesIA, setSugestoesIA] = useState<any[]>([]);
+  const [sugestoesAprovadas, setSugestoesAprovadas] = useState<{ [key: number]: boolean }>({});
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const ondaRef = useRef<NodeJS.Timeout | null>(null);
@@ -471,6 +473,8 @@ export default function DitadoIA() {
 
       const data = await response.json();
       setLaudo(data.laudoAtualizado);
+      setSugestoesIA(data.sugestoes_ia || []);
+      setSugestoesAprovadas({});
       setSucesso(true);
 
       setTimeout(() => setSucesso(false), 3000);
@@ -859,6 +863,70 @@ ${laudo.conclusao}
               {formatarLaudo()}
             </div>
           </div>
+
+          {/* Sugestões da IA Card */}
+          {sugestoesIA.length > 0 && (
+            <div className="bg-amber-50 rounded-lg shadow-sm border border-amber-200 p-6 mb-6">
+              <h2 className="text-lg font-semibold text-amber-900 mb-4 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+                💡 Sugestões da IA (Consulta Opcional)
+              </h2>
+              <div className="space-y-4">
+                {sugestoesIA.map((sugestao, idx) => (
+                  <div key={idx} className="bg-white rounded-lg p-4 border border-amber-200">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-amber-900 text-sm">{sugestao.titulo}</h3>
+                        <p className="text-xs text-amber-800 mt-1">{sugestao.descricao}</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={sugestoesAprovadas[idx] || false}
+                        onChange={(e) => setSugestoesAprovadas({ ...sugestoesAprovadas, [idx]: e.target.checked })}
+                        className="w-4 h-4 mt-1 accent-amber-600"
+                        data-testid={`checkbox-sugestao-${idx}`}
+                      />
+                    </div>
+                    {sugestao.valor_sugerido && (
+                      <div className="bg-amber-50 rounded p-2 text-xs text-amber-800 mb-2 font-mono">
+                        {sugestao.valor_sugerido}
+                      </div>
+                    )}
+                    <p className="text-xs text-slate-600 italic">
+                      ⚠️ Sugestão não aplicada automaticamente - você decide
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  onClick={() => {
+                    const aprovadas = Object.entries(sugestoesAprovadas)
+                      .filter(([_, aprovado]) => aprovado)
+                      .map(([idx]) => sugestoesIA[parseInt(idx)]);
+                    if (aprovadas.length > 0) {
+                      setSucesso(true);
+                      setTimeout(() => setSucesso(false), 2000);
+                    }
+                  }}
+                  className="flex-1 h-9 bg-amber-600 text-white hover:bg-amber-700 text-sm"
+                  data-testid="button-aplicar-sugestoes"
+                >
+                  <Check className="w-3 h-3 mr-1" />
+                  Aplicar Selecionadas
+                </Button>
+                <Button
+                  onClick={() => setSugestoesIA([])}
+                  variant="outline"
+                  className="flex-1 h-9 border-amber-300 text-amber-700 hover:bg-amber-50 text-sm"
+                  data-testid="button-descartar-sugestoes"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Descartar
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Ações */}
           <div className="flex gap-2">

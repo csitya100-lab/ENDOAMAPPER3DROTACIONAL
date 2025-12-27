@@ -126,35 +126,35 @@ export default function ExamReport() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-950 overflow-hidden">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
       {/* Header */}
-      <header className="flex-none bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-b border-white/10 px-6 py-4 flex items-center justify-between z-20">
+      <header className="flex-none bg-white border-b border-slate-200 shadow-sm px-6 py-4 flex items-center justify-between z-20">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => window.location.href = '/'}
-            className="h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
+            className="h-9 w-9 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-white">Relatório do Exame</h1>
-            <p className="text-xs text-white/50 mt-0.5">Mapeamento 3D/2D de Endometriose</p>
+            <h1 className="text-2xl font-bold text-slate-900">Relatório do Exame</h1>
+            <p className="text-xs text-slate-600 mt-0.5">Mapeamento 3D/2D de Endometriose</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Layout Controls */}
-          <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-lg border border-white/10">
+          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
             {(['1x1', '2x2', '3x2', 'Auto'] as LayoutType[]).map(layoutOption => (
               <button
                 key={layoutOption}
                 onClick={() => setLayout(layoutOption)}
                 className={`px-3 py-1.5 text-xs font-medium rounded transition-all whitespace-nowrap ${
                   layout === layoutOption
-                    ? 'bg-pink-500/30 text-pink-300 border border-pink-500/50'
-                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                    ? 'bg-gradient-to-r from-pink-100 to-rose-100 text-rose-700 border border-rose-300'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white'
                 }`}
               >
                 {layoutOption}
@@ -163,24 +163,27 @@ export default function ExamReport() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 border-l border-white/10 pl-3">
+          <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
             <Button
               size="sm"
-              className="h-9 gap-2 bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30"
+              className="h-9 gap-2 bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200"
+              variant="outline"
             >
               <FileText className="w-4 h-4" />
               Gerar Relatório
             </Button>
             <Button
               size="sm"
-              className="h-9 gap-2 bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600/30"
+              className="h-9 gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200"
+              variant="outline"
             >
               <FileDown className="w-4 h-4" />
               Exportar PDF
             </Button>
             <Button
               size="sm"
-              className="h-9 gap-2 bg-green-600/20 text-green-300 border border-green-500/30 hover:bg-green-600/30"
+              className="h-9 gap-2 bg-green-50 text-green-600 hover:bg-green-100 border border-green-200"
+              variant="outline"
             >
               <Printer className="w-4 h-4" />
               Imprimir
@@ -192,15 +195,15 @@ export default function ExamReport() {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden gap-4 p-4">
         {/* Sidebar - Vistas Disponíveis */}
-        <aside className="w-64 bg-white/5 border border-white/10 rounded-lg p-4 overflow-y-auto flex flex-col">
+        <aside className="w-64 bg-white border border-slate-200 rounded-lg shadow-sm p-4 overflow-y-auto flex flex-col">
           <div className="mb-4">
-            <h2 className="text-sm font-bold text-white mb-4 tracking-wide">VISTAS DISPONÍVEIS</h2>
+            <h2 className="text-sm font-bold text-slate-900 mb-4 tracking-wide">VISTAS DISPONÍVEIS</h2>
             
             <div className="space-y-2">
               {views.map(view => (
                 <div 
                   key={view.id} 
-                  className="flex items-center gap-3 p-2.5 rounded hover:bg-white/10 transition-colors cursor-pointer group"
+                  className="flex items-center gap-3 p-2.5 rounded hover:bg-slate-100 transition-colors cursor-pointer group"
                 >
                   <Checkbox
                     checked={view.enabled}
@@ -208,7 +211,7 @@ export default function ExamReport() {
                     className="cursor-pointer"
                     data-testid={`checkbox-view-${view.id}`}
                   />
-                  <label className="text-sm text-white/80 cursor-pointer flex-1 font-medium">
+                  <label className="text-sm text-slate-700 cursor-pointer flex-1 font-medium">
                     {view.name}
                   </label>
                 </div>
@@ -216,25 +219,26 @@ export default function ExamReport() {
             </div>
           </div>
 
-          <div className="border-t border-white/10 pt-3 mt-3">
+          <div className="border-t border-slate-200 pt-3 mt-3">
             <Button
               size="sm"
               onClick={toggleAllViews}
-              className="w-full text-xs h-8 bg-white/10 text-white/80 hover:bg-white/20 border border-white/20"
+              className="w-full text-xs h-8 bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+              variant="outline"
             >
               {views.every(v => v.enabled) ? 'Desselecionar Todas' : 'Selecionar Todas'}
             </Button>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-white/10">
-            <p className="text-[10px] text-white/50 font-mono">
+          <div className="mt-3 pt-3 border-t border-slate-200">
+            <p className="text-[10px] text-slate-500 font-mono">
               {enabledViews.length} vista{enabledViews.length !== 1 ? 's' : ''} selecionada{enabledViews.length !== 1 ? 's' : ''}
             </p>
           </div>
 
           {/* Lesions Summary */}
-          <div className="mt-6 pt-4 border-t border-white/10">
-            <h3 className="text-xs font-bold text-white mb-3 tracking-wide">LESÕES ENCONTRADAS</h3>
+          <div className="mt-6 pt-4 border-t border-slate-200">
+            <h3 className="text-xs font-bold text-slate-900 mb-3 tracking-wide">LESÕES ENCONTRADAS</h3>
             <div className="space-y-2">
               {MOCK_LESIONS.map(lesion => (
                 <div key={lesion.id} className={`text-xs p-2 rounded border ${lesion.color}`}>
@@ -248,7 +252,7 @@ export default function ExamReport() {
         </aside>
 
         {/* Main Preview Area */}
-        <main className="flex-1 overflow-auto flex items-start justify-center bg-gradient-to-b from-slate-900/30 to-slate-900/10 rounded-lg">
+        <main className="flex-1 overflow-auto flex items-start justify-center bg-gradient-to-b from-slate-100 to-slate-50 rounded-lg">
           <div
             className="bg-white shadow-2xl mt-4 mb-4"
             style={{

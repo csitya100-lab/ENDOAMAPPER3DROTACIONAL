@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff } from 'lucide-react';
 
 interface LaudoData {
   paciente: { nome: string; idade: number; cpf: string };
@@ -38,6 +38,56 @@ export default function DitadoIA() {
   const [loading, setLoading] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gravando, setGravando] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'pt-BR';
+
+      recognitionRef.current.onresult = (event: any) => {
+        let textoInterino = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcricao = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            setTextoDitado((prev) => prev + (prev ? ' ' : '') + transcricao);
+          } else {
+            textoInterino += transcricao;
+          }
+        }
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        setError(`Erro de reconhecimento: ${event.error}`);
+        setGravando(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setGravando(false);
+      };
+    }
+  }, []);
+
+  const iniciarGravacao = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.start();
+      setGravando(true);
+      setError(null);
+    } else {
+      setError('Reconhecimento de voz não disponível neste navegador');
+    }
+  };
+
+  const pararGravacao = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setGravando(false);
+    }
+  };
 
   const handleAnalisarDitado = async () => {
     if (!textoDitado.trim()) {
@@ -162,12 +212,27 @@ ${laudo.conclusao || 'A análise está em progresso...'}
             <label className="block text-sm font-semibold text-slate-900 mb-2">
               Transcrição do Ditado
             </label>
-            <textarea
-              value={textoDitado}
-              onChange={(e) => setTextoDitado(e.target.value)}
-              placeholder="Cole aqui o texto do ditado reconhecido…"
-              className="w-full h-32 p-4 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none text-slate-900 placeholder-slate-400"
-            />
+            <div className="flex gap-2 mb-2">
+              <textarea
+                value={textoDitado}
+                onChange={(e) => setTextoDitado(e.target.value)}
+                placeholder="Cole aqui o texto do ditado reconhecido…"
+                className="flex-1 h-32 p-4 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none text-slate-900 placeholder-slate-400"
+              />
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={gravando ? pararGravacao : iniciarGravacao}
+                  className={`h-14 w-14 rounded-lg flex items-center justify-center transition-all ${
+                    gravando
+                      ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg animate-pulse'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                  }`}
+                  title={gravando ? 'Parar gravação' : 'Iniciar gravação de voz'}
+                >
+                  {gravando ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                </Button>
+              </div>
+            </div>
 
             <Button
               onClick={handleAnalisarDitado}

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff } from 'lucide-react';
+import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff, Eye, Printer, X } from 'lucide-react';
 
 interface LaudoData {
   cabecalho: {
@@ -171,7 +171,18 @@ export default function DitadoIA() {
   const [sucesso, setSucesso] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [gravando, setGravando] = useState(false);
+  const [modalVisualizacao, setModalVisualizacao] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handleImprimir = () => {
+    window.print();
+  };
+
+  const formatarLesao = (lesao: any): string => {
+    if (typeof lesao === 'string') return lesao;
+    return `${lesao.tipo || ''} ${lesao.tamanho || ''} ${lesao.localizacao || ''}`.trim();
+  };
 
   useEffect(() => {
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
@@ -467,6 +478,357 @@ ${laudo.conclusao}
               <Download className="w-4 h-4" />
               Salvar Laudo
             </Button>
+          </div>
+
+          {/* Botões de Impressão */}
+          <div className="flex gap-2 mt-4">
+            <Button
+              onClick={() => setModalVisualizacao(true)}
+              variant="outline"
+              className="flex-1 h-10 gap-2 bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200"
+              data-testid="button-visualizar-impressao"
+            >
+              <Eye className="w-4 h-4" />
+              Visualizar Impressão
+            </Button>
+            <Button
+              onClick={handleImprimir}
+              className="flex-1 h-10 gap-2 bg-green-600 text-white hover:bg-green-700"
+              data-testid="button-imprimir-laudo"
+            >
+              <Printer className="w-4 h-4" />
+              Imprimir Laudo
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de Visualização Prévia */}
+      {modalVisualizacao && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 print:hidden">
+          <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900">Visualização Prévia - Laudo A4</h3>
+              <Button
+                onClick={() => setModalVisualizacao(false)}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto p-6 bg-slate-100">
+              <div
+                ref={printRef}
+                className="bg-white shadow-lg mx-auto print-area"
+                style={{
+                  width: '210mm',
+                  minHeight: '297mm',
+                  padding: '20mm',
+                  fontFamily: 'Arial, Segoe UI, sans-serif',
+                  fontSize: '11px',
+                  lineHeight: '1.5',
+                  color: '#333',
+                }}
+              >
+                {/* Cabeçalho */}
+                <div className="text-center border-b-2 border-blue-800 pb-4 mb-6">
+                  <h1 className="text-xl font-bold text-blue-800 mb-1">ENDOACOLHE - MAPEAMENTO 3D/2D</h1>
+                  <p className="text-sm font-semibold text-slate-700">{laudo.cabecalho.tipo_exame}</p>
+                </div>
+
+                {/* Dados do Paciente e Exame */}
+                <div className="border border-slate-300 rounded p-4 mb-6 bg-slate-50">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <p><strong>Paciente:</strong> Paciente A</p>
+                    <p><strong>Data:</strong> {laudo.cabecalho.data}</p>
+                    <p><strong>CPF:</strong> _______________</p>
+                    <p><strong>Idade:</strong> ______</p>
+                    <p><strong>Médico:</strong> {laudo.cabecalho.nome_medico}</p>
+                    <p><strong>CRM:</strong> ____________</p>
+                    <p><strong>Equipamento:</strong> {laudo.equipamento.nome}</p>
+                    <p><strong>Técnicas:</strong> {laudo.equipamento.tecnicas}</p>
+                  </div>
+                </div>
+
+                {/* Estruturas */}
+                <div className="mb-4">
+                  <h2 className="text-sm font-bold text-blue-800 uppercase border-b-2 border-blue-800 pb-1 mb-2">ESTRUTURAS</h2>
+                  <p className="text-xs mb-1"><strong>URETRA:</strong> {laudo.estruturas.uretra.descricao}</p>
+                  <p className="text-xs mb-1"><strong>BEXIGA:</strong> {laudo.estruturas.bexiga.descricao}</p>
+                  <p className="text-xs mb-1"><strong>VAGINA:</strong> {laudo.estruturas.vagina.descricao}</p>
+                </div>
+
+                {/* Útero */}
+                <div className="mb-4">
+                  <h2 className="text-sm font-bold text-blue-800 uppercase border-b-2 border-blue-800 pb-1 mb-2">ÚTERO</h2>
+                  <div className="text-xs space-y-1">
+                    <p><strong>Posição:</strong> {laudo.utero.posicao}</p>
+                    <p><strong>Forma:</strong> {laudo.utero.forma} | <strong>Contornos:</strong> {laudo.utero.contornos}</p>
+                    <p><strong>Paredes:</strong> {laudo.utero.paredes} | <strong>Miométrio:</strong> {laudo.utero.miometrio}</p>
+                    <p><strong>Biometria:</strong> {laudo.utero.biometria}</p>
+                    <p><strong>Eco endometrial:</strong> {laudo.utero.eco_endometrial}, linha média {laudo.utero.linha_media}</p>
+                    <p><strong>Junção endométrio-miométrio:</strong> {laudo.utero.juncao_endometrio_miometrio}</p>
+                    <p><strong>Padrão:</strong> {laudo.utero.padrao}</p>
+                    <p><strong>Espessura endometrial:</strong> {laudo.utero.espessura_endometrial}</p>
+                    <p><strong>Miomas:</strong> {laudo.utero.miomas && laudo.utero.miomas.length > 0 ? laudo.utero.miomas.map(formatarLesao).join(', ') : 'Nenhum detectado'}</p>
+                  </div>
+                </div>
+
+                {/* Ovários */}
+                <div className="mb-4">
+                  <h2 className="text-sm font-bold text-blue-800 uppercase border-b-2 border-blue-800 pb-1 mb-2">OVÁRIOS</h2>
+                  <div className="text-xs space-y-2">
+                    <div>
+                      <p className="font-semibold">OVÁRIO DIREITO:</p>
+                      <p className="ml-3">Localização: {laudo.ovario_direito.localizacao}</p>
+                      <p className="ml-3">Forma: {laudo.ovario_direito.forma} | Limites: {laudo.ovario_direito.limites}</p>
+                      <p className="ml-3">Parênquima: {laudo.ovario_direito.parenchima}</p>
+                      <p className="ml-3">Biometria: {laudo.ovario_direito.biometria}</p>
+                      <p className="ml-3">Lesões: {laudo.ovario_direito.lesoes && laudo.ovario_direito.lesoes.length > 0 ? laudo.ovario_direito.lesoes.map(formatarLesao).join(', ') : 'Nenhuma detectada'}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold">OVÁRIO ESQUERDO:</p>
+                      <p className="ml-3">Localização: {laudo.ovario_esquerdo.localizacao}</p>
+                      <p className="ml-3">Forma: {laudo.ovario_esquerdo.forma} | Limites: {laudo.ovario_esquerdo.limites}</p>
+                      <p className="ml-3">Parênquima: {laudo.ovario_esquerdo.parenchima}</p>
+                      <p className="ml-3">Biometria: {laudo.ovario_esquerdo.biometria}</p>
+                      <p className="ml-3">Lesões: {laudo.ovario_esquerdo.lesoes && laudo.ovario_esquerdo.lesoes.length > 0 ? laudo.ovario_esquerdo.lesoes.map(formatarLesao).join(', ') : 'Nenhuma detectada'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compartimentos */}
+                <div className="mb-4">
+                  <h2 className="text-sm font-bold text-blue-800 uppercase border-b-2 border-blue-800 pb-1 mb-2">COMPARTIMENTOS PÉLVICOS</h2>
+                  <div className="text-xs space-y-2">
+                    <div>
+                      <p className="font-semibold">ANTERIOR:</p>
+                      <p className="ml-3">Parede vesical: {laudo.compartimentos.anterior.parede_vesical}</p>
+                      <p className="ml-3">Espaço vésico-uterino: {laudo.compartimentos.anterior.espaco_vesico_uterino}</p>
+                      <p className="ml-3">Sinal de deslizamento anterior: {laudo.compartimentos.anterior.sinal_deslizamento_anterior}</p>
+                      <p className="ml-3">Endometriose: {laudo.compartimentos.anterior.achados_endometriose === 'Sim' ? 'Detectada' : 'Não detectada'}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold">MEDIAL:</p>
+                      <p className="ml-3">Superfície uterina: {laudo.compartimentos.medial.superficie_uterina}</p>
+                      <p className="ml-3">Ligamentos redondos: {laudo.compartimentos.medial.ligamentos_redondos}</p>
+                      <p className="ml-3">Tubas uterinas: {laudo.compartimentos.medial.tubas_uterinas}</p>
+                      <p className="ml-3">Ovários: {laudo.compartimentos.medial.ovarios}</p>
+                      <p className="ml-3">Endometriose: {laudo.compartimentos.medial.achados_endometriose === 'Sim' ? 'Detectada' : 'Não detectada'}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold">POSTERIOR:</p>
+                      <p className="ml-3">Septo retovaginal: {laudo.compartimentos.posterior.septo_retovaginal}</p>
+                      <p className="ml-3">Fórnix vaginal: {laudo.compartimentos.posterior.frnice_vaginal}</p>
+                      <p className="ml-3">Retossigmoide: {laudo.compartimentos.posterior.retossigmoide}</p>
+                      <p className="ml-3">Ligamentos útero-sacros: {laudo.compartimentos.posterior.ligamentos_utero_sacros}</p>
+                      <p className="ml-3">Região retro-cervical: {laudo.compartimentos.posterior.regiao_retro_cervical}</p>
+                      <p className="ml-3">Sinal de deslizamento posterior: {laudo.compartimentos.posterior.sinal_deslizamento_posterior}</p>
+                      <p className="ml-3">Endometriose: {laudo.compartimentos.posterior.achados_endometriose === 'Sim' ? 'Detectada' : 'Não detectada'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rins e Ureteres */}
+                <div className="mb-4">
+                  <h2 className="text-sm font-bold text-blue-800 uppercase border-b-2 border-blue-800 pb-1 mb-2">RINS E URETERES</h2>
+                  <p className="text-xs mb-1"><strong>Rins:</strong> {laudo.rins_ureteres.rins}</p>
+                  <p className="text-xs mb-1"><strong>Ureteres terminais:</strong> {laudo.rins_ureteres.ureteres_terminais}</p>
+                </div>
+
+                {/* Parede Abdominal */}
+                <div className="mb-4">
+                  <h2 className="text-sm font-bold text-blue-800 uppercase border-b-2 border-blue-800 pb-1 mb-2">PAREDE ABDOMINAL</h2>
+                  <p className="text-xs mb-1"><strong>Região umbilical:</strong> {laudo.parede_abdominal.regiao_umbilical}</p>
+                  <p className="text-xs mb-1"><strong>Parede abdominal:</strong> {laudo.parede_abdominal.parede_abdominal}</p>
+                </div>
+
+                {/* Conclusão */}
+                <div className="mb-8">
+                  <h2 className="text-sm font-bold text-blue-800 uppercase border-b-2 border-blue-800 pb-1 mb-2">CONCLUSÃO</h2>
+                  <p className="text-xs">{laudo.conclusao}</p>
+                </div>
+
+                {/* Rodapé */}
+                <div className="border-t-2 border-slate-300 pt-6 mt-8">
+                  <div className="flex justify-between items-end">
+                    <div className="text-center">
+                      <div className="border-b border-slate-400 w-48 mb-1"></div>
+                      <p className="text-xs">Assinatura do Médico</p>
+                      <p className="text-xs text-slate-500">CRM: ________________</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="border-b border-slate-400 w-32 mb-1"></div>
+                      <p className="text-xs">Data</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="border border-slate-300 w-20 h-20 flex items-center justify-center">
+                        <p className="text-[10px] text-slate-400">Carimbo</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 p-4 border-t border-slate-200">
+              <Button
+                onClick={() => setModalVisualizacao(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Fechar
+              </Button>
+              <Button
+                onClick={() => {
+                  setModalVisualizacao(false);
+                  setTimeout(handleImprimir, 100);
+                }}
+                className="flex-1 bg-green-600 text-white hover:bg-green-700"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Imprimir
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Área de impressão oculta */}
+      <div className="hidden print:block print-content">
+        <div
+          style={{
+            width: '210mm',
+            minHeight: '297mm',
+            padding: '20mm',
+            fontFamily: 'Arial, Segoe UI, sans-serif',
+            fontSize: '11px',
+            lineHeight: '1.5',
+            color: '#333',
+          }}
+        >
+          {/* Cabeçalho */}
+          <div style={{ textAlign: 'center', borderBottom: '2px solid #1e40af', paddingBottom: '16px', marginBottom: '24px' }}>
+            <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e40af', marginBottom: '4px' }}>ENDOACOLHE - MAPEAMENTO 3D/2D</h1>
+            <p style={{ fontSize: '12px', fontWeight: '600', color: '#374151' }}>{laudo.cabecalho.tipo_exame}</p>
+          </div>
+
+          {/* Dados do Paciente */}
+          <div style={{ border: '1px solid #d1d5db', borderRadius: '4px', padding: '16px', marginBottom: '24px', backgroundColor: '#f9fafb' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px' }}>
+              <p><strong>Paciente:</strong> Paciente A</p>
+              <p><strong>Data:</strong> {laudo.cabecalho.data}</p>
+              <p><strong>CPF:</strong> _______________</p>
+              <p><strong>Idade:</strong> ______</p>
+              <p><strong>Médico:</strong> {laudo.cabecalho.nome_medico}</p>
+              <p><strong>CRM:</strong> ____________</p>
+              <p><strong>Equipamento:</strong> {laudo.equipamento.nome}</p>
+              <p><strong>Técnicas:</strong> {laudo.equipamento.tecnicas}</p>
+            </div>
+          </div>
+
+          {/* Estruturas */}
+          <div style={{ marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e40af', textTransform: 'uppercase', borderBottom: '2px solid #1e40af', paddingBottom: '4px', marginBottom: '8px' }}>ESTRUTURAS</h2>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>URETRA:</strong> {laudo.estruturas.uretra.descricao}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>BEXIGA:</strong> {laudo.estruturas.bexiga.descricao}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>VAGINA:</strong> {laudo.estruturas.vagina.descricao}</p>
+          </div>
+
+          {/* Útero */}
+          <div style={{ marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e40af', textTransform: 'uppercase', borderBottom: '2px solid #1e40af', paddingBottom: '4px', marginBottom: '8px' }}>ÚTERO</h2>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Posição:</strong> {laudo.utero.posicao}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Forma:</strong> {laudo.utero.forma} | <strong>Contornos:</strong> {laudo.utero.contornos}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Paredes:</strong> {laudo.utero.paredes} | <strong>Miométrio:</strong> {laudo.utero.miometrio}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Biometria:</strong> {laudo.utero.biometria}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Eco endometrial:</strong> {laudo.utero.eco_endometrial}, linha média {laudo.utero.linha_media}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Junção endométrio-miométrio:</strong> {laudo.utero.juncao_endometrio_miometrio}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Padrão:</strong> {laudo.utero.padrao}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Espessura endometrial:</strong> {laudo.utero.espessura_endometrial}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Miomas:</strong> {laudo.utero.miomas && laudo.utero.miomas.length > 0 ? laudo.utero.miomas.map(formatarLesao).join(', ') : 'Nenhum detectado'}</p>
+          </div>
+
+          {/* Ovários */}
+          <div style={{ marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e40af', textTransform: 'uppercase', borderBottom: '2px solid #1e40af', paddingBottom: '4px', marginBottom: '8px' }}>OVÁRIOS</h2>
+            <p style={{ fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>OVÁRIO DIREITO:</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Localização: {laudo.ovario_direito.localizacao}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Forma: {laudo.ovario_direito.forma} | Limites: {laudo.ovario_direito.limites}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Parênquima: {laudo.ovario_direito.parenchima}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Biometria: {laudo.ovario_direito.biometria}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '8px' }}>Lesões: {laudo.ovario_direito.lesoes && laudo.ovario_direito.lesoes.length > 0 ? laudo.ovario_direito.lesoes.map(formatarLesao).join(', ') : 'Nenhuma detectada'}</p>
+            <p style={{ fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>OVÁRIO ESQUERDO:</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Localização: {laudo.ovario_esquerdo.localizacao}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Forma: {laudo.ovario_esquerdo.forma} | Limites: {laudo.ovario_esquerdo.limites}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Parênquima: {laudo.ovario_esquerdo.parenchima}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Biometria: {laudo.ovario_esquerdo.biometria}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Lesões: {laudo.ovario_esquerdo.lesoes && laudo.ovario_esquerdo.lesoes.length > 0 ? laudo.ovario_esquerdo.lesoes.map(formatarLesao).join(', ') : 'Nenhuma detectada'}</p>
+          </div>
+
+          {/* Compartimentos */}
+          <div style={{ marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e40af', textTransform: 'uppercase', borderBottom: '2px solid #1e40af', paddingBottom: '4px', marginBottom: '8px' }}>COMPARTIMENTOS PÉLVICOS</h2>
+            <p style={{ fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>ANTERIOR:</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Parede vesical: {laudo.compartimentos.anterior.parede_vesical}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Espaço vésico-uterino: {laudo.compartimentos.anterior.espaco_vesico_uterino}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Sinal de deslizamento anterior: {laudo.compartimentos.anterior.sinal_deslizamento_anterior}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '8px' }}>Endometriose: {laudo.compartimentos.anterior.achados_endometriose === 'Sim' ? 'Detectada' : 'Não detectada'}</p>
+            <p style={{ fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>MEDIAL:</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Superfície uterina: {laudo.compartimentos.medial.superficie_uterina}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Ligamentos redondos: {laudo.compartimentos.medial.ligamentos_redondos}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Tubas uterinas: {laudo.compartimentos.medial.tubas_uterinas}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Ovários: {laudo.compartimentos.medial.ovarios}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '8px' }}>Endometriose: {laudo.compartimentos.medial.achados_endometriose === 'Sim' ? 'Detectada' : 'Não detectada'}</p>
+            <p style={{ fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>POSTERIOR:</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Septo retovaginal: {laudo.compartimentos.posterior.septo_retovaginal}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Fórnix vaginal: {laudo.compartimentos.posterior.frnice_vaginal}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Retossigmoide: {laudo.compartimentos.posterior.retossigmoide}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Ligamentos útero-sacros: {laudo.compartimentos.posterior.ligamentos_utero_sacros}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Região retro-cervical: {laudo.compartimentos.posterior.regiao_retro_cervical}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Sinal de deslizamento posterior: {laudo.compartimentos.posterior.sinal_deslizamento_posterior}</p>
+            <p style={{ fontSize: '11px', marginLeft: '12px', marginBottom: '2px' }}>Endometriose: {laudo.compartimentos.posterior.achados_endometriose === 'Sim' ? 'Detectada' : 'Não detectada'}</p>
+          </div>
+
+          {/* Rins e Ureteres */}
+          <div style={{ marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e40af', textTransform: 'uppercase', borderBottom: '2px solid #1e40af', paddingBottom: '4px', marginBottom: '8px' }}>RINS E URETERES</h2>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Rins:</strong> {laudo.rins_ureteres.rins}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Ureteres terminais:</strong> {laudo.rins_ureteres.ureteres_terminais}</p>
+          </div>
+
+          {/* Parede Abdominal */}
+          <div style={{ marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e40af', textTransform: 'uppercase', borderBottom: '2px solid #1e40af', paddingBottom: '4px', marginBottom: '8px' }}>PAREDE ABDOMINAL</h2>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Região umbilical:</strong> {laudo.parede_abdominal.regiao_umbilical}</p>
+            <p style={{ fontSize: '11px', marginBottom: '4px' }}><strong>Parede abdominal:</strong> {laudo.parede_abdominal.parede_abdominal}</p>
+          </div>
+
+          {/* Conclusão */}
+          <div style={{ marginBottom: '32px' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e40af', textTransform: 'uppercase', borderBottom: '2px solid #1e40af', paddingBottom: '4px', marginBottom: '8px' }}>CONCLUSÃO</h2>
+            <p style={{ fontSize: '11px' }}>{laudo.conclusao}</p>
+          </div>
+
+          {/* Rodapé */}
+          <div style={{ borderTop: '2px solid #d1d5db', paddingTop: '24px', marginTop: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ borderBottom: '1px solid #9ca3af', width: '192px', marginBottom: '4px' }}></div>
+                <p style={{ fontSize: '11px' }}>Assinatura do Médico</p>
+                <p style={{ fontSize: '10px', color: '#6b7280' }}>CRM: ________________</p>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ borderBottom: '1px solid #9ca3af', width: '128px', marginBottom: '4px' }}></div>
+                <p style={{ fontSize: '11px' }}>Data</p>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ border: '1px solid #d1d5db', width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <p style={{ fontSize: '10px', color: '#9ca3af' }}>Carimbo</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

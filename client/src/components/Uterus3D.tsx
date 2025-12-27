@@ -164,19 +164,24 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    // Warm ambient light (3500K clinical lighting)
+    const ambientLight = new THREE.AmbientLight(0xFFB88C, 0.5);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    dirLight.position.set(5, 10, 7);
+    // Main directional light - lateral diffuse for clinical realism
+    const dirLight = new THREE.DirectionalLight(0xFFC9A0, 0.85);
+    dirLight.position.set(8, 8, 5);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 1024;
     dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.camera.far = 30;
+    dirLight.shadow.radius = 4;
     scene.add(dirLight);
 
-    const backLight = new THREE.DirectionalLight(0xaaaaff, 0.4);
-    backLight.position.set(-5, 2, -10);
-    scene.add(backLight);
+    // Soft fill light from opposite side
+    const fillLight = new THREE.DirectionalLight(0xF5A96B, 0.35);
+    fillLight.position.set(-6, 5, -8);
+    scene.add(fillLight);
 
     const anatomyGroup = new THREE.Group();
     anatomyGroupRef.current = anatomyGroup;
@@ -266,11 +271,11 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         }
         mergedGeometry.computeBoundingSphere();
         
-        // Create material with vertex colors enabled
+        // Create material with vertex colors enabled - clinical anatomical rendering
         const mergedMaterial = new THREE.MeshStandardMaterial({
             vertexColors: true,
-            roughness: 0.4,
-            metalness: 0.1,
+            roughness: 0.55,
+            metalness: 0.05,
             side: THREE.DoubleSide,
             flatShading: false
         });

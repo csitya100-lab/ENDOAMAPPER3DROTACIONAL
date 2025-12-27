@@ -202,9 +202,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         const scale = 4 / maxDim;
         model.scale.set(scale, scale, scale);
 
-        // Merge all meshes with color preservation
-        const mergedMaterials: THREE.Material[] = [];
-        const meshesToMerge: Array<{geometry: THREE.BufferGeometry, matrix: THREE.Matrix4, material: THREE.Material}> = [];
+        // Merge all meshes with color preservation from materials
+        const meshesToMerge: Array<{geometry: THREE.BufferGeometry, material: THREE.Material}> = [];
         
         model.traverse((child: any) => {
             if ((child as THREE.Mesh).isMesh && child !== model) {
@@ -221,13 +220,12 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
                 
                 meshesToMerge.push({
                     geometry,
-                    matrix: mesh.matrixWorld.clone(),
                     material: material as THREE.Material
                 });
             }
         });
         
-        // Create merged geometry preserving vertex colors
+        // Create merged geometry with accurate vertex colors
         const mergedGeometry = new THREE.BufferGeometry();
         const allPositions: number[] = [];
         const allNormals: number[] = [];
@@ -236,18 +234,18 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         for (const {geometry, material} of meshesToMerge) {
             const positions = geometry.attributes.position;
             const normals = geometry.attributes.normal;
-            const colors = geometry.attributes.color;
             
             if (positions) {
                 const pos = positions.array as Float32Array;
                 const norm = normals ? (normals.array as Float32Array) : null;
                 
-                // Get material color
+                // Extract material color
                 let matColor = new THREE.Color(0xffffff);
-                if (material instanceof THREE.MeshStandardMaterial) {
+                if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshPhongMaterial) {
                     matColor = material.color.clone();
                 }
                 
+                // Add vertices with their color
                 for (let i = 0; i < pos.length; i += 3) {
                     allPositions.push(pos[i], pos[i+1], pos[i+2]);
                     allColors.push(matColor.r, matColor.g, matColor.b);
@@ -263,15 +261,18 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         mergedGeometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(allColors), 3));
         if (allNormals.length > 0) {
             mergedGeometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(allNormals), 3));
+        } else {
+            mergedGeometry.computeVertexNormals();
         }
         mergedGeometry.computeBoundingSphere();
         
-        // Create material with vertex colors
+        // Create material with vertex colors enabled
         const mergedMaterial = new THREE.MeshStandardMaterial({
             vertexColors: true,
             roughness: 0.4,
             metalness: 0.1,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            flatShading: false
         });
         
         // Clear and add merged mesh

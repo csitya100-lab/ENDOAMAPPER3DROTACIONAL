@@ -13,10 +13,21 @@ interface Lesion {
   severity: Severity;
 }
 
+interface ExamInfo {
+  patient: string;
+  date: string;
+  type: string;
+}
+
 export default function Home() {
   const [severity, setSeverity] = useState<Severity>('superficial');
   const [lesionCount, setLesionCount] = useState(0);
   const [lesions, setLesions] = useState<Lesion[]>([]);
+  const [examInfo] = useState<ExamInfo>({
+    patient: 'Paciente A',
+    date: new Date().toLocaleDateString('pt-BR'),
+    type: 'Mapeamento 3D/2D',
+  });
   const uterusRef = useRef<Uterus3DRef>(null);
 
   const handleAddTestLesion = () => {
@@ -143,49 +154,61 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Badge variant="outline" className="font-mono hidden sm:flex bg-slate-100 border-slate-200 text-slate-700">
-            {lesionCount} lesão{lesionCount !== 1 ? 's' : ''}
-          </Badge>
-          
-          <Button 
-            size="sm" 
-            onClick={handleAddTestLesion}
-            className="text-xs h-9 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200"
-            variant="outline"
-          >
-            <Plus className="w-3.5 h-3.5 mr-1.5" />
-            Adicionar Lesão
-          </Button>
-          
-          <Button 
-            size="sm" 
-            onClick={handleClearLesions}
-            className="text-xs h-9 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
-            variant="outline"
-          >
-            <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-            Limpar
-          </Button>
+        <div className="flex items-center gap-6">
+          {/* Patient/Exam Info Block */}
+          <div className="flex items-center gap-4 pr-4 border-r border-slate-200">
+            <div className="text-right">
+              <p className="text-sm font-semibold text-slate-900">{examInfo.patient}</p>
+              <p className="text-xs text-slate-600">{examInfo.type}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">{examInfo.date}</p>
+            </div>
+          </div>
 
-          <Button
-            size="sm"
-            onClick={() => window.location.href = '/report'}
-            className="text-xs h-9 bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200"
-            variant="outline"
-          >
-            <FileText className="w-3.5 h-3.5 mr-1.5" />
-            Relatório
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="font-mono hidden sm:flex bg-slate-100 border-slate-200 text-slate-700">
+              {lesionCount} lesão{lesionCount !== 1 ? 's' : ''}
+            </Badge>
+            
+            <Button 
+              size="sm" 
+              onClick={handleAddTestLesion}
+              className="text-xs h-9 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200"
+              variant="outline"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Adicionar Lesão
+            </Button>
+            
+            <Button 
+              size="sm" 
+              onClick={handleClearLesions}
+              className="text-xs h-9 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+              variant="outline"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+              Limpar
+            </Button>
 
-          <Button
-            size="sm"
-            onClick={() => window.location.href = '/dashboard'}
-            className="text-xs h-9 bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:from-pink-600 hover:to-rose-700"
-          >
-            <LayoutDashboard className="w-3.5 h-3.5 mr-1.5" />
-            Dashboard
-          </Button>
+            <Button
+              size="sm"
+              onClick={() => window.location.href = '/report'}
+              className="text-xs h-9 bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200"
+              variant="outline"
+            >
+              <FileText className="w-3.5 h-3.5 mr-1.5" />
+              Relatório
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={() => window.location.href = '/dashboard'}
+              className="text-xs h-9 bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:from-pink-600 hover:to-rose-700"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5 mr-1.5" />
+              Dashboard
+            </Button>
+          </div>
         </div>
       </header>
 

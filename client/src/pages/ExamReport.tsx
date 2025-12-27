@@ -128,7 +128,7 @@ export default function ExamReport() {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
       {/* Header */}
-      <header className="flex-none bg-white border-b border-slate-200 shadow-sm px-6 py-4 flex items-center justify-between z-20">
+      <header className="flex-none bg-white border-b border-slate-200 shadow-sm px-8 py-4 flex items-center justify-between z-20">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -144,9 +144,18 @@ export default function ExamReport() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Layout Controls */}
-          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
+        <div className="flex items-center gap-6">
+          {/* Patient/Exam Info Block */}
+          <div className="flex items-center gap-4 pr-6 border-r border-slate-200">
+            <div className="text-right">
+              <p className="text-sm font-semibold text-slate-900">{patientData.name}</p>
+              <p className="text-xs text-slate-600">ID: {patientData.id}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Examinador: {patientData.examiner}</p>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-3 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
             {(['1x1', '2x2', '3x2', 'Auto'] as LayoutType[]).map(layoutOption => (
               <button
                 key={layoutOption}

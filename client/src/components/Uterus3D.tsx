@@ -465,8 +465,24 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       event.preventDefault();
     };
 
+    // Double-click: Delete lesion
+    const handleViewDoubleClick = (viewIdx: number) => (event: PointerEvent) => {
+      const lesionId = detectLesionMarker(event, viewIdx);
+      
+      if (lesionId) {
+        // Remove the lesion from storage
+        const lesionIdx = lesionsRef.current.findIndex(l => l.id === lesionId);
+        if (lesionIdx >= 0) {
+          lesionsRef.current.splice(lesionIdx, 1);
+          updateAllMarkers();
+          updateStatus();
+        }
+        event.preventDefault();
+      }
+    };
+
     // Store handlers for cleanup
-    const handlers: { idx: number; down: any; move: any; up: any; leave: any }[] = [];
+    const handlers: { idx: number; down: any; move: any; up: any; leave: any; dblclick: any }[] = [];
     
     // Add event listeners for all views after they're set up
     for (let i = 0; i < views.length; i++) {
@@ -474,13 +490,15 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       const downHandler = handleViewClick(i);
       const moveHandler = handleViewMove(i);
       const upHandler = handleViewUp(i);
+      const dblclickHandler = handleViewDoubleClick(i);
       
       view.element.addEventListener('pointerdown', downHandler);
       view.element.addEventListener('pointermove', moveHandler);
       view.element.addEventListener('pointerup', upHandler);
       view.element.addEventListener('pointerleave', upHandler);
+      view.element.addEventListener('dblclick', dblclickHandler);
       
-      handlers.push({ idx: i, down: downHandler, move: moveHandler, up: upHandler, leave: upHandler });
+      handlers.push({ idx: i, down: downHandler, move: moveHandler, up: upHandler, leave: upHandler, dblclick: dblclickHandler });
     }
 
     // === ANIMATION LOOP ===
@@ -543,13 +561,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       window.removeEventListener('resize', handleResize);
       
       // Remove event listeners from all views
-      handlers.forEach(({ idx, down, move, up, leave }) => {
+      handlers.forEach(({ idx, down, move, up, leave, dblclick }) => {
         const view = views[idx];
         if (view && view.element) {
           view.element.removeEventListener('pointerdown', down);
           view.element.removeEventListener('pointermove', move);
           view.element.removeEventListener('pointerup', up);
           view.element.removeEventListener('pointerleave', leave);
+          view.element.removeEventListener('dblclick', dblclick);
         }
       });
       

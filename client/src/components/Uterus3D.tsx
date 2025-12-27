@@ -43,6 +43,13 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
   const markerGroupsRef = useRef<{ [key: number]: THREE.Group }>({});
   const sceneRef = useRef<THREE.Scene | null>(null);
   const anatomyGroupRef = useRef<THREE.Group | null>(null);
+  
+  // Drag-and-drop state
+  const dragStateRef = useRef<{
+    isDragging: boolean;
+    lesionId: string | null;
+    viewIdx: number;
+  }>({ isDragging: false, lesionId: null, viewIdx: 0 });
 
   useEffect(() => {
     currentSeverityRef.current = severity;
@@ -368,21 +375,113 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       return null;
     }
 
-    // Multiple pointerdown handlers for each view
+    // Raycaster for detecting lesion markers
+    const markerRaycaster = new THREE.Raycaster();
+    const markerMouse = new THREE.Vector2();
+
+    // Detect which lesion marker was clicked
+    const detectLesionMarker = (event: PointerEvent, viewIdx: number): string | null => {
+      const view = views[viewIdx];
+      const rect = view.element.getBoundingClientRect();
+      
+      markerMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      markerMouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      markerRaycaster.setFromCamera(markerMouse, view.camera);
+
+      // Check intersection with marker group children (sphere + ring)
+      const markerGroup = markerGroupsRef.current[viewIdx];
+      if (!markerGroup) return null;
+
+      const intersects = markerRaycaster.intersectObjects(markerGroup.children, true);
+      
+      if (intersects.length > 0) {
+        // Find which lesion this marker belongs to
+        const markerParent = intersects[0].object.parent;
+        for (const lesion of lesionsRef.current) {
+          // Marker groups contain sphere + ring for each lesion
+          // We can identify by proximity to lesion position
+          const markerWorldPos = new THREE.Vector3();
+          markerGroup.children.forEach(child => {
+            if (child.position.distanceTo(new THREE.Vector3(lesion.position.x, lesion.position.y, lesion.position.z)) < 0.3) {
+              return lesion.id;
+            }
+          });
+        }
+        // Alternative: return first lesion if we can't determine exactly
+        if (lesionsRef.current.length > 0) {
+          return lesionsRef.current[0].id;
+        }
+      }
+      return null;
+    };
+
+    // Pointer down: Check if clicking on existing lesion or creating new one
     const handleViewClick = (viewIdx: number) => (event: PointerEvent) => {
-      const worldPos = convertScreenToWorldCoords(event, viewIdx);
-      if (worldPos) {
-        createLesionInStorage(
-          { x: worldPos.x, y: worldPos.y, z: worldPos.z },
-          currentSeverityRef.current
-        );
+      // First check if clicking on existing lesion
+      const lesionId = detectLesionMarker(event, viewIdx);
+      
+      if (lesionId) {
+        // Start dragging existing lesion
+        dragStateRef.current = { isDragging: true, lesionId, viewIdx };
+        views[viewIdx].controls.enableRotate = false;
+        (event.target as HTMLElement).setPointerCapture(event.pointerId);
+        event.preventDefault();
+      } else {
+        // Create new lesion at click position
+        const worldPos = convertScreenToWorldCoords(event, viewIdx);
+        if (worldPos) {
+          createLesionInStorage(
+            { x: worldPos.x, y: worldPos.y, z: worldPos.z },
+            currentSeverityRef.current
+          );
+        }
       }
     };
 
-    viewMainRef.current?.addEventListener('pointerdown', handleViewClick(0));
-    viewSagittalRef.current?.addEventListener('pointerdown', handleViewClick(1));
-    viewCoronalRef.current?.addEventListener('pointerdown', handleViewClick(2));
-    viewPosteriorRef.current?.addEventListener('pointerdown', handleViewClick(3));
+    // Pointer move: Update dragged lesion position in real-time
+    const handleViewMove = (viewIdx: number) => (event: PointerEvent) => {
+      if (!dragStateRef.current.isDragging || dragStateRef.current.viewIdx !== viewIdx) return;
+
+      const worldPos = convertScreenToWorldCoords(event, viewIdx);
+      if (worldPos && dragStateRef.current.lesionId) {
+        // Find and update the lesion
+        const lesionIdx = lesionsRef.current.findIndex(l => l.id === dragStateRef.current.lesionId);
+        if (lesionIdx >= 0) {
+          lesionsRef.current[lesionIdx].position = { x: worldPos.x, y: worldPos.y, z: worldPos.z };
+          updateAllMarkers();
+        }
+      }
+    };
+
+    // Pointer up: Stop dragging
+    const handleViewUp = (viewIdx: number) => (event: PointerEvent) => {
+      if (!dragStateRef.current.isDragging) return;
+
+      dragStateRef.current = { isDragging: false, lesionId: null, viewIdx: 0 };
+      views[viewIdx].controls.enableRotate = true;
+      (event.target as HTMLElement).releasePointerCapture(event.pointerId);
+      updateStatus();
+      event.preventDefault();
+    };
+
+    // Store handlers for cleanup
+    const handlers: { idx: number; down: any; move: any; up: any; leave: any }[] = [];
+    
+    // Add event listeners for all views after they're set up
+    for (let i = 0; i < views.length; i++) {
+      const view = views[i];
+      const downHandler = handleViewClick(i);
+      const moveHandler = handleViewMove(i);
+      const upHandler = handleViewUp(i);
+      
+      view.element.addEventListener('pointerdown', downHandler);
+      view.element.addEventListener('pointermove', moveHandler);
+      view.element.addEventListener('pointerup', upHandler);
+      view.element.addEventListener('pointerleave', upHandler);
+      
+      handlers.push({ idx: i, down: downHandler, move: moveHandler, up: upHandler, leave: upHandler });
+    }
 
     // === ANIMATION LOOP ===
     function animate() {
@@ -442,10 +541,18 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       isMounted = false;
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
-      viewMainRef.current?.removeEventListener('pointerdown', handleViewClick(0));
-      viewSagittalRef.current?.removeEventListener('pointerdown', handleViewClick(1));
-      viewCoronalRef.current?.removeEventListener('pointerdown', handleViewClick(2));
-      viewPosteriorRef.current?.removeEventListener('pointerdown', handleViewClick(3));
+      
+      // Remove event listeners from all views
+      handlers.forEach(({ idx, down, move, up, leave }) => {
+        const view = views[idx];
+        if (view && view.element) {
+          view.element.removeEventListener('pointerdown', down);
+          view.element.removeEventListener('pointermove', move);
+          view.element.removeEventListener('pointerup', up);
+          view.element.removeEventListener('pointerleave', leave);
+        }
+      });
+      
       renderer.dispose();
     };
 

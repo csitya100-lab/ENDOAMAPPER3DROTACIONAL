@@ -64,8 +64,12 @@ Preferred communication style: Simple, everyday language.
   - Enables 2D<->3D synchronization across views
 - **Drawing Tools Toolbar**: Access in Vistas 2D page header
   - Select tool: Manage lesion markers
-  - Pen tool: Draw annotations with custom color and size (1-20px)
+  - Pen tool: Freehand drawing with custom color and size (1-20px)
   - Eraser tool: Remove annotations from canvas
+  - Line tool: Draw straight lines with customizable thickness and color
+  - Circle tool: Draw circle outlines with custom size and color
+  - Filled Circle tool: Draw solid circles with custom size and color
+  - Text tool: Add text annotations with customizable size and color
 
 ### Medical Report Structure
 The laudo (medical report) follows a compartmentalized clinical model for endometriosis diagnosis including:

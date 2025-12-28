@@ -32,7 +32,10 @@ import {
   Pen,
   Eraser,
   Pointer,
-  RotateCw
+  RotateCw,
+  Type,
+  Minus,
+  Circle
 } from 'lucide-react';
 import { useState } from 'react';
 import { DrawingTool } from '@/components/Canvas2D';
@@ -159,8 +162,48 @@ export default function Vistas2D() {
             >
               <Eraser className="w-4 h-4" />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDrawingTool('line')}
+              className={`h-8 w-8 ${drawingTool === 'line' ? 'bg-slate-700' : ''}`}
+              title="Linha"
+              data-testid="button-tool-line"
+            >
+              <Minus className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDrawingTool('circle')}
+              className={`h-8 w-8 ${drawingTool === 'circle' ? 'bg-slate-700' : ''}`}
+              title="Círculo"
+              data-testid="button-tool-circle"
+            >
+              <Circle className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDrawingTool('circle-filled')}
+              className={`h-8 w-8 ${drawingTool === 'circle-filled' ? 'bg-slate-700' : ''}`}
+              title="Círculo Preenchido"
+              data-testid="button-tool-circle-filled"
+            >
+              <Circle className="w-4 h-4 fill-current" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDrawingTool('text')}
+              className={`h-8 w-8 ${drawingTool === 'text' ? 'bg-slate-700' : ''}`}
+              title="Texto"
+              data-testid="button-tool-text"
+            >
+              <Type className="w-4 h-4" />
+            </Button>
             
-            {drawingTool === 'pen' && (
+            {drawingTool !== 'select' && (
               <>
                 <div className="h-6 w-px bg-slate-700" />
                 <input

@@ -10,7 +10,7 @@ import {
 } from '@shared/3d/projections';
 import { Lesion, Severity } from '@/lib/lesionStore';
 
-export type DrawingTool = 'select' | 'pen' | 'eraser';
+export type DrawingTool = 'select' | 'pen' | 'eraser' | 'line' | 'text' | 'circle' | 'circle-filled';
 
 interface Canvas2DProps {
   viewType: ViewType;
@@ -60,6 +60,9 @@ export default function Canvas2D({
   const [hoveredLesionId, setHoveredLesionId] = useState<string | null>(null);
   const [viewImage, setViewImage] = useState<HTMLImageElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
+  const [textInput, setTextInput] = useState('');
+  const [showTextInput, setShowTextInput] = useState(false);
 
   useEffect(() => {
     const imagePath = VIEW_IMAGES[viewType];
@@ -266,28 +269,35 @@ export default function Canvas2D({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
+    if (drawingTool === 'text') {
+      setStartPos({ x, y });
+      setShowTextInput(true);
+      return;
+    }
+
     setIsDrawing(true);
+    setStartPos({ x, y });
     const ctx = drawingCanvas.getContext('2d');
     if (!ctx) return;
 
     ctx.lineWidth = drawingSize;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    ctx.strokeStyle = drawingColor;
 
     if (drawingTool === 'pen') {
-      ctx.strokeStyle = drawingColor;
       ctx.globalCompositeOperation = 'source-over';
+      ctx.beginPath();
+      ctx.moveTo(x, y);
     } else if (drawingTool === 'eraser') {
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.strokeStyle = 'rgba(0,0,0,1)';
+      ctx.beginPath();
+      ctx.moveTo(x, y);
     }
-
-    ctx.beginPath();
-    ctx.moveTo(x, y);
   }, [drawingTool, drawingColor, drawingSize]);
 
   const handleDrawingPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDrawing || drawingTool === 'select') return;
+    if (!isDrawing || !startPos || drawingTool === 'select' || drawingTool === 'text') return;
 
     const drawingCanvas = drawingCanvasRef.current;
     if (!drawingCanvas) return;
@@ -299,13 +309,67 @@ export default function Canvas2D({
     const ctx = drawingCanvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.lineTo(x, y);
-    ctx.stroke();
-  }, [isDrawing, drawingTool]);
+    if (drawingTool === 'pen' || drawingTool === 'eraser') {
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    } else if (drawingTool === 'line' || drawingTool === 'circle' || drawingTool === 'circle-filled') {
+      ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+      ctx.lineWidth = drawingSize;
+      ctx.strokeStyle = drawingColor;
+      ctx.fillStyle = drawingColor;
 
-  const handleDrawingPointerUp = useCallback(() => {
+      if (drawingTool === 'line') {
+        ctx.beginPath();
+        ctx.moveTo(startPos.x, startPos.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      } else {
+        const radius = Math.sqrt(Math.pow(x - startPos.x, 2) + Math.pow(y - startPos.y, 2));
+        ctx.beginPath();
+        ctx.arc(startPos.x, startPos.y, radius, 0, Math.PI * 2);
+        if (drawingTool === 'circle-filled') {
+          ctx.fill();
+        } else {
+          ctx.stroke();
+        }
+      }
+    }
+  }, [isDrawing, startPos, drawingTool, drawingColor, drawingSize]);
+
+  const handleDrawingPointerUp = useCallback((e: React.PointerEvent) => {
+    if (drawingTool === 'line' || drawingTool === 'circle' || drawingTool === 'circle-filled') {
+      const drawingCanvas = drawingCanvasRef.current;
+      if (drawingCanvas && startPos && isDrawing) {
+        const rect = drawingCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const ctx = drawingCanvas.getContext('2d');
+        if (ctx) {
+          ctx.lineWidth = drawingSize;
+          ctx.strokeStyle = drawingColor;
+          ctx.fillStyle = drawingColor;
+
+          if (drawingTool === 'line') {
+            ctx.beginPath();
+            ctx.moveTo(startPos.x, startPos.y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+          } else {
+            const radius = Math.sqrt(Math.pow(x - startPos.x, 2) + Math.pow(y - startPos.y, 2));
+            ctx.beginPath();
+            ctx.arc(startPos.x, startPos.y, radius, 0, Math.PI * 2);
+            if (drawingTool === 'circle-filled') {
+              ctx.fill();
+            } else {
+              ctx.stroke();
+            }
+          }
+        }
+      }
+    }
     setIsDrawing(false);
-  }, []);
+    setStartPos(null);
+  }, [isDrawing, startPos, drawingTool, drawingColor, drawingSize]);
 
   return (
     <div 
@@ -333,6 +397,38 @@ export default function Canvas2D({
         onPointerLeave={handleDrawingPointerUp}
         data-testid={`drawing-canvas-${viewType}`}
       />
+      
+      {showTextInput && startPos && (
+        <div
+          className="absolute bg-slate-800 border border-slate-600 rounded p-2"
+          style={{ left: `${startPos.x}px`, top: `${startPos.y}px` }}
+        >
+          <input
+            type="text"
+            value={textInput}
+            onChange={(e) => setTextInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && textInput.trim()) {
+                const drawingCanvas = drawingCanvasRef.current;
+                if (drawingCanvas) {
+                  const ctx = drawingCanvas.getContext('2d');
+                  if (ctx) {
+                    ctx.fillStyle = drawingColor;
+                    ctx.font = `${drawingSize * 4}px sans-serif`;
+                    ctx.fillText(textInput, startPos.x, startPos.y);
+                  }
+                }
+                setShowTextInput(false);
+                setTextInput('');
+                setStartPos(null);
+              }
+            }}
+            autoFocus
+            className="w-24 px-2 py-1 text-sm bg-slate-900 border border-slate-500 text-white rounded"
+            placeholder="Texto..."
+          />
+        </div>
+      )}
       
       {hoveredLesionId && !isDragging && drawingTool === 'select' && (
         <div className="absolute bottom-2 left-2 bg-black/80 text-white text-xs px-2 py-1 rounded pointer-events-none">

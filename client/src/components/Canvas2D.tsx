@@ -42,6 +42,15 @@ export default function Canvas2D({
   const [isDragging, setIsDragging] = useState(false);
   const [dragLesionId, setDragLesionId] = useState<string | null>(null);
   const [hoveredLesionId, setHoveredLesionId] = useState<string | null>(null);
+  const [coronalImage, setCoronalImage] = useState<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    if (viewType === 'coronal') {
+      const img = new Image();
+      img.src = '/assets/coronal-view.png';
+      img.onload = () => setCoronalImage(img);
+    }
+  }, [viewType]);
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -60,57 +69,72 @@ export default function Canvas2D({
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.1)';
-    ctx.lineWidth = 1;
-    const gridSize = 40 * zoomLevel;
-    
-    for (let x = bounds.centerX % gridSize; x < canvas.width; x += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
-      ctx.stroke();
-    }
-    for (let y = bounds.centerY % gridSize; y < canvas.height; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
-      ctx.stroke();
-    }
+    // Draw coronal view background image if available
+    if (viewType === 'coronal' && coronalImage) {
+      const maxSize = Math.min(canvas.width, canvas.height) * 0.8;
+      const scale = maxSize / Math.max(coronalImage.width, coronalImage.height);
+      const scaledWidth = coronalImage.width * scale;
+      const scaledHeight = coronalImage.height * scale;
+      const x = (canvas.width - scaledWidth) / 2;
+      const y = (canvas.height - scaledHeight) / 2;
+      
+      ctx.globalAlpha = 0.85;
+      ctx.drawImage(coronalImage, x, y, scaledWidth, scaledHeight);
+      ctx.globalAlpha = 1.0;
+    } else {
+      // Draw grid and anatomical reference for non-coronal views
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.1)';
+      ctx.lineWidth = 1;
+      const gridSize = 40 * zoomLevel;
+      
+      for (let x = bounds.centerX % gridSize; x < canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = bounds.centerY % gridSize; y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
 
-    const uterusWidth = bounds.scale * 1.8;
-    const uterusHeight = bounds.scale * 2.2;
-    
-    ctx.beginPath();
-    ctx.ellipse(
-      bounds.centerX,
-      bounds.centerY,
-      uterusWidth / 2,
-      uterusHeight / 2,
-      0,
-      0,
-      Math.PI * 2
-    );
-    ctx.strokeStyle = 'rgba(221, 138, 150, 0.4)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(221, 138, 150, 0.08)';
-    ctx.fill();
+      const uterusWidth = bounds.scale * 1.8;
+      const uterusHeight = bounds.scale * 2.2;
+      
+      ctx.beginPath();
+      ctx.ellipse(
+        bounds.centerX,
+        bounds.centerY,
+        uterusWidth / 2,
+        uterusHeight / 2,
+        0,
+        0,
+        Math.PI * 2
+      );
+      ctx.strokeStyle = 'rgba(221, 138, 150, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(221, 138, 150, 0.08)';
+      ctx.fill();
 
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([5, 5]);
-    
-    ctx.beginPath();
-    ctx.moveTo(bounds.centerX, 0);
-    ctx.lineTo(bounds.centerX, canvas.height);
-    ctx.stroke();
-    
-    ctx.beginPath();
-    ctx.moveTo(0, bounds.centerY);
-    ctx.lineTo(canvas.width, bounds.centerY);
-    ctx.stroke();
-    
-    ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      
+      ctx.beginPath();
+      ctx.moveTo(bounds.centerX, 0);
+      ctx.lineTo(bounds.centerX, canvas.height);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(0, bounds.centerY);
+      ctx.lineTo(canvas.width, bounds.centerY);
+      ctx.stroke();
+      
+      ctx.setLineDash([]);
+    }
 
     lesions.forEach(lesion => {
       const pos2D = project3DToView(lesion.position, viewType, bounds);
@@ -167,7 +191,7 @@ export default function Canvas2D({
     ctx.fillStyle = viewColor;
     ctx.fillText(getViewLabel(viewType).toUpperCase(), 16, 26);
 
-  }, [lesions, selectedLesionId, hoveredLesionId, zoomLevel, viewType]);
+  }, [lesions, selectedLesionId, hoveredLesionId, zoomLevel, viewType, coronalImage]);
 
   useEffect(() => {
     drawCanvas();

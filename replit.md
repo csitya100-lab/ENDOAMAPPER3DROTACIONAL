@@ -7,6 +7,7 @@ A medical visualization application for mapping and documenting endometriosis le
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Menu sidebar: Uses short labels "3D" and "2D" instead of full descriptive names for navigation items.
 
 ## System Architecture
 

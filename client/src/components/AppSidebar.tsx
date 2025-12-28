@@ -27,13 +27,13 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     path: '/',
-    label: 'Mapeamento 3D',
+    label: '3D',
     icon: <MapPin className="w-5 h-5" />,
     description: 'Modelo 3D rotacional'
   },
   {
     path: '/vistas-2d',
-    label: 'Vistas 2D',
+    label: '2D',
     icon: <Grid3x3 className="w-5 h-5" />,
     description: 'Editor de vistas planares'
   },

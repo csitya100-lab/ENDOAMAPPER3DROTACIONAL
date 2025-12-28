@@ -1,288 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff, Eye, Printer, X, ChevronRight, RotateCw, Shield, ClipboardList } from 'lucide-react';
+import { 
+  type LaudoData, 
+  type AchadosDetectados,
+  LAUDO_PADRAO,
+  converterNumerosParaDigitos,
+  detectarAchados,
+  formatarLesao,
+  formatarLaudo,
+  validarLaudo,
+  carregarLaudoDoStorage
+} from '@shared/laudo';
 
-interface LaudoData {
-  cabecalho: {
-    nome_medico: string;
-    data: string;
-    tipo_exame: string;
-  };
-  equipamento: {
-    nome: string;
-    vias: string;
-    tecnicas: string;
-  };
-  estruturas: {
-    uretra: { descricao: string };
-    bexiga: { descricao: string };
-    vagina: { descricao: string };
-  };
-  utero: {
-    posicao: string;
-    forma: string;
-    contornos: string;
-    paredes: string;
-    miometrio: string;
-    biometria: string;
-    eco_endometrial: string;
-    linha_media: string;
-    juncao_endometrio_miometrio: string;
-    padrao: string;
-    espessura_endometrial: string;
-    miomas: any[];
-  };
-  ovario_direito: {
-    localizacao: string;
-    forma: string;
-    limites: string;
-    parenchima: string;
-    biometria: string;
-    lesoes: any[];
-  };
-  ovario_esquerdo: {
-    localizacao: string;
-    forma: string;
-    limites: string;
-    parenchima: string;
-    biometria: string;
-    lesoes: any[];
-  };
-  compartimentos: {
-    anterior: {
-      parede_vesical: string;
-      espaco_vesico_uterino: string;
-      sinal_deslizamento_anterior: string;
-      achados_endometriose: string;
-    };
-    medial: {
-      superficie_uterina: string;
-      ligamentos_redondos: string;
-      tubas_uterinas: string;
-      ovarios: string;
-      achados_endometriose: string;
-    };
-    posterior: {
-      septo_retovaginal: string;
-      frnice_vaginal: string;
-      retossigmoide: string;
-      ligamentos_utero_sacros: string;
-      regiao_retro_cervical: string;
-      sinal_deslizamento_posterior: string;
-      achados_endometriose: string;
-    };
-  };
-  rins_ureteres: {
-    rins: string;
-    ureteres_terminais: string;
-  };
-  parede_abdominal: {
-    regiao_umbilical: string;
-    parede_abdominal: string;
-  };
-  conclusao: string;
-}
-
-// Função para converter números por extenso em dígitos
-const converterNumerosParaDigitos = (texto: string): string => {
-  const numerosPalavra: { [key: string]: string } = {
-    'zero': '0', 'um': '1', 'uma': '1', 'dois': '2', 'duas': '2', 'três': '3', 'tres': '3',
-    'quatro': '4', 'cinco': '5', 'seis': '6', 'sete': '7',
-    'oito': '8', 'nove': '9', 'dez': '10', 'onze': '11',
-    'doze': '12', 'treze': '13', 'quatorze': '14', 'quinze': '15',
-    'dezesseis': '16', 'dezessete': '17', 'dezoito': '18',
-    'dezenove': '19', 'vinte': '20', 'trinta': '30', 'quarenta': '40',
-    'cinquenta': '50', 'sessenta': '60', 'setenta': '70',
-    'oitenta': '80', 'noventa': '90', 'cem': '100', 'cento': '100', 'mil': '1000'
-  };
-
-  let resultado = texto;
-
-  // Substituir "ponto" ou "vírgula" por "."
-  resultado = resultado.replace(/\bponto\b/gi, '.');
-  resultado = resultado.replace(/\bvírgula\b/gi, '.');
-  resultado = resultado.replace(/\bvirgula\b/gi, '.');
-
-  // Substituir "por" ou "vezes" por "x"
-  resultado = resultado.replace(/\bpor\b/gi, 'x');
-  resultado = resultado.replace(/\bvezes\b/gi, 'x');
-
-  // Converter números por extenso em dígitos
-  // Padrão: uma ou mais palavras de números separadas por espaço
-  resultado = resultado.replace(
-    /\b(?:zero|um|uma|dois|duas|três|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|mil)(?:\s+(?:zero|um|uma|dois|duas|três|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|mil))*\b/gi,
-    (match) => {
-      const palavras = match.toLowerCase().split(/\s+/);
-      let valor = 0;
-      
-      for (const palavra of palavras) {
-        if (numerosPalavra[palavra]) {
-          valor += parseInt(numerosPalavra[palavra], 10);
-        }
-      }
-      
-      return valor.toString();
-    }
-  );
-
-  // Normalizar espaços ao redor de "x" (para medidas como "3 x 4 cm")
-  resultado = resultado.replace(/\s*x\s*/gi, ' x ');
-
-  // Substituir "centímetros" e variações por "cm"
-  resultado = resultado.replace(/\bcentímetros\b/gi, 'cm');
-  resultado = resultado.replace(/\bcentímetro\b/gi, 'cm');
-  resultado = resultado.replace(/\bcentimetros\b/gi, 'cm');
-  resultado = resultado.replace(/\bcentimetro\b/gi, 'cm');
-
-  // Substituir "milímetros" e variações por "mm"
-  resultado = resultado.replace(/\bmilímetros\b/gi, 'mm');
-  resultado = resultado.replace(/\bmilímetro\b/gi, 'mm');
-  resultado = resultado.replace(/\bmilimetros\b/gi, 'mm');
-  resultado = resultado.replace(/\bmilimetro\b/gi, 'mm');
-
-  return resultado;
-};
-
-// Funções de detecção de achados clínicos
-interface AchadosDetectados {
-  temEndometrioma: boolean;
-  temMioma: boolean;
-  temProfundidade: boolean;
-  profundidade?: string;
-  localizacao?: string;
-  tamanho?: string;
-  transcricao: string;
-}
-
-const detectarAchados = (texto: string): AchadosDetectados => {
-  const achados: AchadosDetectados = {
-    temEndometrioma: false,
-    temMioma: false,
-    temProfundidade: false,
-    transcricao: texto,
-  };
-
-  // Detectar endometrioma
-  if (/endometrioma/i.test(texto)) {
-    achados.temEndometrioma = true;
-  }
-
-  // Detectar mioma ou fibroma
-  if (/mioma|fibroma/i.test(texto)) {
-    achados.temMioma = true;
-  }
-
-  // Detectar profundidade
-  if (/profund/i.test(texto)) {
-    achados.temProfundidade = true;
-    if (/superficial/i.test(texto)) {
-      achados.profundidade = 'Superficial';
-    } else if (/intermediária|intermediaria/i.test(texto)) {
-      achados.profundidade = 'Intermediária';
-    } else if (/profund/i.test(texto)) {
-      achados.profundidade = 'Profunda';
-    }
-  }
-
-  // Detectar localização (ovário direito/esquerdo)
-  if (/ovário\s*direito|ovário\s*d|OD/i.test(texto)) {
-    achados.localizacao = 'Ovário Direito';
-  } else if (/ovário\s*esquerdo|ovário\s*e|OE/i.test(texto)) {
-    achados.localizacao = 'Ovário Esquerdo';
-  } else if (/ligamento|tuba|útero/i.test(texto)) {
-    const match = texto.match(/ligamento|tuba|útero/i);
-    achados.localizacao = match ? match[0] : undefined;
-  }
-
-  // Detectar tamanho (padrão: número + unidade)
-  const sizeMatch = texto.match(/(\d+[\.,]?\d*)\s*(cm|mm|x)/i);
-  if (sizeMatch) {
-    achados.tamanho = sizeMatch[0].trim();
-  }
-
-  return achados;
-};
-
-const LAUDO_INICIAL: LaudoData = {
-  cabecalho: {
-    nome_medico: 'Dra.',
-    data: '27/12/2025',
-    tipo_exame: 'ULTRASSONOGRAFIA PARA PESQUISA DE ENDOMETRIOSE COM PREPARO INTESTINAL',
-  },
-  equipamento: {
-    nome: 'GE Voluson E10',
-    vias: 'Abdominal e Transvaginal',
-    tecnicas: 'V.C.I. e 3D HDLIVESTUDIO',
-  },
-  estruturas: {
-    uretra: { descricao: 'Retilínea, sem coleções ou cistos peri-uretrais' },
-    bexiga: { descricao: 'Parcialmente cheia, paredes lisas, sem cálculos ou nódulos' },
-    vagina: { descricao: 'Com características ecográficas normais' },
-  },
-  utero: {
-    posicao: 'Anteverso flexão, móvel',
-    forma: 'Típica',
-    contornos: 'Regulares',
-    paredes: 'Simétricas',
-    miometrio: 'Textura homogênea',
-    biometria: '3.8 x 4.5 x 8.0 cm, volume 74.7 cm³',
-    eco_endometrial: 'Homogêneo',
-    linha_media: 'Linear',
-    juncao_endometrio_miometrio: 'Regular',
-    padrao: 'Basal',
-    espessura_endometrial: '3.7 mm',
-    miomas: [],
-  },
-  ovario_direito: {
-    localizacao: 'Região paratuterina, móvel',
-    forma: 'Típica',
-    limites: 'Definidos',
-    parenchima: 'Ecogenicidade habitual',
-    biometria: '3.1 x 1.7 x 1.9 cm, volume 3.4 cm³',
-    lesoes: [],
-  },
-  ovario_esquerdo: {
-    localizacao: 'Região paratuterina, móvel',
-    forma: 'Típica',
-    limites: 'Definidos',
-    parenchima: 'Ecogenicidade habitual',
-    biometria: '2.7 x 1.5 x 1.4 cm, volume 3.2 cm³',
-    lesoes: [],
-  },
-  compartimentos: {
-    anterior: {
-      parede_vesical: 'Sem nodularidades',
-      espaco_vesico_uterino: 'Livre',
-      sinal_deslizamento_anterior: 'Positivo',
-      achados_endometriose: 'Não',
-    },
-    medial: {
-      superficie_uterina: 'Normal',
-      ligamentos_redondos: 'Sem sinais de endometriose',
-      tubas_uterinas: 'Normais',
-      ovarios: 'Sem sinais de endometriose',
-      achados_endometriose: 'Não',
-    },
-    posterior: {
-      septo_retovaginal: 'Sem sinais de endometriose profunda',
-      frnice_vaginal: 'Normal',
-      retossigmoide: 'Normal',
-      ligamentos_utero_sacros: 'Sem achados',
-      regiao_retro_cervical: 'Normal',
-      sinal_deslizamento_posterior: 'Positivo',
-      achados_endometriose: 'Não',
-    },
-  },
-  rins_ureteres: {
-    rins: 'Aspecto ecográfico normal, sem sinais de hidronefrose',
-    ureteres_terminais: 'Identificados, sem retrações ou alterações luminais',
-  },
-  parede_abdominal: {
-    regiao_umbilical: 'Sem alterações',
-    parede_abdominal: 'Sem alterações',
-  },
-  conclusao: 'Avaliação ecográfica sem sinais de endometriose profunda.',
-};
+const LAUDO_INICIAL = LAUDO_PADRAO;
 
 type EstadoMicrofone = 'inativo' | 'gravando' | 'processando' | 'concluido';
 type SuporteBrowser = 'suportado' | 'parcial' | 'nao-suportado';
@@ -352,11 +83,6 @@ export default function DitadoIA() {
 
   const handleImprimir = () => {
     window.print();
-  };
-
-  const formatarLesao = (lesao: any): string => {
-    if (typeof lesao === 'string') return lesao;
-    return `${lesao.tipo || ''} ${lesao.tamanho || ''} ${lesao.localizacao || ''}`.trim();
   };
 
   useEffect(() => {
@@ -519,39 +245,6 @@ export default function DitadoIA() {
       if (ondaRef.current) clearInterval(ondaRef.current);
     };
   }, []);
-
-  const formatarLaudo = () => {
-    const formatarObjeto = (obj: any, nivel: number = 0): string => {
-      if (!obj || typeof obj !== 'object') return String(obj || '');
-      
-      const indent = '  '.repeat(nivel);
-      const linhas: string[] = [];
-      
-      for (const [chave, valor] of Object.entries(obj)) {
-        const chaveFormatada = chave.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        
-        if (Array.isArray(valor)) {
-          if (valor.length > 0) {
-            const itens = valor.map((item: any) => 
-              typeof item === 'string' ? item : Object.values(item).filter(Boolean).join(' ')
-            ).join(', ');
-            linhas.push(`${indent}• ${chaveFormatada}: ${itens}`);
-          } else {
-            linhas.push(`${indent}• ${chaveFormatada}: Nenhum`);
-          }
-        } else if (typeof valor === 'object' && valor !== null) {
-          linhas.push(`${indent}[${chaveFormatada.toUpperCase()}]`);
-          linhas.push(formatarObjeto(valor, nivel + 1));
-        } else {
-          linhas.push(`${indent}• ${chaveFormatada}: ${valor || '-'}`);
-        }
-      }
-      
-      return linhas.filter(l => l.trim()).join('\n');
-    };
-
-    return formatarObjeto(laudo);
-  };
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
@@ -838,7 +531,7 @@ export default function DitadoIA() {
               Laudo Atualizado
             </h2>
             <div className="bg-slate-50 rounded-lg p-6 text-sm text-slate-800 font-mono whitespace-pre-wrap break-words leading-relaxed max-h-96 overflow-y-auto">
-              {formatarLaudo()}
+              {formatarLaudo(laudo)}
             </div>
           </div>
 

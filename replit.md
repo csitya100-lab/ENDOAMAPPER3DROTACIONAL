@@ -36,6 +36,10 @@ Preferred communication style: Simple, everyday language.
 - **Path Aliases**: `@/` maps to client source, `@shared/` maps to shared code
 - **Component Architecture**: Reusable UI components in `client/src/components/ui/`
 - **Page-based Routing**: Pages in `client/src/pages/` map to routes
+- **Laudo Module**: Centralized medical report logic at `shared/laudo/`:
+  - `types.ts`: LaudoData, ModeloLaudo, AchadosDetectados interfaces
+  - `templates.ts`: LAUDO_PADRAO, LAUDO_NORMAL, LAUDO_OBSTETRICO_1T, LAUDO_OBSTETRICO_2T, MODELOS_SISTEMA
+  - `utils.ts`: converterNumerosParaDigitos, detectarAchados, formatarLesao, formatarLaudo, validarLaudo, carregarLaudoDoStorage
 
 ### Application Pages
 1. **Home** (`/`): Main 3D visualization interface with lesion controls

@@ -1,4 +1,4 @@
-export type ViewType = 'sagittal' | 'coronal' | 'posterior';
+export type ViewType = 'sagittal-avf' | 'sagittal-rvf' | 'coronal' | 'posterior';
 
 export interface Position3D {
   x: number;
@@ -36,8 +36,12 @@ export function project3DToView(position3D: Position3D, viewType: ViewType, boun
   let canvasY: number;
   
   switch (viewType) {
-    case 'sagittal':
+    case 'sagittal-avf':
       canvasX = centerX + (z * scale);
+      canvasY = centerY - (y * scale);
+      break;
+    case 'sagittal-rvf':
+      canvasX = centerX - (z * scale);
       canvasY = centerY - (y * scale);
       break;
     case 'coronal':
@@ -69,11 +73,17 @@ export function canvas2DTo3D(
   const normalizedY = -(canvasY - centerY) / scale;
   
   switch (viewType) {
-    case 'sagittal':
+    case 'sagittal-avf':
       return {
         x: existingPosition?.x ?? 0,
         y: normalizedY,
         z: normalizedX
+      };
+    case 'sagittal-rvf':
+      return {
+        x: existingPosition?.x ?? 0,
+        y: normalizedY,
+        z: -normalizedX
       };
     case 'coronal':
       return {
@@ -94,7 +104,8 @@ export function canvas2DTo3D(
 
 export function getViewLabel(viewType: ViewType): string {
   const labels: Record<ViewType, string> = {
-    sagittal: 'Vista Sagital',
+    'sagittal-avf': 'Vista Sagital AVF',
+    'sagittal-rvf': 'Vista Sagital RVF',
     coronal: 'Vista Coronal',
     posterior: 'Vista Posterior'
   };
@@ -103,7 +114,8 @@ export function getViewLabel(viewType: ViewType): string {
 
 export function getViewColor(viewType: ViewType): string {
   const colors: Record<ViewType, string> = {
-    sagittal: '#3b82f6',
+    'sagittal-avf': '#3b82f6',
+    'sagittal-rvf': '#8b5cf6',
     coronal: '#10b981',
     posterior: '#f59e0b'
   };

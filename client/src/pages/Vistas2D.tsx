@@ -38,7 +38,7 @@ const SEVERITY_CONFIG: Record<Severity, { label: string; color: string; bgColor:
   deep: { label: 'Profunda', color: 'text-blue-400', bgColor: 'bg-blue-500/20' }
 };
 
-const VIEW_TYPES: ViewType[] = ['sagittal', 'coronal', 'posterior'];
+const VIEW_TYPES: ViewType[] = ['sagittal-avf', 'sagittal-rvf', 'coronal', 'posterior'];
 
 export default function Vistas2D() {
   const [, setLocation] = useLocation();
@@ -209,9 +209,9 @@ export default function Vistas2D() {
 
         <div className="grid grid-cols-12 gap-6 h-[calc(100vh-160px)]">
           <div className="col-span-9">
-            <div className="grid grid-cols-3 gap-4 h-full">
+            <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
               {VIEW_TYPES.map((viewType) => (
-                <div key={viewType} className="h-full">
+                <div key={viewType} className="h-full min-h-0">
                   <Canvas2D
                     viewType={viewType}
                     lesions={lesions}

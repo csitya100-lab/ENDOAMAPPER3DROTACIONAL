@@ -27,6 +27,13 @@ const SEVERITY_COLORS: Record<Severity, string> = {
   deep: '#3b82f6'
 };
 
+const VIEW_IMAGES: Record<ViewType, string> = {
+  'sagittal-avf': '/assets/sagittal-avf-view.png',
+  'sagittal-rvf': '/assets/sagittal-rvf-view.png',
+  'coronal': '/assets/coronal-view.png',
+  'posterior': '/assets/posterior-view.jpg'
+};
+
 export default function Canvas2D({
   viewType,
   lesions,
@@ -42,13 +49,14 @@ export default function Canvas2D({
   const [isDragging, setIsDragging] = useState(false);
   const [dragLesionId, setDragLesionId] = useState<string | null>(null);
   const [hoveredLesionId, setHoveredLesionId] = useState<string | null>(null);
-  const [coronalImage, setCoronalImage] = useState<HTMLImageElement | null>(null);
+  const [viewImage, setViewImage] = useState<HTMLImageElement | null>(null);
 
   useEffect(() => {
-    if (viewType === 'coronal') {
+    const imagePath = VIEW_IMAGES[viewType];
+    if (imagePath) {
       const img = new Image();
-      img.src = '/assets/coronal-view.png';
-      img.onload = () => setCoronalImage(img);
+      img.src = imagePath;
+      img.onload = () => setViewImage(img);
     }
   }, [viewType]);
 
@@ -69,71 +77,17 @@ export default function Canvas2D({
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw coronal view background image if available
-    if (viewType === 'coronal' && coronalImage) {
-      const maxSize = Math.min(canvas.width, canvas.height) * 0.8;
-      const scale = maxSize / Math.max(coronalImage.width, coronalImage.height);
-      const scaledWidth = coronalImage.width * scale;
-      const scaledHeight = coronalImage.height * scale;
+    if (viewImage) {
+      const maxSize = Math.min(canvas.width, canvas.height) * 0.85;
+      const scale = maxSize / Math.max(viewImage.width, viewImage.height);
+      const scaledWidth = viewImage.width * scale;
+      const scaledHeight = viewImage.height * scale;
       const x = (canvas.width - scaledWidth) / 2;
       const y = (canvas.height - scaledHeight) / 2;
       
-      ctx.globalAlpha = 0.85;
-      ctx.drawImage(coronalImage, x, y, scaledWidth, scaledHeight);
+      ctx.globalAlpha = 0.9;
+      ctx.drawImage(viewImage, x, y, scaledWidth, scaledHeight);
       ctx.globalAlpha = 1.0;
-    } else {
-      // Draw grid and anatomical reference for non-coronal views
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.1)';
-      ctx.lineWidth = 1;
-      const gridSize = 40 * zoomLevel;
-      
-      for (let x = bounds.centerX % gridSize; x < canvas.width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = bounds.centerY % gridSize; y < canvas.height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
-
-      const uterusWidth = bounds.scale * 1.8;
-      const uterusHeight = bounds.scale * 2.2;
-      
-      ctx.beginPath();
-      ctx.ellipse(
-        bounds.centerX,
-        bounds.centerY,
-        uterusWidth / 2,
-        uterusHeight / 2,
-        0,
-        0,
-        Math.PI * 2
-      );
-      ctx.strokeStyle = 'rgba(221, 138, 150, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(221, 138, 150, 0.08)';
-      ctx.fill();
-
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([5, 5]);
-      
-      ctx.beginPath();
-      ctx.moveTo(bounds.centerX, 0);
-      ctx.lineTo(bounds.centerX, canvas.height);
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.moveTo(0, bounds.centerY);
-      ctx.lineTo(canvas.width, bounds.centerY);
-      ctx.stroke();
-      
-      ctx.setLineDash([]);
     }
 
     lesions.forEach(lesion => {
@@ -185,13 +139,15 @@ export default function Canvas2D({
     });
 
     const viewColor = getViewColor(viewType);
+    const label = getViewLabel(viewType)?.toUpperCase() || viewType.toUpperCase();
+    ctx.font = 'bold 11px monospace';
+    const labelWidth = ctx.measureText(label).width + 20;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(8, 8, 120, 28);
-    ctx.font = 'bold 12px monospace';
+    ctx.fillRect(8, 8, Math.max(labelWidth, 160), 28);
     ctx.fillStyle = viewColor;
-    ctx.fillText(getViewLabel(viewType).toUpperCase(), 16, 26);
+    ctx.fillText(label, 16, 26);
 
-  }, [lesions, selectedLesionId, hoveredLesionId, zoomLevel, viewType, coronalImage]);
+  }, [lesions, selectedLesionId, hoveredLesionId, zoomLevel, viewType, viewImage]);
 
   useEffect(() => {
     drawCanvas();

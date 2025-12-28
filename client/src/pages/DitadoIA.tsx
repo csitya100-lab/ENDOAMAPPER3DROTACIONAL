@@ -313,7 +313,17 @@ const detectarNavegadorESuporte = (): { navegador: string; suporte: SuporteBrows
 
 export default function DitadoIA() {
   const [textoDitado, setTextoDitado] = useState('');
-  const [laudo, setLaudo] = useState<LaudoData>(LAUDO_INICIAL);
+  const [laudo, setLaudo] = useState<LaudoData>(() => {
+    const laudoSalvo = localStorage.getItem('laudo_atual');
+    if (laudoSalvo) {
+      try {
+        return JSON.parse(laudoSalvo);
+      } catch {
+        return LAUDO_INICIAL;
+      }
+    }
+    return LAUDO_INICIAL;
+  });
   const [loading, setLoading] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -53,12 +53,19 @@ Preferred communication style: Simple, everyday language.
 - **Projection Functions** (`shared/3d/projections.ts`): 3D<->2D coordinate transformations
   - `project3DToView()`: Converts 3D positions to 2D canvas coordinates for each view type
   - `canvas2DTo3D()`: Converts 2D canvas clicks back to 3D world coordinates
-  - Supports: sagittal (side view), coronal (front view), posterior (back view)
-- **Canvas2D Component** (`client/src/components/Canvas2D.tsx`): Interactive 2D canvas for lesion manipulation
+  - Supports: sagittal AVF (anterior view), sagittal RVF (posterior view), coronal (front view), posterior (back view)
+- **Canvas2D Component** (`client/src/components/Canvas2D.tsx`): Interactive 2D canvas with dual-layer rendering
+  - Layer 1: Lesion markers with anatomical backgrounds
+  - Layer 2: Freehand drawing and annotation tools
   - Click to add lesions, drag to move, double-click to edit
-  - Renders lesion markers with severity-based colors
+  - Drawing tools: Select (lesions), Pen (freehand), Eraser
+  - Customizable drawing color and brush size
 - **Lesion Store** (`client/src/lib/lesionStore.ts`): Zustand-based global state for lesion synchronization
   - Enables 2D<->3D synchronization across views
+- **Drawing Tools Toolbar**: Access in Vistas 2D page header
+  - Select tool: Manage lesion markers
+  - Pen tool: Draw annotations with custom color and size (1-20px)
+  - Eraser tool: Remove annotations from canvas
 
 ### Medical Report Structure
 The laudo (medical report) follows a compartmentalized clinical model for endometriosis diagnosis including:

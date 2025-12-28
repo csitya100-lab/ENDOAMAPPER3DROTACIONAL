@@ -10,12 +10,17 @@ import {
 } from '@shared/3d/projections';
 import { Lesion, Severity } from '@/lib/lesionStore';
 
+export type DrawingTool = 'select' | 'pen' | 'eraser';
+
 interface Canvas2DProps {
   viewType: ViewType;
   lesions: Lesion[];
   selectedLesionId: string | null;
   zoomLevel: number;
   editMode: boolean;
+  drawingTool?: DrawingTool;
+  drawingColor?: string;
+  drawingSize?: number;
   onLesionSelect: (id: string | null) => void;
   onLesionMove: (id: string, position: Position3D) => void;
   onLesionCreate: (position: Position3D) => void;
@@ -40,16 +45,21 @@ export default function Canvas2D({
   selectedLesionId,
   zoomLevel,
   editMode,
+  drawingTool = 'select',
+  drawingColor = '#ffffff',
+  drawingSize = 3,
   onLesionSelect,
   onLesionMove,
   onLesionCreate
 }: Canvas2DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragLesionId, setDragLesionId] = useState<string | null>(null);
   const [hoveredLesionId, setHoveredLesionId] = useState<string | null>(null);
   const [viewImage, setViewImage] = useState<HTMLImageElement | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   useEffect(() => {
     const imagePath = VIEW_IMAGES[viewType];
@@ -231,7 +241,7 @@ export default function Canvas2D({
   }, [isDragging]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-    if (!editMode) return;
+    if (!editMode || drawingTool !== 'select') return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -244,7 +254,58 @@ export default function Canvas2D({
     if (lesionId) {
       onLesionSelect(lesionId);
     }
-  }, [editMode, getLesionAtPosition, onLesionSelect]);
+  }, [editMode, drawingTool, getLesionAtPosition, onLesionSelect]);
+
+  const handleDrawingPointerDown = useCallback((e: React.PointerEvent) => {
+    if (drawingTool === 'select') return;
+    
+    const drawingCanvas = drawingCanvasRef.current;
+    if (!drawingCanvas) return;
+
+    const rect = drawingCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setIsDrawing(true);
+    const ctx = drawingCanvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.lineWidth = drawingSize;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (drawingTool === 'pen') {
+      ctx.strokeStyle = drawingColor;
+      ctx.globalCompositeOperation = 'source-over';
+    } else if (drawingTool === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }, [drawingTool, drawingColor, drawingSize]);
+
+  const handleDrawingPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDrawing || drawingTool === 'select') return;
+
+    const drawingCanvas = drawingCanvasRef.current;
+    if (!drawingCanvas) return;
+
+    const rect = drawingCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const ctx = drawingCanvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }, [isDrawing, drawingTool]);
+
+  const handleDrawingPointerUp = useCallback(() => {
+    setIsDrawing(false);
+  }, []);
 
   return (
     <div 
@@ -263,7 +324,17 @@ export default function Canvas2D({
         data-testid={`canvas-${viewType}`}
       />
       
-      {hoveredLesionId && !isDragging && (
+      <canvas
+        ref={drawingCanvasRef}
+        className={`absolute inset-0 touch-none ${drawingTool !== 'select' ? 'cursor-crosshair' : 'cursor-default'}`}
+        onPointerDown={handleDrawingPointerDown}
+        onPointerMove={handleDrawingPointerMove}
+        onPointerUp={handleDrawingPointerUp}
+        onPointerLeave={handleDrawingPointerUp}
+        data-testid={`drawing-canvas-${viewType}`}
+      />
+      
+      {hoveredLesionId && !isDragging && drawingTool === 'select' && (
         <div className="absolute bottom-2 left-2 bg-black/80 text-white text-xs px-2 py-1 rounded pointer-events-none">
           {editMode ? 'Arraste para mover · Duplo-clique para editar' : 'Clique para selecionar'}
         </div>

@@ -28,9 +28,14 @@ import {
   MapPin,
   RotateCcw,
   Grid3x3,
-  ArrowLeft
+  ArrowLeft,
+  Pen,
+  Eraser,
+  Pointer,
+  RotateCw
 } from 'lucide-react';
 import { useState } from 'react';
+import { DrawingTool } from '@/components/Canvas2D';
 
 const SEVERITY_CONFIG: Record<Severity, { label: string; color: string; bgColor: string }> = {
   superficial: { label: 'Superficial', color: 'text-red-400', bgColor: 'bg-red-500/20' },
@@ -45,6 +50,9 @@ export default function Vistas2D() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [editMode, setEditMode] = useState(true);
   const [currentSeverity, setCurrentSeverity] = useState<Severity>('moderate');
+  const [drawingTool, setDrawingTool] = useState<DrawingTool>('select');
+  const [drawingColor, setDrawingColor] = useState('#ffffff');
+  const [drawingSize, setDrawingSize] = useState(3);
 
   const { 
     lesions, 
@@ -97,7 +105,7 @@ export default function Vistas2D() {
       
       <main className="flex-1 ml-16 p-6">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="sm"
@@ -118,6 +126,66 @@ export default function Vistas2D() {
                 Edite lesões com precisão em vistas planares
               </p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-slate-800/50 rounded-lg px-3 py-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDrawingTool('select')}
+              className={`h-8 w-8 ${drawingTool === 'select' ? 'bg-slate-700' : ''}`}
+              title="Selecionar"
+              data-testid="button-tool-select"
+            >
+              <Pointer className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDrawingTool('pen')}
+              className={`h-8 w-8 ${drawingTool === 'pen' ? 'bg-slate-700' : ''}`}
+              title="Desenhar"
+              data-testid="button-tool-pen"
+            >
+              <Pen className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDrawingTool('eraser')}
+              className={`h-8 w-8 ${drawingTool === 'eraser' ? 'bg-slate-700' : ''}`}
+              title="Borracha"
+              data-testid="button-tool-eraser"
+            >
+              <Eraser className="w-4 h-4" />
+            </Button>
+            
+            {drawingTool === 'pen' && (
+              <>
+                <div className="h-6 w-px bg-slate-700" />
+                <input
+                  type="color"
+                  value={drawingColor}
+                  onChange={(e) => setDrawingColor(e.target.value)}
+                  className="w-8 h-8 cursor-pointer rounded border border-slate-600"
+                  title="Cor"
+                  data-testid="input-drawing-color"
+                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={drawingSize}
+                    onChange={(e) => setDrawingSize(parseInt(e.target.value))}
+                    className="w-20 h-2"
+                    title="Espessura"
+                    data-testid="input-drawing-size"
+                  />
+                  <span className="text-xs text-slate-400 w-6">{drawingSize}px</span>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -218,6 +286,9 @@ export default function Vistas2D() {
                     selectedLesionId={selectedLesionId}
                     zoomLevel={zoomLevel}
                     editMode={editMode}
+                    drawingTool={drawingTool}
+                    drawingColor={drawingColor}
+                    drawingSize={drawingSize}
                     onLesionSelect={handleLesionSelect}
                     onLesionMove={handleLesionMove}
                     onLesionCreate={handleLesionCreate}

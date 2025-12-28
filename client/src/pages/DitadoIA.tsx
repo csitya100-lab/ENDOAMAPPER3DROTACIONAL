@@ -515,84 +515,36 @@ export default function DitadoIA() {
   }, []);
 
   const formatarLaudo = () => {
-    return `
-[CABEÇALHO]
-Data: ${laudo.cabecalho.data}
-Tipo: ${laudo.cabecalho.tipo_exame}
-Equipamento: ${laudo.equipamento.nome}
-Vias: ${laudo.equipamento.vias}
-Técnicas: ${laudo.equipamento.tecnicas}
+    const formatarObjeto = (obj: any, nivel: number = 0): string => {
+      if (!obj || typeof obj !== 'object') return String(obj || '');
+      
+      const indent = '  '.repeat(nivel);
+      const linhas: string[] = [];
+      
+      for (const [chave, valor] of Object.entries(obj)) {
+        const chaveFormatada = chave.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        
+        if (Array.isArray(valor)) {
+          if (valor.length > 0) {
+            const itens = valor.map((item: any) => 
+              typeof item === 'string' ? item : Object.values(item).filter(Boolean).join(' ')
+            ).join(', ');
+            linhas.push(`${indent}• ${chaveFormatada}: ${itens}`);
+          } else {
+            linhas.push(`${indent}• ${chaveFormatada}: Nenhum`);
+          }
+        } else if (typeof valor === 'object' && valor !== null) {
+          linhas.push(`${indent}[${chaveFormatada.toUpperCase()}]`);
+          linhas.push(formatarObjeto(valor, nivel + 1));
+        } else {
+          linhas.push(`${indent}• ${chaveFormatada}: ${valor || '-'}`);
+        }
+      }
+      
+      return linhas.filter(l => l.trim()).join('\n');
+    };
 
-[ESTRUTURAS]
-  URETRA: ${laudo.estruturas.uretra.descricao}
-  BEXIGA: ${laudo.estruturas.bexiga.descricao}
-  VAGINA: ${laudo.estruturas.vagina.descricao}
-
-[ÚTERO]
-  • Posição: ${laudo.utero.posicao}
-  • Forma: ${laudo.utero.forma}
-  • Contornos: ${laudo.utero.contornos}
-  • Paredes: ${laudo.utero.paredes}
-  • Miométrio: ${laudo.utero.miometrio}
-  • Biometria: ${laudo.utero.biometria}
-  • Eco Endometrial: ${laudo.utero.eco_endometrial}
-  • Linha Média: ${laudo.utero.linha_media}
-  • Junção Endométrio-Miométrio: ${laudo.utero.juncao_endometrio_miometrio}
-  • Padrão: ${laudo.utero.padrao}
-  • Espessura Endometrial: ${laudo.utero.espessura_endometrial}
-  • Miomas: ${laudo.utero.miomas && laudo.utero.miomas.length > 0 ? laudo.utero.miomas.map((m: any) => `${m.tipo || 'mioma'} ${m.tamanho || ''} ${m.localizacao || ''}`).join(', ') : 'Nenhum detectado'}
-
-[OVÁRIO DIREITO]
-  • Localização: ${laudo.ovario_direito.localizacao}
-  • Forma: ${laudo.ovario_direito.forma}
-  • Limites: ${laudo.ovario_direito.limites}
-  • Parênquima: ${laudo.ovario_direito.parenchima}
-  • Biometria: ${laudo.ovario_direito.biometria}
-  • Lesões: ${laudo.ovario_direito.lesoes && laudo.ovario_direito.lesoes.length > 0 ? laudo.ovario_direito.lesoes.map((l: any) => typeof l === 'string' ? l : `${l.tipo || ''} ${l.tamanho || ''} ${l.localizacao || ''}`).join(', ') : 'Nenhuma detectada'}
-
-[OVÁRIO ESQUERDO]
-  • Localização: ${laudo.ovario_esquerdo.localizacao}
-  • Forma: ${laudo.ovario_esquerdo.forma}
-  • Limites: ${laudo.ovario_esquerdo.limites}
-  • Parênquima: ${laudo.ovario_esquerdo.parenchima}
-  • Biometria: ${laudo.ovario_esquerdo.biometria}
-  • Lesões: ${laudo.ovario_esquerdo.lesoes && laudo.ovario_esquerdo.lesoes.length > 0 ? laudo.ovario_esquerdo.lesoes.map((l: any) => typeof l === 'string' ? l : `${l.tipo || ''} ${l.tamanho || ''} ${l.localizacao || ''}`).join(', ') : 'Nenhuma detectada'}
-
-[COMPARTIMENTOS]
-
-ANTERIOR:
-  • Parede Vesical: ${laudo.compartimentos.anterior.parede_vesical}
-  • Espaço Vésico-Uterino: ${laudo.compartimentos.anterior.espaco_vesico_uterino}
-  • Sinal de Deslizamento Anterior: ${laudo.compartimentos.anterior.sinal_deslizamento_anterior}
-  • Endometriose: ${laudo.compartimentos.anterior.achados_endometriose}
-
-MEDIAL:
-  • Superfície Uterina: ${laudo.compartimentos.medial.superficie_uterina}
-  • Ligamentos Redondos: ${laudo.compartimentos.medial.ligamentos_redondos}
-  • Tubas Uterinas: ${laudo.compartimentos.medial.tubas_uterinas}
-  • Ovários: ${laudo.compartimentos.medial.ovarios}
-  • Endometriose: ${laudo.compartimentos.medial.achados_endometriose}
-
-POSTERIOR:
-  • Septo Retovaginal: ${laudo.compartimentos.posterior.septo_retovaginal}
-  • Fírnix Vaginal: ${laudo.compartimentos.posterior.frnice_vaginal}
-  • Retossigmoide: ${laudo.compartimentos.posterior.retossigmoide}
-  • Ligamentos Útero-Sacros: ${laudo.compartimentos.posterior.ligamentos_utero_sacros}
-  • Região Retro-Cervical: ${laudo.compartimentos.posterior.regiao_retro_cervical}
-  • Sinal de Deslizamento Posterior: ${laudo.compartimentos.posterior.sinal_deslizamento_posterior}
-  • Endometriose: ${laudo.compartimentos.posterior.achados_endometriose}
-
-[RINS E URETERES]
-  • Rins: ${laudo.rins_ureteres.rins}
-  • Ureteres Terminais: ${laudo.rins_ureteres.ureteres_terminais}
-
-[PAREDE ABDOMINAL]
-  • Região Umbilical: ${laudo.parede_abdominal.regiao_umbilical}
-  • Parede Abdominal: ${laudo.parede_abdominal.parede_abdominal}
-
-[CONCLUSÃO]
-${laudo.conclusao}
-    `.trim();
+    return formatarObjeto(laudo);
   };
 
   return (

@@ -1,18 +1,10 @@
 import { useRef, useState } from 'react';
 import { Uterus3D, Uterus3DRef } from '@/components/Uterus3D';
+import { useLesionStore, Severity } from '@/lib/lesionStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Circle, RotateCcw, Plus, Info, ChevronRight, FileText, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Circle, RotateCcw, Plus, FileText, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
-
-type Severity = 'superficial' | 'moderate' | 'deep';
-
-interface Lesion {
-  id: string;
-  position: { x: number; y: number; z: number };
-  severity: Severity;
-}
 
 interface ExamInfo {
   patient: string;
@@ -22,8 +14,7 @@ interface ExamInfo {
 
 export default function Home() {
   const [severity, setSeverity] = useState<Severity>('superficial');
-  const [lesionCount, setLesionCount] = useState(0);
-  const [lesions, setLesions] = useState<Lesion[]>([]);
+  const { lesions } = useLesionStore();
   const [examInfo] = useState<ExamInfo>({
     patient: 'Paciente A',
     date: new Date().toLocaleDateString('pt-BR'),
@@ -41,6 +32,7 @@ export default function Home() {
 
   const getLesionCount = (sev: Severity) => lesions.filter(l => l.severity === sev).length;
   const lastLesion = lesions[lesions.length - 1];
+  const lesionCount = lesions.length;
 
   const getMappingStatus = () => {
     if (lesionCount === 0) return 'Vazio';
@@ -206,8 +198,8 @@ export default function Home() {
             <Uterus3D 
               ref={uterusRef}
               severity={severity}
-              onLesionCountChange={setLesionCount}
-              onLesionsUpdate={setLesions}
+              onLesionCountChange={() => {}}
+              onLesionsUpdate={() => {}}
             />
           </main>
 

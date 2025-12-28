@@ -6,7 +6,8 @@ import {
   Mic, 
   FolderOpen,
   Settings,
-  HelpCircle
+  HelpCircle,
+  Grid3x3
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -26,9 +27,15 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     path: '/',
-    label: 'Mapeamento',
+    label: 'Mapeamento 3D',
     icon: <MapPin className="w-5 h-5" />,
-    description: 'Mapear lesões 3D/2D'
+    description: 'Modelo 3D rotacional'
+  },
+  {
+    path: '/vistas-2d',
+    label: 'Vistas 2D',
+    icon: <Grid3x3 className="w-5 h-5" />,
+    description: 'Editor de vistas planares'
   },
   {
     path: '/report',

@@ -9,6 +9,7 @@ import ExamReport from "@/pages/ExamReport";
 import Dashboard from "@/pages/Dashboard";
 import DitadoIA from "@/pages/DitadoIA";
 import GerenciarModelos from "@/pages/GerenciarModelos";
+import Vistas2D from "@/pages/Vistas2D";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/report" component={ExamReport} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/vistas-2d" component={Vistas2D} />
       <Route path="/ditado-ia" component={DitadoIA} />
       <Route path="/modelos" component={GerenciarModelos} />
       <Route component={NotFound} />

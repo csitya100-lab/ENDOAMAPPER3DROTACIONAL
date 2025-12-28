@@ -43,9 +43,22 @@ Preferred communication style: Simple, everyday language.
 
 ### Application Pages
 1. **Home** (`/`): Main 3D visualization interface with lesion controls
-2. **Dashboard** (`/dashboard`): Patient exam records overview
-3. **Exam Report** (`/report`): Multi-view report generation with lesion details
-4. **Ditado IA** (`/ditado-ia`): AI-powered voice dictation to structured medical report
+2. **Vistas 2D** (`/vistas-2d`): 2D views editor with Sagittal, Coronal, and Posterior views for precise lesion positioning
+3. **Dashboard** (`/dashboard`): Patient exam records overview
+4. **Exam Report** (`/report`): Multi-view report generation with lesion details
+5. **Ditado IA** (`/ditado-ia`): AI-powered voice dictation to structured medical report
+6. **Gerenciar Modelos** (`/modelos`): Template management for report models
+
+### 2D Views System
+- **Projection Functions** (`shared/3d/projections.ts`): 3D<->2D coordinate transformations
+  - `project3DToView()`: Converts 3D positions to 2D canvas coordinates for each view type
+  - `canvas2DTo3D()`: Converts 2D canvas clicks back to 3D world coordinates
+  - Supports: sagittal (side view), coronal (front view), posterior (back view)
+- **Canvas2D Component** (`client/src/components/Canvas2D.tsx`): Interactive 2D canvas for lesion manipulation
+  - Click to add lesions, drag to move, double-click to edit
+  - Renders lesion markers with severity-based colors
+- **Lesion Store** (`client/src/lib/lesionStore.ts`): Zustand-based global state for lesion synchronization
+  - Enables 2D<->3D synchronization across views
 
 ### Medical Report Structure
 The laudo (medical report) follows a compartmentalized clinical model for endometriosis diagnosis including:
@@ -72,6 +85,7 @@ The laudo (medical report) follows a compartmentalized clinical model for endome
 ### Key NPM Packages
 - `three`: 3D graphics rendering
 - `@tanstack/react-query`: Async state management
+- `zustand`: Lightweight state management for cross-component synchronization
 - `drizzle-orm` / `drizzle-zod`: Database ORM with Zod integration
 - `@radix-ui/*`: Accessible UI primitives
 - `zod`: Runtime type validation

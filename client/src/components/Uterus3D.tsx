@@ -1,15 +1,8 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-
-type Severity = 'superficial' | 'moderate' | 'deep';
-
-interface Lesion {
-  id: string;
-  position: { x: number; y: number; z: number };
-  severity: Severity;
-}
+import { useLesionStore, Lesion, Severity } from '@/lib/lesionStore';
 
 interface Uterus3DProps {
   severity: Severity;
@@ -23,9 +16,9 @@ export interface Uterus3DRef {
 }
 
 const COLORS = {
-  superficial: 0xef4444, // Red
-  moderate: 0xf97316,   // Orange
-  deep: 0x3b82f6        // Blue
+  superficial: 0xef4444,
+  moderate: 0xf97316,
+  deep: 0x3b82f6
 };
 
 export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLesionCountChange, onLesionsUpdate }, ref) => {
@@ -35,16 +28,16 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
   const viewCoronalRef = useRef<HTMLDivElement>(null);
   const viewPosteriorRef = useRef<HTMLDivElement>(null);
   
-  // Global lesion storage with 3D positions
-  const lesionsRef = useRef<Lesion[]>([]);
+  const { lesions, addLesion, updateLesion, removeLesion, clearLesions } = useLesionStore();
+  
   const currentSeverityRef = useRef(severity);
   const viewsRef = useRef<any[]>([]);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const markerGroupsRef = useRef<{ [key: number]: THREE.Group }>({});
   const sceneRef = useRef<THREE.Scene | null>(null);
   const anatomyGroupRef = useRef<THREE.Group | null>(null);
+  const updateMarkersRef = useRef<(() => void) | null>(null);
   
-  // Drag-and-drop state
   const dragStateRef = useRef<{
     isDragging: boolean;
     lesionId: string | null;
@@ -54,6 +47,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
   useEffect(() => {
     currentSeverityRef.current = severity;
   }, [severity]);
+
+  useEffect(() => {
+    onLesionCountChange(lesions.length);
+    onLesionsUpdate([...lesions]);
+    if (updateMarkersRef.current) {
+      updateMarkersRef.current();
+    }
+  }, [lesions, onLesionCountChange, onLesionsUpdate]);
 
   useImperativeHandle(ref, () => ({
     addTestLesion: () => {
@@ -65,43 +66,34 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       const y = (r * Math.sin(phi) * Math.sin(theta));
       const z = r * Math.cos(phi);
       
-      createLesionInStorage({ x, y, z }, currentSeverityRef.current);
+      addLesion({
+        position: { x, y, z },
+        severity: currentSeverityRef.current
+      });
     },
     clearLesions: () => {
-      lesionsRef.current = [];
-      updateAllMarkers();
-      updateStatus();
+      clearLesions();
     }
   }));
 
   const createLesionInStorage = (position: { x: number; y: number; z: number }, sev: Severity) => {
-    const lesion: Lesion = {
-      id: `lesion-${Date.now()}-${Math.random()}`,
+    addLesion({
       position,
       severity: sev
-    };
-    lesionsRef.current.push(lesion);
-    updateAllMarkers();
-    updateStatus();
-  };
-
-  const updateStatus = () => {
-    onLesionCountChange(lesionsRef.current.length);
-    onLesionsUpdate([...lesionsRef.current]);
+    });
   };
 
   const updateAllMarkers = () => {
     if (!sceneRef.current) return;
     
-    // Clear all marker groups
     Object.values(markerGroupsRef.current).forEach(group => {
       while(group.children.length > 0) {
         group.remove(group.children[0]);
       }
     });
 
-    // Recreate all markers for each view
-    lesionsRef.current.forEach(lesion => {
+    const currentLesions = useLesionStore.getState().lesions;
+    currentLesions.forEach(lesion => {
       viewsRef.current.forEach((view, viewIdx) => {
         createMarkerForView(lesion, viewIdx, view);
       });
@@ -311,6 +303,9 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       scene.add(markerGroupsRef.current[i]);
     }
 
+    // Assign updateAllMarkers function to ref for external access
+    updateMarkersRef.current = updateAllMarkers;
+
     const views: any[] = [];
     viewsRef.current = views;
 
@@ -397,28 +392,23 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
 
       markerRaycaster.setFromCamera(markerMouse, view.camera);
 
-      // Check intersection with marker group children (sphere + ring)
       const markerGroup = markerGroupsRef.current[viewIdx];
       if (!markerGroup) return null;
 
       const intersects = markerRaycaster.intersectObjects(markerGroup.children, true);
       
       if (intersects.length > 0) {
-        // Find which lesion this marker belongs to
-        const markerParent = intersects[0].object.parent;
-        for (const lesion of lesionsRef.current) {
-          // Marker groups contain sphere + ring for each lesion
-          // We can identify by proximity to lesion position
+        const currentLesions = useLesionStore.getState().lesions;
+        for (const lesion of currentLesions) {
           const markerWorldPos = new THREE.Vector3();
-          markerGroup.children.forEach(child => {
+          for (const child of markerGroup.children) {
             if (child.position.distanceTo(new THREE.Vector3(lesion.position.x, lesion.position.y, lesion.position.z)) < 0.3) {
               return lesion.id;
             }
-          });
+          }
         }
-        // Alternative: return first lesion if we can't determine exactly
-        if (lesionsRef.current.length > 0) {
-          return lesionsRef.current[0].id;
+        if (currentLesions.length > 0) {
+          return currentLesions[0].id;
         }
       }
       return null;
@@ -453,12 +443,10 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
 
       const worldPos = convertScreenToWorldCoords(event, viewIdx);
       if (worldPos && dragStateRef.current.lesionId) {
-        // Find and update the lesion
-        const lesionIdx = lesionsRef.current.findIndex(l => l.id === dragStateRef.current.lesionId);
-        if (lesionIdx >= 0) {
-          lesionsRef.current[lesionIdx].position = { x: worldPos.x, y: worldPos.y, z: worldPos.z };
-          updateAllMarkers();
-        }
+        useLesionStore.getState().updateLesion(dragStateRef.current.lesionId, { 
+          position: { x: worldPos.x, y: worldPos.y, z: worldPos.z } 
+        });
+        updateAllMarkers();
       }
     };
 
@@ -469,7 +457,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       dragStateRef.current = { isDragging: false, lesionId: null, viewIdx: 0 };
       views[viewIdx].controls.enableRotate = true;
       (event.target as HTMLElement).releasePointerCapture(event.pointerId);
-      updateStatus();
       event.preventDefault();
     };
 
@@ -478,13 +465,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       const lesionId = detectLesionMarker(event, viewIdx);
       
       if (lesionId) {
-        // Remove the lesion from storage
-        const lesionIdx = lesionsRef.current.findIndex(l => l.id === lesionId);
-        if (lesionIdx >= 0) {
-          lesionsRef.current.splice(lesionIdx, 1);
-          updateAllMarkers();
-          updateStatus();
-        }
+        useLesionStore.getState().removeLesion(lesionId);
+        updateAllMarkers();
         event.preventDefault();
       }
     };

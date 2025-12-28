@@ -1,0 +1,84 @@
+Com base na análise dos documentos fornecidos, especialmente o Consenso da SRU (Society of Radiologists in Ultrasound), o consenso IDEA (International Deep Endometriosis Analysis) e os exemplos de laudos positivos reais (como os arquivos "MODELO POSITIVO.docx" e "DAIANA RECK.docx"), apresento um exemplo de **laudo estruturado para um caso positivo**.
+
+Este modelo organiza os achados por compartimentos anatômicos e incorpora a terminologia padronizada (MUSA para adenomiose e IDEA para endometriose).
+
+---
+
+### MODELO DE LAUDO ESTRUTURADO (COM ACHADOS POSITIVOS)
+
+**EXAME: ULTRASSONOGRAFIA PARA MAPEAMENTO DE ENDOMETRIOSE COM PREPARO INTESTINAL**
+
+**TÉCNICA:**
+Exame realizado por via transvaginal e abdominal (se necessário para rins/diafragma), após preparo intestinal, utilizando manobras dinâmicas (sinal do deslizamento) para pesquisa de focos de endometriose profunda e aderências.
+
+---
+
+### ANÁLISE MORFOLÓGICA E BIOMETRIA
+
+**1. ÚTERO (Avaliação MUSA)**
+*   **Posição:** [Anteversoflexão / Retroversoflexão / Retroversão fixa].
+*   **Morfologia:** [Regular / Globosa / Assimétrica].
+*   **Miométrio:** Textura [Homogênea / Heterogênea].
+    *   *Se houver Adenomiose:* Presença de cistos miometriais, ilhas hiperecogênicas, estrias lineares subendometriais ou espessamento assimétrico das paredes (Sinais diretos e indiretos MUSA).
+    *   *Exemplo de descrição:* "Espessamento assimétrico da parede posterior com estrias em ventania (fan-shaped shadowing), sugestivo de adenomiose".
+*   **Endométrio:** Espessura de [X] mm. Aspecto [proliferativo/secretor]. Junção endométrio-miométrio (JZ) [regular/irregular].
+
+**2. ANEXOS (Avaliação IOTA/O-RADS)**
+*   **Ovário Direito:** Medidas [X x X x X] cm. Volume [X] cm³.
+    *   *Achados:* Presença de cisto unilocular com conteúdo em vidro fosco (endometrioma), medindo [X] cm, sem fluxo ao Doppler.
+    *   *Mobilidade:* [Móvel / Reduzida / Fixo].
+*   **Ovário Esquerdo:** Medidas [X x X x X] cm. Volume [X] cm³.
+    *   *Achados:* Aspecto normal ou descrição de lesões.
+    *   *Mobilidade:* [Móvel / Reduzida / Fixo].
+    *   *Sinal dos "Kissing Ovaries":* [Presente/Ausente] (Ovários retrouterinos aderidos na linha média).
+
+---
+
+### MAPEAMENTO DE ENDOMETRIOSE PROFUNDA (SISTEMÁTICA IDEA)
+
+**1. COMPARTIMENTO ANTERIOR**
+*   **Bexiga:** [Paredes normais / Nódulo hipoecogênico].
+    *   *Se positivo:* Nódulo na parede posterior/domo vesical medindo [X] cm, invadindo a camada muscular (detrusor), distando [X] cm dos meatos ureterais.
+*   **Espaço Vésico-Uterino:** [Livre / Obliteração parcial ou total].
+*   **Ureteres (segmento pélvico):** [Calibre preservado / Dilatação / Nódulo periureteral].
+
+**2. COMPARTIMENTO MEDIAL E LATERAL**
+*   **Ligamentos Redondos:** [Normais / Espessados com nódulos].
+*   **Paramétrios:** [Livres / Infiltrados].
+    *   *Se positivo:* Espessamento/nódulo hipoecogênico no paramétrio [lado], determinando retração ou afilamento do ureter correspondente.
+
+**3. COMPARTIMENTO POSTERIOR**
+*   **Sinal do Deslizamento (Sliding Sign):** [Positivo / Negativo].
+    *   *Negativo:* Indica obliteração do Fundo de Saco de Douglas (processo aderencial).
+*   **Região Retrocervical e Torus Uterino:**
+    *   Presença de espessamento ou nódulo hipoecogênico irregular medindo [X] cm.
+*   **Ligamentos Uterossacros (USL):**
+    *   *Direito:* [Normal / Espessado / Nódulo de X cm].
+    *   *Esquerdo:* [Normal / Espessado / Nódulo de X cm].
+*   **Intestino (Reto e Sigmoide):**
+    *   *Se positivo:* Lesão hipoecogênica irregular (“comet tail” ou “mushroom cap”), medindo [X] cm de extensão longitudinal.
+    *   *Distância da borda anal:* [X] cm.
+    *   *Infiltração:* Atinge a camada [Serosa / Muscular Própria / Submucosa].
+    *   *Circunferência:* Compromete [X]% da alça.
+
+---
+
+### SÍTIOS EXTRAPÉLVICOS (Se avaliados)
+*   **Rins:** [Sem hidronefrose / Hidronefrose à direita/esquerda].
+*   **Diafragma/Parede Abdominal/Cicatriz Umbilical:** [Sem alterações / Nódulo em cicatriz de cesárea medindo X cm].
+
+---
+
+### CONCLUSÃO
+
+1.  **Mapeamento positivo para endometriose profunda**, acometendo os compartimentos [citar compartimentos afetados, ex: posterior e lateral].
+2.  **Sinais de Adenomiose** [difusa/focal].
+3.  **Classificação de Risco (Sugestão SRU):**
+    *   **APU-3 (Positivo para Endometriose):** Presença de sinais diretos de endometriose profunda (Categoria A) ou múltiplos sinais indiretos.
+
+---
+
+### Observações sobre a Estrutura:
+*   **Divisão por Compartimentos:** Segue a lógica cirúrgica e os consensos internacionais (IDEA), facilitando o planejamento pré-operatório.
+*   **Detalhes das Lesões:** Para lesões intestinais, é crucial informar a distância da borda anal, a camada da parede intestinal acometida e a porcentagem da circunferência, pois isso define se a cirurgia será um "shaving", ressecção discoide ou segmentar.
+*   **Mobilidade:** O relato da mobilidade (sinal do deslizamento) é fundamental para prever a obliteração do fundo de saco de Douglas.

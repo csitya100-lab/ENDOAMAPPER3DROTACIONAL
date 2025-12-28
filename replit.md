@@ -49,6 +49,18 @@ Preferred communication style: Simple, everyday language.
 5. **Ditado IA** (`/ditado-ia`): AI-powered voice dictation to structured medical report
 6. **Gerenciar Modelos** (`/modelos`): Template management for report models
 
+### Report Templates Available
+1. **Mapeamento de Endometriose**: Standard endometriosis mapping template
+2. **US Transvaginal Normal**: Routine gynecological exam template
+3. **Obstetrícia 1º Trimestre**: First trimester obstetric assessment
+4. **Morfológico 2º Trimestre**: Fetal morphology evaluation
+5. **Mapeamento de endometriose 2**: Advanced structured template with MUSA (adenomyosis), IOTA/O-RADS (ovarian lesions), and IDEA (deep endometriosis) systematic evaluation including:
+   - Complete anatomical biometry and morphology assessment
+   - Compartmental endometriosis mapping (anterior, medial, posterior)
+   - Detailed lesion characterization with anatomical classification
+   - Risk classification system (APU-1/2/3)
+   - Extrapelvic site assessment (kidneys, diaphragm, abdominal wall)
+
 ### 2D Views System
 - **Projection Functions** (`shared/3d/projections.ts`): 3D<->2D coordinate transformations
   - `project3DToView()`: Converts 3D positions to 2D canvas coordinates for each view type

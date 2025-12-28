@@ -132,10 +132,17 @@ ${JSON.stringify(laudoValidado, null, 2)}
 Ditado do Médico:
 "${ditado}"
 
-Retorne APENAS um JSON válido com array de operações. Exemplo:
+Retorne APENAS um JSON válido com array de operações.
+
+IMPORTANTE PARA CONCLUSÃO:
+- A conclusão deve ser RESUMO do que foi ditado, NÃO diagnóstico
+- Formato correto: "Os achados descritos incluem: [listar exatamente o que foi ditado]"
+- NUNCA use: "Diagnóstico de...", "Compatível com...", "Sugestivo de..."
+
+Exemplo:
 [
-  { "acao": "update", "caminho": "conclusao", "valor": "Achados compatíveis com endometriose profunda" },
-  { "acao": "update", "caminho": "utero.tamanho", "valor": "aumentado" }
+  { "acao": "update", "caminho": "conclusao", "valor": "Os achados descritos incluem: mioma tipo 2 FIGO intracavitário medindo 2.5 cm na parede anterior" },
+  { "acao": "add", "caminho": "utero.miomas", "valor": { "tipo": "tipo 2 FIGO intracavitário", "tamanho": "2.5 cm", "localizacao": "parede anterior" } }
 ]`;
 
       const response = await ai.models.generateContent({

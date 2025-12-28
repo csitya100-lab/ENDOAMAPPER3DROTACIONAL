@@ -1,0 +1,65 @@
+# PLANO ARQUITETURA VISTAS 2D
+
+## OBJETIVO
+Criar secao Vistas2D.tsx para edicao de vistas bidimensionais
+separada do modelo 3D rotacional, mantendo sincronizacao automatica.
+
+## ESTRUTURA DO APP
+- /dashboard - visao geral
+- /mapeamento-3d - modelo 3D rotacional (existe)
+- /vistas-2d - NOVO - editor vistas planares
+- /ditado-ia - transcricao voz (existe)
+- /gerenciar-modelos - configuracoes (existe)
+
+## STORE GLOBAL DE LESOES
+
+interface Lesion {
+  id: string
+  position3D: { x: number, y: number, z: number }
+  severity: 'mild' | 'moderate' | 'severe'
+  location: string
+  observacoes?: string
+}
+
+## FUNCOES PROJECAO 3D <-> 2D
+
+project3DToView(position3D, viewType)
+canvas2DTo3D(x, y, viewType)
+
+## PAGINA VISTAS 2D
+
+### Layout
+- Header: titulo + toolbar (zoom, selecao vista)
+- Esquerda: 3 canvases em grid (Sagital, Coronal, Posterior)
+- Direita: Painel com lista lesoes, detalhes, edicao
+
+### Componente Canvas2D
+- Renderiza: fundo uterus, pontos lesoes, contorno selecionada
+- Interacoes: click seleciona, drag move, hover tooltip
+
+### Estados
+const [lesions] = useState([])
+const [selectedLesionId] = useState(null)
+const [zoomLevel] = useState(1)
+const [editMode] = useState(true)
+
+## DIFERENCA 3D vs 2D
+
+3D: rotacional, visao geral, overview
+2D: 3 canvases, detalhe, precisao posicional
+
+## FLUXO DE USO
+1. Navega /vistas-2d
+2. Carrega lesoes do store/API
+3. Renderiza 3 canvases com lesoes projetadas
+4. Click em lesao -> seleciona e exibe painel
+5. Drag move lesao nos canvases -> atualiza 3D
+6. Edit severidade/observacoes -> atualiza store
+7. Sincronizacao automatica com viewer 3D
+
+## PROXIMOS PASSOS
+1. Criar shared/3d/projections.ts
+2. Criar componente Canvas2D.tsx
+3. Criar pages/Vistas2D.tsx
+4. Integrar ao router e sidebar
+5. Testar sincronizacao 2D <-> 3D

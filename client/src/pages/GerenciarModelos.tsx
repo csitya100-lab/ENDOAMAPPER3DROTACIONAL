@@ -94,12 +94,137 @@ const LAUDO_PADRAO = {
   conclusao: 'Avaliação ecográfica sem sinais de endometriose profunda.',
 };
 
+const LAUDO_NORMAL = {
+  cabecalho: {
+    nome_medico: 'Dr(a). _______________',
+    data: new Date().toLocaleDateString('pt-BR'),
+    tipo_exame: 'Ultrassonografia Transvaginal',
+  },
+  equipamento: {
+    nome: 'Aparelho de ultrassonografia de alta resolução',
+    vias: 'Transvaginal',
+    tecnicas: 'Técnica padrão',
+  },
+  utero: {
+    posicao: 'Anteversoflexão (AVF)',
+    forma: 'Piriforme',
+    contornos: 'Regulares',
+    miometrio: 'Homogêneo',
+    eco_endometrial: 'Trilaminar, compatível com fase do ciclo',
+    biometria: 'Dentro dos limites da normalidade',
+  },
+  ovario_direito: {
+    localizacao: 'Posição habitual',
+    aspecto: 'Normal, com folículos em desenvolvimento',
+    biometria: 'Dentro da normalidade',
+  },
+  ovario_esquerdo: {
+    localizacao: 'Posição habitual',
+    aspecto: 'Normal, com folículos em desenvolvimento',
+    biometria: 'Dentro da normalidade',
+  },
+  fundo_de_saco: 'Livre',
+  conclusao: 'Exame ultrassonográfico transvaginal dentro dos limites da normalidade.',
+};
+
+const LAUDO_OBSTETRICO_1T = {
+  cabecalho: {
+    nome_medico: 'Dr(a). _______________',
+    data: new Date().toLocaleDateString('pt-BR'),
+    tipo_exame: 'Ultrassonografia Obstétrica 1º Trimestre',
+  },
+  equipamento: {
+    nome: 'Aparelho de ultrassonografia de alta resolução',
+    vias: 'Transvaginal e/ou Transabdominal',
+    tecnicas: 'Técnica padrão obstétrica',
+  },
+  gestacao: {
+    numero_fetos: '1 (gestação única)',
+    localizacao: 'Tópica, intrauterina',
+    saco_gestacional: 'Regular, bem implantado',
+    vesicula_vitelinica: 'Presente, aspecto normal',
+  },
+  embriao: {
+    ccn: '___ mm',
+    idade_gestacional: '___ semanas e ___ dias',
+    bcf: 'Presente, regular',
+    frequencia_cardiaca: '___ bpm',
+  },
+  utero: {
+    aspecto: 'Gravídico, sem alterações',
+    miometrio: 'Homogêneo',
+  },
+  ovarios: {
+    direito: 'Sem alterações significativas',
+    esquerdo: 'Sem alterações significativas',
+    corpo_luteo: 'Presente em ovário ___',
+  },
+  conclusao: 'Gestação tópica, única, com embrião vivo. Idade gestacional compatível com ___ semanas.',
+};
+
+const LAUDO_OBSTETRICO_2T = {
+  cabecalho: {
+    nome_medico: 'Dr(a). _______________',
+    data: new Date().toLocaleDateString('pt-BR'),
+    tipo_exame: 'Ultrassonografia Morfológica 2º Trimestre',
+  },
+  equipamento: {
+    nome: 'Aparelho de ultrassonografia de alta resolução',
+    vias: 'Transabdominal',
+    tecnicas: 'Avaliação morfológica fetal detalhada',
+  },
+  feto: {
+    situacao: 'Longitudinal',
+    apresentacao: 'Cefálica',
+    dorso: 'À ___',
+    movimentos_fetais: 'Presentes',
+    bcf: 'Presente, rítmico',
+    frequencia_cardiaca: '___ bpm',
+  },
+  biometria: {
+    dbp: '___ mm (p___)',
+    cc: '___ mm (p___)',
+    ca: '___ mm (p___)',
+    cf: '___ mm (p___)',
+    peso_estimado: '___ g (p___)',
+    idade_gestacional: '___ semanas',
+  },
+  anatomia: {
+    cranio: 'Contornos regulares, estruturas da linha média preservadas',
+    face: 'Perfil normal, lábios e narinas íntegros',
+    coluna: 'Alinhamento normal, sem defeitos de fechamento',
+    coracao: 'Quatro câmaras simétricas, ritmo regular',
+    abdome: 'Circunferência normal, estômago e bexiga visualizados',
+    rins: 'Tópicos, pelves não dilatadas',
+    membros: 'Presentes e simétricos',
+    genitalia: 'Compatível com sexo ___',
+  },
+  placenta: {
+    localizacao: '___',
+    grau: 'Grau ___',
+    espessura: 'Normal',
+  },
+  cordao_umbilical: {
+    insercao: 'Central',
+    vasos: '3 vasos (2 artérias e 1 veia)',
+  },
+  liquido_amniotico: {
+    volume: 'Normal',
+    ila: '___ cm',
+  },
+  colo_uterino: {
+    comprimento: '___ mm',
+    orificio_interno: 'Fechado',
+  },
+  conclusao: 'Gestação única, tópica, com feto vivo. Biometria compatível com ___ semanas. Morfologia fetal sem alterações evidentes ao método.',
+};
+
 const MODELOS_SISTEMA: ModeloLaudo[] = [
   {
     id: 'sistema-1',
-    nome: 'Modelo Padrão (Endometriose)',
+    nome: 'Mapeamento de Endometriose',
     tipo: 'sistema',
-    descricao: 'Estrutura base original do sistema para mapeamento de endometriose.',
+    descricao: 'Template completo para avaliação de endometriose profunda com todos os compartimentos.',
     data_criacao: '2025-01-01T00:00:00Z',
     data_edicao: '2025-01-01T00:00:00Z',
     json_laudo: LAUDO_PADRAO,
@@ -107,32 +232,32 @@ const MODELOS_SISTEMA: ModeloLaudo[] = [
   },
   {
     id: 'sistema-2',
-    nome: 'Laudo Normal (Sem Achados)',
+    nome: 'US Transvaginal Normal',
     tipo: 'sistema',
-    descricao: 'Template limpo para exames sem achados patológicos.',
+    descricao: 'Template simplificado para exames ginecológicos de rotina sem achados patológicos.',
     data_criacao: '2025-01-01T00:00:00Z',
     data_edicao: '2025-01-01T00:00:00Z',
-    json_laudo: { ...LAUDO_PADRAO, conclusao: 'Exame ultrassonográfico dentro dos limites da normalidade.' },
+    json_laudo: LAUDO_NORMAL,
     uso_count: 0,
   },
   {
     id: 'sistema-3',
     nome: 'Obstetrícia 1º Trimestre',
     tipo: 'sistema',
-    descricao: 'Template para avaliação obstétrica do primeiro trimestre.',
+    descricao: 'Template para avaliação obstétrica inicial com datação e vitalidade.',
     data_criacao: '2025-01-01T00:00:00Z',
     data_edicao: '2025-01-01T00:00:00Z',
-    json_laudo: { ...LAUDO_PADRAO, cabecalho: { ...LAUDO_PADRAO.cabecalho, tipo_exame: 'Ultrassonografia Obstétrica 1º Trimestre' } },
+    json_laudo: LAUDO_OBSTETRICO_1T,
     uso_count: 0,
   },
   {
     id: 'sistema-4',
-    nome: 'Obstetrícia 2º Trimestre',
+    nome: 'Morfológico 2º Trimestre',
     tipo: 'sistema',
-    descricao: 'Template para avaliação morfológica do segundo trimestre.',
+    descricao: 'Template completo para avaliação morfológica fetal detalhada.',
     data_criacao: '2025-01-01T00:00:00Z',
     data_edicao: '2025-01-01T00:00:00Z',
-    json_laudo: { ...LAUDO_PADRAO, cabecalho: { ...LAUDO_PADRAO.cabecalho, tipo_exame: 'Ultrassonografia Morfológica 2º Trimestre' } },
+    json_laudo: LAUDO_OBSTETRICO_2T,
     uso_count: 0,
   },
 ];
@@ -455,33 +580,55 @@ export default function GerenciarModelos() {
       </main>
 
       {modalEditar && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+        <div 
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setModalEditar(null)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
               <h3 className="text-lg font-semibold text-slate-900">Editar Modelo: {modalEditar.nome}</h3>
-              <Button variant="ghost" size="icon" onClick={() => setModalEditar(null)} data-testid="button-fechar-modal-editar">
+              <button 
+                type="button"
+                onClick={() => setModalEditar(null)} 
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                data-testid="button-fechar-modal-editar"
+              >
                 <X className="w-4 h-4" />
-              </Button>
+              </button>
             </div>
             <div className="flex-1 overflow-auto p-4">
               <textarea
                 value={jsonEditando}
                 onChange={(e) => setJsonEditando(e.target.value)}
-                className="w-full h-96 p-4 border border-slate-200 rounded-lg font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full h-96 p-4 border border-slate-200 rounded-lg font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                 data-testid="textarea-editar-json"
+                spellCheck={false}
               />
               {erroJson && (
-                <p className="text-sm text-red-600 mt-2">{erroJson}</p>
+                <p className="text-sm text-red-600 mt-2" data-testid="text-erro-json">{erroJson}</p>
               )}
             </div>
             <div className="flex gap-2 p-4 border-t border-slate-200">
-              <Button variant="outline" onClick={() => setModalEditar(null)} className="flex-1" data-testid="button-cancelar-edicao">
+              <button 
+                type="button"
+                onClick={() => setModalEditar(null)} 
+                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                data-testid="button-cancelar-edicao"
+              >
                 Cancelar
-              </Button>
-              <Button onClick={salvarEdicao} className="flex-1 bg-green-600 text-white hover:bg-green-700" data-testid="button-salvar-edicao">
-                <Check className="w-4 h-4 mr-2" />
+              </button>
+              <button 
+                type="button"
+                onClick={salvarEdicao} 
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                data-testid="button-salvar-edicao"
+              >
+                <Check className="w-4 h-4" />
                 Salvar Alterações
-              </Button>
+              </button>
             </div>
           </div>
         </div>

@@ -1,0 +1,206 @@
+CRIAR SEÇÃO "GERENCIAR MODELOS" COM DESIGN PROFISSIONAL:
+
+Inspiração visual: Modal limpo, cards bem estruturados, interações claras.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+ESTRUTURA VISUAL (igual ao Google AI Studio):
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Voltar ao início                                           ⊗   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ 📋 Gerenciar Modelos                                            │
+│                                                                 │
+│ ┌────────────────────────────────────┐ ┌──────────────────────┐│
+│ │ Modelo Padrão (Endometriose)       │ │ Salvar Laudo Atual  ││
+│ │ [Badge: Sistema]                   │ │ como Modelo         ││
+│ │ Estrutura base original do sistema.│ │                     ││
+│ │                                    │ │ [Campo de texto]    ││
+│ │ [Usar] [Editar] [Duplicar]         │ │ Nome do novo modelo ││
+│ │                                    │ │ (ex: Template Novo) ││
+│ ├────────────────────────────────────┤ │                     ││
+│ │ Laudo Mioma Complexo               │ │ ⚠️ O texto editado ││
+│ │ [Badge: Pessoal]                   │ │ no laudo atual será ││
+│ │ Template com múltiplos miomas.     │ │ salvo como padrão  ││
+│ │ Criado: 20/12/2025                 │ │ para este novo      ││
+│ │                                    │ │ modelo.             ││
+│ │ [Usar] [Editar] [Duplicar] [Del]   │ │                     ││
+│ │                                    │ │ [← Cancelar] [✓]    ││
+│ ├────────────────────────────────────┤ │                     ││
+│ │ Obstetrícia 22 Semanas             │ │ Salvar Modelo       ││
+│ │ [Badge: Pessoal]                   │ └──────────────────────┘│
+│ │ Medidas e biometria para 22sem...  │                         │
+│ │ Criado: 15/12/2025                 │                         │
+│ │                                    │                         │
+│ │ [Usar] [Editar] [Duplicar] [Del]   │                         │
+│ └────────────────────────────────────┘                         │
+│                                                                 │
+│ ┌──────────────────────────────────────────────────────────┐   │
+│ │ 📥 Importar JSON (Avançado)                              │   │
+│ ├──────────────────────────────────────────────────────────┤   │
+│ │                                                          │   │
+│ │ Cole a estrutura JSON aqui...                           │   │
+│ │ [Textarea grande]                                       │   │
+│ │                                                          │   │
+│ │ [Importar Estrutura]                                    │   │
+│ │                                                          │   │
+│ └──────────────────────────────────────────────────────────┘   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+
+COMPONENTES DETALHADOS:
+
+1. HEADER:
+   ├─ Botão voltar (← Voltar ao início)
+   ├─ Título: "📋 Gerenciar Modelos"
+   └─ Espaçamento limpo
+
+2. SEÇÃO ESQUERDA: MEUS MODELOS (2/3 da largura)
+   
+   ├─ CARD POR MODELO:
+   │  ├─ Título do modelo
+   │  ├─ Badge: [Sistema] ou [Pessoal]
+   │  │  └─ Sistema = pré-definido, não deletável
+   │  │  └─ Pessoal = criado pelo médico, deletável
+   │  ├─ Descrição (1-2 linhas)
+   │  ├─ Data de criação (cinza pequeno)
+   │  └─ Botões inline:
+   │     ├─ [Usar] (azul) → copia para laudoAtual
+   │     ├─ [Editar] (cinza) → abre editor JSON
+   │     ├─ [Duplicar] (cinza) → cria cópia
+   │     └─ [Del] (vermelho) → (só pessoais) delete
+
+3. SEÇÃO DIREITA: SALVAR LAUDO ATUAL COMO MODELO (1/3 da largura)
+   
+   ├─ Título: "Salvar Laudo Atual como Modelo"
+   ├─ Campo de texto: "Nome do novo modelo"
+   │  └─ Placeholder: "ex: Template Novo, Caso Complexo..."
+   ├─ Aviso (pequeno, cinza):
+   │  "O texto editado no laudo atual será salvo como padrão para este novo modelo."
+   └─ Botões:
+      ├─ [← Cancelar] (cinza)
+      └─ [✓ Salvar Modelo] (verde/rosa)
+
+4. SEÇÃO IMPORTAR JSON:
+   ├─ Título: "📥 Importar JSON (Avançado)"
+   ├─ Textarea grande:
+   │  └─ Placeholder: "Cole a estrutura JSON aqui..."
+   ├─ Observação (pequeno):
+   │  "Para usuários avançados. Cole um JSON válido de laudo anterior."
+   └─ Botão:
+      └─ [Importar Estrutura] (azul)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+ESTILO CSS (baseado no Google AI Studio):
+
+- Fundo: branco puro (#ffffff)
+- Cards: borda sutil (1px #e5e7eb), shadow leve (0 1px 3px rgba(0,0,0,0.1))
+- Texto: cinza escuro (#1f2937) para títulos, #6b7280 para descrição
+- Botões: cores claras, borders, sem shadows
+- Spacing: 16px, 24px, 32px (escala consistente)
+- Font: Inter, Segoe UI (sans-serif profissional)
+- Badges: background subtle (#f3f4f6), texto pequeno (#6b7280)
+- Textarea: border ao focar (#3b82f6), altura mínima 150px
+
+═══════════════════════════════════════════════════════════════════════════════
+
+FUNCIONALIDADES:
+
+A) USAR MODELO:
+   └─ Copia JSON do modelo para laudoAtual
+   └─ Redireciona automaticamente para "Ditado IA para Laudo"
+   └─ Mostra toast: "Modelo carregado. Você pode editar agora."
+
+B) EDITAR MODELO:
+   └─ Abre novo modal com:
+      ├─ Textarea contendo JSON do modelo (editável)
+      ├─ Botões: [Preview] [Salvar] [Cancelar]
+   └─ Valida JSON antes de salvar
+   └─ Se erro: mostra linha e mensagem de erro
+
+C) DUPLICAR MODELO:
+   └─ Pede novo nome (modal simples)
+   └─ Cria cópia com nome: "Cópia de [nome original]"
+   └─ Aparece na lista
+
+D) DELETAR MODELO:
+   └─ Pede confirmação: "Deseja deletar este modelo?"
+   └─ ⚠️ Ação irreversível
+   └─ Remove da lista
+
+E) SALVAR LAUDO ATUAL COMO MODELO:
+   └─ Nome obrigatório
+   └─ Pega laudoAtual completo
+   └─ Salva com timestamp
+   └─ Torna-se modelo "Pessoal"
+   └─ Toast: "Modelo salvo com sucesso!"
+
+F) IMPORTAR JSON:
+   └─ Valida estrutura JSON
+   └─ Se válido: abre pequeno modal pedindo nome
+   └─ Salva como novo modelo "Pessoal"
+   └─ Se inválido: mostra erro claro
+
+═══════════════════════════════════════════════════════════════════════════════
+
+NAVEGAÇÃO:
+
+Acessar seção:
+├─ Opção 1: Botão "Modelos" na navbar principal
+├─ Opção 2: Menu lateral → "Gerenciar Modelos"
+└─ Opção 3: Na página "Ditado IA" → botão "Carregar Modelo"
+
+Voltar de "Gerenciar Modelos":
+└─ Botão "← Voltar ao início" → Dashboard
+   ou
+└─ Se veio de "Ditado IA" → volta para lá
+
+═══════════════════════════════════════════════════════════════════════════════
+
+PERSISTÊNCIA:
+
+Armazenar em localStorage:
+
+modelos = [
+  {
+    id: 'uuid-1',
+    nome: 'Laudo Normal - Endometriose',
+    tipo: 'sistema', // 'sistema' ou 'pessoal'
+    descricao: 'Estrutura base original do sistema.',
+    data_criacao: '2025-12-20T10:30:00Z',
+    data_edicao: '2025-12-20T10:30:00Z',
+    json_laudo: { ... }, // JSON completo
+    uso_count: 5 // quantas vezes foi usado
+  },
+  ...
+]
+
+═══════════════════════════════════════════════════════════════════════════════
+
+TEMPLATES PRÉ-DEFINIDOS (SISTEMA):
+
+1) "Modelo Padrão (Endometriose)" - seu laudo atual
+2) "Laudo Normal" - sem achados
+3) "Obstetrícia 1º Trimestre"
+4) "Obstetrícia 2º Trimestre"
+5) "Obstetrícia 3º Trimestre"
+6) "Avaliação Mamária"
+
+Todos com tipo: 'sistema', não deletáveis.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+RESPONSIVE:
+
+Desktop (>1024px):
+└─ Layout 2 colunas (modelos esquerda, salvar direita)
+
+Tablet (768-1024px):
+└─ Layout 1 coluna, botão "Salvar modelo" em card abaixo
+
+Mobile (<768px):
+└─ Layout 1 coluna, full width, cards empilhadas

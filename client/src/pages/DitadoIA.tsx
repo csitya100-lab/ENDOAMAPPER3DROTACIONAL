@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff, Eye, Printer, X, ChevronRight, RotateCw, Shield } from 'lucide-react';
+import { ChevronLeft, Zap, Check, RotateCcw, Download, AlertCircle, CheckCircle2, Loader2, Mic, MicOff, Eye, Printer, X, ChevronRight, RotateCw, Shield, ClipboardList } from 'lucide-react';
 
 interface LaudoData {
   cabecalho: {
@@ -612,8 +612,18 @@ ${laudo.conclusao}
           </div>
         </div>
 
-        <div className="flex items-center gap-4 pr-4 border-r border-slate-200">
-          <div className="text-right">
+        <div className="flex items-center gap-4">
+          <Button
+            onClick={() => window.location.href = '/modelos'}
+            variant="outline"
+            size="sm"
+            className="border-slate-300 text-slate-700 hover:bg-slate-50"
+            data-testid="button-carregar-modelo"
+          >
+            <ClipboardList className="w-4 h-4 mr-2" />
+            Carregar Modelo
+          </Button>
+          <div className="text-right pr-4 border-r border-slate-200">
             <p className="text-sm font-semibold text-slate-900">Exame</p>
             <p className="text-xs text-slate-600">Endometriose</p>
             <p className="text-[10px] text-slate-500 mt-0.5">{laudo.cabecalho.data}</p>

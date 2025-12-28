@@ -95,126 +95,38 @@ const LAUDO_PADRAO = {
 };
 
 const LAUDO_NORMAL = {
+  ...LAUDO_PADRAO,
   cabecalho: {
-    nome_medico: 'Dr(a). _______________',
-    data: new Date().toLocaleDateString('pt-BR'),
-    tipo_exame: 'Ultrassonografia Transvaginal',
+    ...LAUDO_PADRAO.cabecalho,
+    tipo_exame: 'Ultrassonografia Transvaginal de Rotina',
   },
-  equipamento: {
-    nome: 'Aparelho de ultrassonografia de alta resolução',
-    vias: 'Transvaginal',
-    tecnicas: 'Técnica padrão',
-  },
-  utero: {
-    posicao: 'Anteversoflexão (AVF)',
-    forma: 'Piriforme',
-    contornos: 'Regulares',
-    miometrio: 'Homogêneo',
-    eco_endometrial: 'Trilaminar, compatível com fase do ciclo',
-    biometria: 'Dentro dos limites da normalidade',
-  },
-  ovario_direito: {
-    localizacao: 'Posição habitual',
-    aspecto: 'Normal, com folículos em desenvolvimento',
-    biometria: 'Dentro da normalidade',
-  },
-  ovario_esquerdo: {
-    localizacao: 'Posição habitual',
-    aspecto: 'Normal, com folículos em desenvolvimento',
-    biometria: 'Dentro da normalidade',
-  },
-  fundo_de_saco: 'Livre',
-  conclusao: 'Exame ultrassonográfico transvaginal dentro dos limites da normalidade.',
+  conclusao: 'Exame ultrassonográfico transvaginal dentro dos limites da normalidade. Ausência de achados patológicos.',
 };
 
 const LAUDO_OBSTETRICO_1T = {
+  ...LAUDO_PADRAO,
   cabecalho: {
-    nome_medico: 'Dr(a). _______________',
-    data: new Date().toLocaleDateString('pt-BR'),
+    ...LAUDO_PADRAO.cabecalho,
     tipo_exame: 'Ultrassonografia Obstétrica 1º Trimestre',
   },
   equipamento: {
-    nome: 'Aparelho de ultrassonografia de alta resolução',
+    ...LAUDO_PADRAO.equipamento,
     vias: 'Transvaginal e/ou Transabdominal',
     tecnicas: 'Técnica padrão obstétrica',
-  },
-  gestacao: {
-    numero_fetos: '1 (gestação única)',
-    localizacao: 'Tópica, intrauterina',
-    saco_gestacional: 'Regular, bem implantado',
-    vesicula_vitelinica: 'Presente, aspecto normal',
-  },
-  embriao: {
-    ccn: '___ mm',
-    idade_gestacional: '___ semanas e ___ dias',
-    bcf: 'Presente, regular',
-    frequencia_cardiaca: '___ bpm',
-  },
-  utero: {
-    aspecto: 'Gravídico, sem alterações',
-    miometrio: 'Homogêneo',
-  },
-  ovarios: {
-    direito: 'Sem alterações significativas',
-    esquerdo: 'Sem alterações significativas',
-    corpo_luteo: 'Presente em ovário ___',
   },
   conclusao: 'Gestação tópica, única, com embrião vivo. Idade gestacional compatível com ___ semanas.',
 };
 
 const LAUDO_OBSTETRICO_2T = {
+  ...LAUDO_PADRAO,
   cabecalho: {
-    nome_medico: 'Dr(a). _______________',
-    data: new Date().toLocaleDateString('pt-BR'),
+    ...LAUDO_PADRAO.cabecalho,
     tipo_exame: 'Ultrassonografia Morfológica 2º Trimestre',
   },
   equipamento: {
-    nome: 'Aparelho de ultrassonografia de alta resolução',
+    ...LAUDO_PADRAO.equipamento,
     vias: 'Transabdominal',
     tecnicas: 'Avaliação morfológica fetal detalhada',
-  },
-  feto: {
-    situacao: 'Longitudinal',
-    apresentacao: 'Cefálica',
-    dorso: 'À ___',
-    movimentos_fetais: 'Presentes',
-    bcf: 'Presente, rítmico',
-    frequencia_cardiaca: '___ bpm',
-  },
-  biometria: {
-    dbp: '___ mm (p___)',
-    cc: '___ mm (p___)',
-    ca: '___ mm (p___)',
-    cf: '___ mm (p___)',
-    peso_estimado: '___ g (p___)',
-    idade_gestacional: '___ semanas',
-  },
-  anatomia: {
-    cranio: 'Contornos regulares, estruturas da linha média preservadas',
-    face: 'Perfil normal, lábios e narinas íntegros',
-    coluna: 'Alinhamento normal, sem defeitos de fechamento',
-    coracao: 'Quatro câmaras simétricas, ritmo regular',
-    abdome: 'Circunferência normal, estômago e bexiga visualizados',
-    rins: 'Tópicos, pelves não dilatadas',
-    membros: 'Presentes e simétricos',
-    genitalia: 'Compatível com sexo ___',
-  },
-  placenta: {
-    localizacao: '___',
-    grau: 'Grau ___',
-    espessura: 'Normal',
-  },
-  cordao_umbilical: {
-    insercao: 'Central',
-    vasos: '3 vasos (2 artérias e 1 veia)',
-  },
-  liquido_amniotico: {
-    volume: 'Normal',
-    ila: '___ cm',
-  },
-  colo_uterino: {
-    comprimento: '___ mm',
-    orificio_interno: 'Fechado',
   },
   conclusao: 'Gestação única, tópica, com feto vivo. Biometria compatível com ___ semanas. Morfologia fetal sem alterações evidentes ao método.',
 };

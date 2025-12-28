@@ -317,8 +317,14 @@ export default function DitadoIA() {
     const laudoSalvo = localStorage.getItem('laudo_atual');
     if (laudoSalvo) {
       try {
-        return JSON.parse(laudoSalvo);
+        const parsed = JSON.parse(laudoSalvo);
+        if (parsed.estruturas && parsed.compartimentos && parsed.utero) {
+          return parsed;
+        }
+        localStorage.removeItem('laudo_atual');
+        return LAUDO_INICIAL;
       } catch {
+        localStorage.removeItem('laudo_atual');
         return LAUDO_INICIAL;
       }
     }

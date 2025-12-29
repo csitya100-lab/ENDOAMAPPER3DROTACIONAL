@@ -318,6 +318,11 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
         controls = new OrbitControls(camera, element);
         controls.minDistance = 2;
         controls.maxDistance = 10;
+        controls.mouseButtons = {
+          LEFT: THREE.MOUSE.ROTATE,
+          MIDDLE: THREE.MOUSE.DOLLY,
+          RIGHT: THREE.MOUSE.ROTATE
+        };
       } else {
         const frustumSize = 8;
         const aspect = element.clientWidth / element.clientHeight;

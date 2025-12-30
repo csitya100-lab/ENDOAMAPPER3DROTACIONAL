@@ -14,16 +14,16 @@ export type DrawingTool = 'select' | 'pen' | 'eraser' | 'line' | 'text' | 'circl
 
 interface Canvas2DProps {
   viewType: ViewType;
-  lesions: Lesion[];
-  selectedLesionId: string | null;
+  lesions?: Lesion[];
+  selectedLesionId?: string | null;
   zoomLevel: number;
   editMode: boolean;
   drawingTool?: DrawingTool;
   drawingColor?: string;
   drawingSize?: number;
-  onLesionSelect: (id: string | null) => void;
-  onLesionMove: (id: string, position: Position3D) => void;
-  onLesionCreate: (position: Position3D) => void;
+  onLesionSelect?: (id: string | null) => void;
+  onLesionMove?: (id: string, position: Position3D) => void;
+  onLesionCreate?: (position: Position3D) => void;
   onCanvasRef?: (canvas: HTMLCanvasElement | null) => void;
 }
 
@@ -42,8 +42,8 @@ const VIEW_IMAGES: Record<ViewType, string> = {
 
 export default function Canvas2D({
   viewType,
-  lesions,
-  selectedLesionId,
+  lesions = [],
+  selectedLesionId = null,
   zoomLevel,
   editMode,
   drawingTool = 'select',
@@ -212,9 +212,9 @@ export default function Canvas2D({
     if (lesionId) {
       setIsDragging(true);
       setDragLesionId(lesionId);
-      onLesionSelect(lesionId);
+      onLesionSelect?.(lesionId);
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    } else {
+    } else if (onLesionCreate) {
       const bounds = calculateCanvasBounds(canvas.width, canvas.height, zoomLevel);
       const position3D = canvas2DTo3D(x, y, viewType, bounds);
       onLesionCreate(position3D);
@@ -229,7 +229,7 @@ export default function Canvas2D({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (isDragging && dragLesionId && editMode) {
+    if (isDragging && dragLesionId && editMode && onLesionMove) {
       const bounds = calculateCanvasBounds(canvas.width, canvas.height, zoomLevel);
       const currentLesion = lesions.find(l => l.id === dragLesionId);
       const position3D = canvas2DTo3D(x, y, viewType, bounds, currentLesion?.position);
@@ -261,7 +261,7 @@ export default function Canvas2D({
 
     const lesionId = getLesionAtPosition(x, y);
     if (lesionId) {
-      onLesionSelect(lesionId);
+      onLesionSelect?.(lesionId);
     }
   }, [editMode, drawingTool, getLesionAtPosition, onLesionSelect]);
 

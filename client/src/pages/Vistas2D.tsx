@@ -1,38 +1,21 @@
-import { useCallback } from 'react';
 import { useLocation } from 'wouter';
 import AppSidebar from '@/components/AppSidebar';
 import Canvas2D from '@/components/Canvas2D';
-import { useLesionStore, Lesion, Severity } from '@/lib/lesionStore';
-import { Position3D, ViewType, clampPosition } from '@shared/3d/projections';
+import { ViewType } from '@shared/3d/projections';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   ZoomIn,
   ZoomOut,
-  Trash2,
   Edit3,
   Eye,
-  MapPin,
   RotateCcw,
   Grid3x3,
   ArrowLeft,
   Pen,
   Eraser,
   Pointer,
-  RotateCw,
   Type,
   Minus,
   Circle,
@@ -40,12 +23,6 @@ import {
 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { DrawingTool } from '@/components/Canvas2D';
-
-const SEVERITY_CONFIG: Record<Severity, { label: string; color: string; bgColor: string }> = {
-  superficial: { label: 'Superficial', color: 'text-red-400', bgColor: 'bg-red-500/20' },
-  moderate: { label: 'Moderada', color: 'text-orange-400', bgColor: 'bg-orange-500/20' },
-  deep: { label: 'Profunda', color: 'text-blue-400', bgColor: 'bg-blue-500/20' }
-};
 
 const VIEW_TYPES: ViewType[] = ['sagittal-avf', 'sagittal-rvf', 'coronal', 'posterior'];
 
@@ -60,8 +37,7 @@ export default function Vistas2D() {
   const [, setLocation] = useLocation();
   const [zoomLevel, setZoomLevel] = useState(1);
   const [editMode, setEditMode] = useState(true);
-  const [currentSeverity, setCurrentSeverity] = useState<Severity>('moderate');
-  const [drawingTool, setDrawingTool] = useState<DrawingTool>('select');
+  const [drawingTool, setDrawingTool] = useState<DrawingTool>('pen');
   const [drawingColor, setDrawingColor] = useState('#ffffff');
   const [drawingSize, setDrawingSize] = useState(3);
   const [selectedViewsForExport, setSelectedViewsForExport] = useState<Set<ViewType>>(new Set());
@@ -89,47 +65,6 @@ export default function Vistas2D() {
       setSelectedViewsForExport(new Set(VIEW_TYPES));
     }
   };
-
-  const { 
-    lesions, 
-    selectedLesionId, 
-    addLesion, 
-    updateLesion, 
-    removeLesion, 
-    clearLesions, 
-    selectLesion 
-  } = useLesionStore();
-
-  const selectedLesion = lesions.find(l => l.id === selectedLesionId);
-
-  const handleLesionSelect = useCallback((id: string | null) => {
-    selectLesion(id);
-  }, [selectLesion]);
-
-  const handleLesionMove = useCallback((id: string, position: Position3D) => {
-    updateLesion(id, { position: clampPosition(position) });
-  }, [updateLesion]);
-
-  const handleLesionCreate = useCallback((position: Position3D) => {
-    addLesion({
-      position: clampPosition(position),
-      severity: currentSeverity,
-      location: '',
-      observacoes: ''
-    });
-  }, [addLesion, currentSeverity]);
-
-  const handleDeleteLesion = useCallback((id: string) => {
-    removeLesion(id);
-  }, [removeLesion]);
-
-  const handleClearAll = useCallback(() => {
-    clearLesions();
-  }, [clearLesions]);
-
-  const handleUpdateLesion = useCallback((id: string, updates: Partial<Lesion>) => {
-    updateLesion(id, updates);
-  }, [updateLesion]);
 
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
@@ -341,33 +276,6 @@ export default function Vistas2D() {
               </Button>
             </div>
 
-            {editMode && (
-              <Select value={currentSeverity} onValueChange={(v) => setCurrentSeverity(v as Severity)}>
-                <SelectTrigger className="w-40 bg-slate-800/50 border-slate-700" data-testid="select-severity">
-                  <SelectValue placeholder="Severidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="superficial">
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-red-500" />
-                      Superficial
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="moderate">
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-orange-500" />
-                      Moderada
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="deep">
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-blue-500" />
-                      Profunda
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            )}
           </div>
         </div>
 
@@ -378,16 +286,11 @@ export default function Vistas2D() {
                 <div key={viewType} className="h-full min-h-0 relative group">
                   <Canvas2D
                     viewType={viewType}
-                    lesions={lesions}
-                    selectedLesionId={selectedLesionId}
                     zoomLevel={zoomLevel}
                     editMode={editMode}
                     drawingTool={drawingTool}
                     drawingColor={drawingColor}
                     drawingSize={drawingSize}
-                    onLesionSelect={handleLesionSelect}
-                    onLesionMove={handleLesionMove}
-                    onLesionCreate={handleLesionCreate}
                     onCanvasRef={(canvas) => { canvasRefs.current[viewType] = canvas; }}
                   />
                   <label className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-3 py-2 rounded cursor-pointer hover:bg-black/80 transition-colors">
@@ -406,18 +309,7 @@ export default function Vistas2D() {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 text-xs text-slate-500">
-              <span className="w-2 h-2 rounded-full bg-red-500" /> Superficial
-            </span>
-            <span className="flex items-center gap-1 text-xs text-slate-500">
-              <span className="w-2 h-2 rounded-full bg-orange-500" /> Moderada
-            </span>
-            <span className="flex items-center gap-1 text-xs text-slate-500">
-              <span className="w-2 h-2 rounded-full bg-blue-500" /> Profunda
-            </span>
-          </div>
+        <div className="mt-4 flex items-center justify-end gap-4">
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-500">
               {selectedViewsForExport.size === 0 

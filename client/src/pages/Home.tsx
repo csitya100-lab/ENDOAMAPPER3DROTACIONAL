@@ -179,9 +179,9 @@ export default function Home() {
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 gap-2 bg-slate-100 border-slate-200">
+                <Button variant="outline" size="sm" className="h-9 gap-2 bg-slate-100 border-slate-200 text-slate-700">
                   <Settings2 className="w-4 h-4" />
-                  <span className="text-xs">Marcador</span>
+                  <span className="text-xs font-medium">Marcador</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-64 p-4" align="start">

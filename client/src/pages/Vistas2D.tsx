@@ -210,19 +210,6 @@ export default function Vistas2D() {
                   title="Cor"
                   data-testid="input-drawing-color"
                 />
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <input
-                    type="range"
-                    min="1"
-                    max="20"
-                    value={drawingSize}
-                    onChange={(e) => setDrawingSize(parseInt(e.target.value))}
-                    className="w-20 h-2 flex-shrink-0"
-                    title="Espessura"
-                    data-testid="input-drawing-size"
-                  />
-                  <span className="text-xs text-slate-400 w-6 flex-shrink-0">{drawingSize}px</span>
-                </div>
               </>
             )}
           </div>

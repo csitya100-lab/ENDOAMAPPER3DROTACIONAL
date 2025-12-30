@@ -53,8 +53,12 @@ export default function Vistas2D() {
     const newSet = new Set(selectedViewsForExport);
     if (newSet.has(viewType)) {
       newSet.delete(viewType);
+      if (focusedView === viewType) {
+        setFocusedView(null);
+      }
     } else {
       newSet.add(viewType);
+      setFocusedView(viewType);
     }
     setSelectedViewsForExport(newSet);
   };
@@ -304,8 +308,7 @@ export default function Vistas2D() {
                 viewType !== focusedView && (
                   <div
                     key={viewType}
-                    onClick={() => setFocusedView(viewType)}
-                    className="h-24 min-h-0 relative group rounded border border-slate-600 hover:border-pink-500 cursor-pointer transition-all hover:shadow-lg hover:shadow-pink-500/20 overflow-hidden"
+                    className="h-24 min-h-0 relative group rounded border border-slate-600 transition-all overflow-hidden"
                   >
                     <Canvas2D
                       viewType={viewType}
@@ -346,8 +349,7 @@ export default function Vistas2D() {
                 {VIEW_TYPES.map((viewType) => (
                   <div
                     key={viewType}
-                    onClick={() => setFocusedView(viewType)}
-                    className="h-full min-h-0 relative group rounded-lg border border-slate-700 hover:border-pink-500 cursor-pointer transition-all hover:shadow-lg hover:shadow-pink-500/20 overflow-hidden"
+                    className="h-full min-h-0 relative group rounded-lg border border-slate-700 transition-all overflow-hidden"
                   >
                     <Canvas2D
                       viewType={viewType}

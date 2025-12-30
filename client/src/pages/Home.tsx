@@ -19,7 +19,7 @@ export default function Home() {
   const [markerSize, setMarkerSize] = useState(0.18);
   const [markerColor, setMarkerColor] = useState<string | undefined>(undefined);
   const [markerType, setMarkerType] = useState<MarkerType>('circle');
-  const { lesions, updateLesion } = useLesionStore();
+  const { lesions } = useLesionStore();
   const [examInfo] = useState<ExamInfo>({
     patient: 'Paciente A',
     date: new Date().toLocaleDateString('pt-BR'),
@@ -362,73 +362,9 @@ export default function Home() {
                       <div key={lesion.id} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-mono font-bold text-slate-700">#{idx + 1}</span>
-                          <div className="flex items-center gap-1">
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button className="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-700" data-testid={`button-edit-lesion-${idx}`}>
-                                  <Settings2 className="w-3 h-3" />
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-56 p-3" align="end">
-                                <div className="space-y-3">
-                                  <div>
-                                    <label className="text-[10px] font-medium text-slate-600 mb-1 block">Tamanho</label>
-                                    <Slider
-                                      value={[lesion.size ?? 0.18]}
-                                      onValueChange={([v]) => updateLesion(lesion.id, { size: v })}
-                                      min={0.08}
-                                      max={0.5}
-                                      step={0.02}
-                                      className="w-full"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] font-medium text-slate-600 mb-1 block">Tipo</label>
-                                    <div className="flex gap-1">
-                                      <button
-                                        onClick={() => updateLesion(lesion.id, { markerType: 'circle' })}
-                                        className={`p-1.5 rounded ${lesion.markerType === 'circle' || !lesion.markerType ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:bg-slate-100'}`}
-                                      >
-                                        <Circle className="w-3.5 h-3.5" />
-                                      </button>
-                                      <button
-                                        onClick={() => updateLesion(lesion.id, { markerType: 'square' })}
-                                        className={`p-1.5 rounded ${lesion.markerType === 'square' ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:bg-slate-100'}`}
-                                      >
-                                        <Square className="w-3.5 h-3.5" />
-                                      </button>
-                                      <button
-                                        onClick={() => updateLesion(lesion.id, { markerType: 'triangle' })}
-                                        className={`p-1.5 rounded ${lesion.markerType === 'triangle' ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:bg-slate-100'}`}
-                                      >
-                                        <Triangle className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] font-medium text-slate-600 mb-1 block">Cor</label>
-                                    <div className="flex items-center gap-2">
-                                      <input
-                                        type="color"
-                                        value={lesion.color || (lesion.severity === 'superficial' ? '#ef4444' : lesion.severity === 'moderate' ? '#f97316' : '#3b82f6')}
-                                        onChange={(e) => updateLesion(lesion.id, { color: e.target.value })}
-                                        className="w-8 h-6 cursor-pointer rounded border border-slate-300"
-                                      />
-                                      <button
-                                        onClick={() => updateLesion(lesion.id, { color: undefined })}
-                                        className="text-[9px] text-slate-500 hover:text-slate-700"
-                                      >
-                                        Padrão
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-medium ${getLesionStatusColor(lesionStatus)}`}>
-                              {getLesionStatusIcon(lesionStatus)}
-                              {lesionStatus}
-                            </div>
+                          <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-medium ${getLesionStatusColor(lesionStatus)}`}>
+                            {getLesionStatusIcon(lesionStatus)}
+                            {lesionStatus}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 mb-1.5">

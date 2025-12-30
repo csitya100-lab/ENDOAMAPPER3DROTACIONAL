@@ -99,11 +99,29 @@ export default function ExamReport() {
   });
   const [exportedViews, setExportedViews] = useState<Array<{ viewType: string; viewLabel: string; imageData: string }>>([]);
 
+  // Mapeamento de viewLabel para viewName dos cards
+  const labelToViewNameMap: Record<string, string> = {
+    'Sagittal (AVF)': 'Sagittal (Side)',
+    'Sagittal (RVF)': 'Sagittal (Side)',
+    'Coronal': 'Coronal (Front)',
+    'Posterior': 'Posterior'
+  };
+
   useEffect(() => {
     const stored = localStorage.getItem('exportedViews');
     if (stored) {
       const data = JSON.parse(stored);
-      setExportedViews(Array.isArray(data) ? data : []);
+      const viewsArray = Array.isArray(data) ? data : [];
+      setExportedViews(viewsArray);
+
+      // Auto-habilitar as vistas correspondentes
+      if (viewsArray.length > 0) {
+        const newViews = views.map(v => {
+          const shouldEnable = viewsArray.some(view => labelToViewNameMap[view.viewLabel] === v.name);
+          return shouldEnable ? { ...v, enabled: true } : v;
+        });
+        setViews(newViews);
+      }
     }
   }, []);
 
@@ -352,30 +370,6 @@ export default function ExamReport() {
               </div>
             </div>
 
-            {exportedViews.length > 0 && (
-              <div className="mb-6 pb-4 border-2 border-pink-300 bg-pink-50 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-pink-600" />
-                    {exportedViews.length} Vista{exportedViews.length !== 1 ? 's' : ''} Importada{exportedViews.length !== 1 ? 's' : ''}
-                  </h3>
-                  <button 
-                    onClick={() => { setExportedViews([]); localStorage.removeItem('exportedViews'); }}
-                    className="text-xs text-slate-600 hover:text-red-600"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className={`grid ${exportedViews.length === 1 ? 'grid-cols-1' : exportedViews.length === 2 ? 'grid-cols-2' : 'grid-cols-2'} gap-3`}>
-                  {exportedViews.map((view) => (
-                    <div key={view.viewType} className="flex flex-col">
-                      <p className="text-xs font-semibold text-slate-700 mb-2">{view.viewLabel}</p>
-                      <img src={view.imageData} alt={view.viewLabel} className="w-full rounded border border-pink-300" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <div className="mb-6 pb-4 border-b-2 border-slate-300">
               <h1 className="text-3xl font-bold text-slate-900 mb-1">Relatório de Endometriose</h1>
@@ -392,34 +386,43 @@ export default function ExamReport() {
                       key={card.id}
                       className="border-2 border-slate-300 rounded-lg overflow-hidden flex flex-col bg-white hover:shadow-lg transition-shadow"
                     >
-                      <div className="h-40 bg-gradient-to-br from-slate-200 via-slate-300 to-slate-200 flex items-center justify-center border-b-2 border-slate-300 relative">
-                        <div className="text-slate-500 text-xs font-mono text-center px-4">
-                          <div className="mb-1">📐 {card.viewName}</div>
-                          <div className="text-[10px] text-slate-400">[Espaço para imagem]</div>
-                        </div>
-                        <div className="absolute top-2 right-2 flex items-center gap-1">
-                          <button
-                            onClick={() => activeRecording === card.id ? stopDictation() : startDictation(card.id)}
-                            className={`p-1.5 rounded flex items-center justify-center transition-colors ${
-                              activeRecording === card.id 
-                                ? 'bg-red-100 text-red-600' 
-                                : 'bg-white text-slate-600 hover:bg-slate-100'
-                            }`}
-                            title={activeRecording === card.id ? 'Parar ditado' : 'Iniciar ditado por voz'}
-                            data-testid={`button-dictation-${card.id}`}
-                          >
-                            {activeRecording === card.id ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                          </button>
-                          <button
-                            onClick={() => correctSpelling(card.id)}
-                            className="p-1.5 rounded flex items-center justify-center bg-white text-blue-600 hover:bg-blue-50 transition-colors"
-                            title="Corrigir ortografia e gramática"
-                            data-testid={`button-spellcheck-${card.id}`}
-                          >
-                            <SpellCheck className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
+                      {(() => {
+                        const exportedView = exportedViews.find(v => labelToViewNameMap[v.viewLabel] === card.viewName);
+                        return (
+                          <div className="h-40 bg-gradient-to-br from-slate-200 via-slate-300 to-slate-200 flex items-center justify-center border-b-2 border-slate-300 relative overflow-hidden">
+                            {exportedView ? (
+                              <img src={exportedView.imageData} alt={card.viewName} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="text-slate-500 text-xs font-mono text-center px-4">
+                                <div className="mb-1">📐 {card.viewName}</div>
+                                <div className="text-[10px] text-slate-400">[Espaço para imagem]</div>
+                              </div>
+                            )}
+                            <div className="absolute top-2 right-2 flex items-center gap-1">
+                              <button
+                                onClick={() => activeRecording === card.id ? stopDictation() : startDictation(card.id)}
+                                className={`p-1.5 rounded flex items-center justify-center transition-colors ${
+                                  activeRecording === card.id 
+                                    ? 'bg-red-100 text-red-600' 
+                                    : 'bg-white text-slate-600 hover:bg-slate-100'
+                                }`}
+                                title={activeRecording === card.id ? 'Parar ditado' : 'Iniciar ditado por voz'}
+                                data-testid={`button-dictation-${card.id}`}
+                              >
+                                {activeRecording === card.id ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                              </button>
+                              <button
+                                onClick={() => correctSpelling(card.id)}
+                                className="p-1.5 rounded flex items-center justify-center bg-white text-blue-600 hover:bg-blue-50 transition-colors"
+                                title="Corrigir ortografia e gramática"
+                                data-testid={`button-spellcheck-${card.id}`}
+                              >
+                                <SpellCheck className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       <div className="flex-1 flex flex-col p-3">
                         <input

@@ -35,9 +35,10 @@ import {
   RotateCw,
   Type,
   Minus,
-  Circle
+  Circle,
+  FileText
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { DrawingTool } from '@/components/Canvas2D';
 
 const SEVERITY_CONFIG: Record<Severity, { label: string; color: string; bgColor: string }> = {
@@ -48,6 +49,13 @@ const SEVERITY_CONFIG: Record<Severity, { label: string; color: string; bgColor:
 
 const VIEW_TYPES: ViewType[] = ['sagittal-avf', 'sagittal-rvf', 'coronal', 'posterior'];
 
+const VIEW_LABELS: Record<ViewType, string> = {
+  'sagittal-avf': 'Sagittal (AVF)',
+  'sagittal-rvf': 'Sagittal (RVF)',
+  'coronal': 'Coronal',
+  'posterior': 'Posterior'
+};
+
 export default function Vistas2D() {
   const [, setLocation] = useLocation();
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -56,6 +64,13 @@ export default function Vistas2D() {
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('select');
   const [drawingColor, setDrawingColor] = useState('#ffffff');
   const [drawingSize, setDrawingSize] = useState(3);
+  const [selectedViewForExport, setSelectedViewForExport] = useState<ViewType | null>(null);
+  const canvasRefs = useRef<Record<ViewType, HTMLCanvasElement | null>>({
+    'sagittal-avf': null,
+    'sagittal-rvf': null,
+    'coronal': null,
+    'posterior': null
+  });
 
   const { 
     lesions, 
@@ -101,6 +116,26 @@ export default function Vistas2D() {
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
   const handleResetZoom = () => setZoomLevel(1);
+
+  const handleExportView = () => {
+    if (!selectedViewForExport) {
+      alert('Selecione uma vista para exportar');
+      return;
+    }
+
+    const canvas = canvasRefs.current[selectedViewForExport];
+    if (!canvas) return;
+
+    const imageData = canvas.toDataURL('image/png');
+    localStorage.setItem('exportedView', JSON.stringify({
+      viewType: selectedViewForExport,
+      viewLabel: VIEW_LABELS[selectedViewForExport],
+      imageData,
+      timestamp: new Date().toISOString()
+    }));
+
+    setLocation('/report');
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex">
@@ -322,7 +357,7 @@ export default function Vistas2D() {
           <div className="col-span-12">
             <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
               {VIEW_TYPES.map((viewType) => (
-                <div key={viewType} className="h-full min-h-0">
+                <div key={viewType} className="h-full min-h-0 relative group">
                   <Canvas2D
                     viewType={viewType}
                     lesions={lesions}
@@ -335,27 +370,49 @@ export default function Vistas2D() {
                     onLesionSelect={handleLesionSelect}
                     onLesionMove={handleLesionMove}
                     onLesionCreate={handleLesionCreate}
+                    onCanvasRef={(canvas) => { canvasRefs.current[viewType] = canvas; }}
                   />
+                  <label className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-3 py-2 rounded cursor-pointer hover:bg-black/80 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={selectedViewForExport === viewType}
+                      onChange={() => setSelectedViewForExport(selectedViewForExport === viewType ? null : viewType)}
+                      className="cursor-pointer"
+                      data-testid={`checkbox-export-${viewType}`}
+                    />
+                    <span className="text-xs font-medium text-white">{VIEW_LABELS[viewType]}</span>
+                  </label>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
+        <div className="mt-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 text-xs text-slate-500">
               <span className="w-2 h-2 rounded-full bg-red-500" /> Superficial
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 text-xs text-slate-500">
               <span className="w-2 h-2 rounded-full bg-orange-500" /> Moderada
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 text-xs text-slate-500">
               <span className="w-2 h-2 rounded-full bg-blue-500" /> Profunda
             </span>
           </div>
-          <div>
-            Clique para adicionar · Arraste para mover · Duplo-clique para editar
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-500">
+              {selectedViewForExport ? `Selecionado: ${VIEW_LABELS[selectedViewForExport]}` : 'Nenhuma vista selecionada'}
+            </span>
+            <Button
+              onClick={handleExportView}
+              disabled={!selectedViewForExport}
+              className="bg-pink-600 hover:bg-pink-700 text-white text-xs h-8"
+              data-testid="button-export-to-report"
+            >
+              <FileText className="w-3.5 h-3.5 mr-1" />
+              Enviar ao Laudo
+            </Button>
           </div>
         </div>
       </main>

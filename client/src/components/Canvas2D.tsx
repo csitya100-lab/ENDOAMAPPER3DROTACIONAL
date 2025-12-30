@@ -24,6 +24,7 @@ interface Canvas2DProps {
   onLesionSelect: (id: string | null) => void;
   onLesionMove: (id: string, position: Position3D) => void;
   onLesionCreate: (position: Position3D) => void;
+  onCanvasRef?: (canvas: HTMLCanvasElement | null) => void;
 }
 
 const SEVERITY_COLORS: Record<Severity, string> = {
@@ -50,7 +51,8 @@ export default function Canvas2D({
   drawingSize = 3,
   onLesionSelect,
   onLesionMove,
-  onLesionCreate
+  onLesionCreate,
+  onCanvasRef
 }: Canvas2DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -72,6 +74,10 @@ export default function Canvas2D({
       img.onload = () => setViewImage(img);
     }
   }, [viewType]);
+
+  useEffect(() => {
+    onCanvasRef?.(canvasRef.current);
+  }, [onCanvasRef]);
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;

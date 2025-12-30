@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FileDown, Printer, FileText, Mic, MicOff, SpellCheck } from 'lucide-react';
@@ -97,6 +97,15 @@ export default function ExamReport() {
     examiner: 'Dr. Silva',
     date: new Date().toLocaleDateString('pt-BR'),
   });
+  const [exportedView, setExportedView] = useState<{ viewType: string; viewLabel: string; imageData: string } | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('exportedView');
+    if (stored) {
+      const data = JSON.parse(stored);
+      setExportedView(data);
+    }
+  }, []);
 
   const toggleView = (viewId: string) => {
     setViews(views.map(v => v.id === viewId ? { ...v, enabled: !v.enabled } : v));
@@ -342,6 +351,24 @@ export default function ExamReport() {
                 />
               </div>
             </div>
+
+            {exportedView && (
+              <div className="mb-6 pb-4 border-2 border-pink-300 bg-pink-50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-pink-600" />
+                    Vista Importada: {exportedView.viewLabel}
+                  </h3>
+                  <button 
+                    onClick={() => { setExportedView(null); localStorage.removeItem('exportedView'); }}
+                    className="text-xs text-slate-600 hover:text-red-600"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <img src={exportedView.imageData} alt={exportedView.viewLabel} className="w-full rounded border border-pink-300" />
+              </div>
+            )}
 
             <div className="mb-6 pb-4 border-b-2 border-slate-300">
               <h1 className="text-3xl font-bold text-slate-900 mb-1">Relatório de Endometriose</h1>

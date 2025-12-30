@@ -64,13 +64,31 @@ export default function Vistas2D() {
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('select');
   const [drawingColor, setDrawingColor] = useState('#ffffff');
   const [drawingSize, setDrawingSize] = useState(3);
-  const [selectedViewForExport, setSelectedViewForExport] = useState<ViewType | null>(null);
+  const [selectedViewsForExport, setSelectedViewsForExport] = useState<Set<ViewType>>(new Set());
   const canvasRefs = useRef<Record<ViewType, HTMLCanvasElement | null>>({
     'sagittal-avf': null,
     'sagittal-rvf': null,
     'coronal': null,
     'posterior': null
   });
+
+  const toggleViewSelection = (viewType: ViewType) => {
+    const newSet = new Set(selectedViewsForExport);
+    if (newSet.has(viewType)) {
+      newSet.delete(viewType);
+    } else {
+      newSet.add(viewType);
+    }
+    setSelectedViewsForExport(newSet);
+  };
+
+  const selectAllViews = () => {
+    if (selectedViewsForExport.size === VIEW_TYPES.length) {
+      setSelectedViewsForExport(new Set());
+    } else {
+      setSelectedViewsForExport(new Set(VIEW_TYPES));
+    }
+  };
 
   const { 
     lesions, 
@@ -118,22 +136,22 @@ export default function Vistas2D() {
   const handleResetZoom = () => setZoomLevel(1);
 
   const handleExportView = () => {
-    if (!selectedViewForExport) {
-      alert('Selecione uma vista para exportar');
+    if (selectedViewsForExport.size === 0) {
+      alert('Selecione uma ou mais vistas para exportar');
       return;
     }
 
-    const canvas = canvasRefs.current[selectedViewForExport];
-    if (!canvas) return;
+    const exportedViews = Array.from(selectedViewsForExport).map(viewType => {
+      const canvas = canvasRefs.current[viewType];
+      if (!canvas) return null;
+      return {
+        viewType,
+        viewLabel: VIEW_LABELS[viewType],
+        imageData: canvas.toDataURL('image/png'),
+      };
+    }).filter(Boolean);
 
-    const imageData = canvas.toDataURL('image/png');
-    localStorage.setItem('exportedView', JSON.stringify({
-      viewType: selectedViewForExport,
-      viewLabel: VIEW_LABELS[selectedViewForExport],
-      imageData,
-      timestamp: new Date().toISOString()
-    }));
-
+    localStorage.setItem('exportedViews', JSON.stringify(exportedViews));
     setLocation('/report');
   };
 
@@ -375,8 +393,8 @@ export default function Vistas2D() {
                   <label className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-3 py-2 rounded cursor-pointer hover:bg-black/80 transition-colors">
                     <input
                       type="checkbox"
-                      checked={selectedViewForExport === viewType}
-                      onChange={() => setSelectedViewForExport(selectedViewForExport === viewType ? null : viewType)}
+                      checked={selectedViewsForExport.has(viewType)}
+                      onChange={() => toggleViewSelection(viewType)}
                       className="cursor-pointer"
                       data-testid={`checkbox-export-${viewType}`}
                     />
@@ -402,11 +420,20 @@ export default function Vistas2D() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-500">
-              {selectedViewForExport ? `Selecionado: ${VIEW_LABELS[selectedViewForExport]}` : 'Nenhuma vista selecionada'}
+              {selectedViewsForExport.size === 0 
+                ? 'Nenhuma vista selecionada' 
+                : `${selectedViewsForExport.size} vista${selectedViewsForExport.size !== 1 ? 's' : ''} selecionada${selectedViewsForExport.size !== 1 ? 's' : ''}`}
             </span>
             <Button
+              onClick={selectAllViews}
+              className="bg-slate-600 hover:bg-slate-700 text-white text-xs h-8"
+              data-testid="button-select-all-views"
+            >
+              {selectedViewsForExport.size === VIEW_TYPES.length ? 'Desselecionar Todas' : 'Selecionar Todas'}
+            </Button>
+            <Button
               onClick={handleExportView}
-              disabled={!selectedViewForExport}
+              disabled={selectedViewsForExport.size === 0}
               className="bg-pink-600 hover:bg-pink-700 text-white text-xs h-8"
               data-testid="button-export-to-report"
             >

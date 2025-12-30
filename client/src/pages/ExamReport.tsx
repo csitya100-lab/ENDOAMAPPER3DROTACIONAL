@@ -97,13 +97,13 @@ export default function ExamReport() {
     examiner: 'Dr. Silva',
     date: new Date().toLocaleDateString('pt-BR'),
   });
-  const [exportedView, setExportedView] = useState<{ viewType: string; viewLabel: string; imageData: string } | null>(null);
+  const [exportedViews, setExportedViews] = useState<Array<{ viewType: string; viewLabel: string; imageData: string }>>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem('exportedView');
+    const stored = localStorage.getItem('exportedViews');
     if (stored) {
       const data = JSON.parse(stored);
-      setExportedView(data);
+      setExportedViews(Array.isArray(data) ? data : []);
     }
   }, []);
 
@@ -352,21 +352,28 @@ export default function ExamReport() {
               </div>
             </div>
 
-            {exportedView && (
+            {exportedViews.length > 0 && (
               <div className="mb-6 pb-4 border-2 border-pink-300 bg-pink-50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-bold text-slate-900 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-pink-600" />
-                    Vista Importada: {exportedView.viewLabel}
+                    {exportedViews.length} Vista{exportedViews.length !== 1 ? 's' : ''} Importada{exportedViews.length !== 1 ? 's' : ''}
                   </h3>
                   <button 
-                    onClick={() => { setExportedView(null); localStorage.removeItem('exportedView'); }}
+                    onClick={() => { setExportedViews([]); localStorage.removeItem('exportedViews'); }}
                     className="text-xs text-slate-600 hover:text-red-600"
                   >
                     ✕
                   </button>
                 </div>
-                <img src={exportedView.imageData} alt={exportedView.viewLabel} className="w-full rounded border border-pink-300" />
+                <div className={`grid ${exportedViews.length === 1 ? 'grid-cols-1' : exportedViews.length === 2 ? 'grid-cols-2' : 'grid-cols-2'} gap-3`}>
+                  {exportedViews.map((view) => (
+                    <div key={view.viewType} className="flex flex-col">
+                      <p className="text-xs font-semibold text-slate-700 mb-2">{view.viewLabel}</p>
+                      <img src={view.imageData} alt={view.viewLabel} className="w-full rounded border border-pink-300" />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

@@ -36,10 +36,10 @@ interface PatientData {
 }
 
 const VIEWS: View[] = [
-  { id: '1', name: '3D Perspective', enabled: true },
-  { id: '2', name: 'Sagittal (Side)', enabled: true },
-  { id: '3', name: 'Coronal (Front)', enabled: true },
-  { id: '4', name: 'Posterior', enabled: true },
+  { id: '1', name: '3D Perspective', enabled: false },
+  { id: '2', name: 'Sagittal (Side)', enabled: false },
+  { id: '3', name: 'Coronal (Front)', enabled: false },
+  { id: '4', name: 'Posterior', enabled: false },
 ];
 
 const MOCK_LESIONS: Lesion[] = [
@@ -100,11 +100,6 @@ export default function ExamReport() {
 
   const toggleView = (viewId: string) => {
     setViews(views.map(v => v.id === viewId ? { ...v, enabled: !v.enabled } : v));
-  };
-
-  const toggleAllViews = () => {
-    const allEnabled = views.every(v => v.enabled);
-    setViews(views.map(v => ({ ...v, enabled: !allEnabled })));
   };
 
   const updateCard = (cardId: string, field: 'title' | 'description', value: string) => {
@@ -295,18 +290,7 @@ export default function ExamReport() {
             </div>
           </div>
 
-          <div className="border-t border-slate-200 pt-3 mt-3">
-            <Button
-              size="sm"
-              onClick={toggleAllViews}
-              className="w-full text-xs h-8 bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
-              variant="outline"
-            >
-              {views.every(v => v.enabled) ? 'Desselecionar Todas' : 'Selecionar Todas'}
-            </Button>
-          </div>
-
-          <div className="mt-3 pt-3 border-t border-slate-200">
+          <div className="mt-4 pt-4 border-t border-slate-200">
             <p className="text-[10px] text-slate-500 font-mono">
               {enabledViews.length} vista{enabledViews.length !== 1 ? 's' : ''} selecionada{enabledViews.length !== 1 ? 's' : ''}
             </p>

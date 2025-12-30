@@ -89,12 +89,43 @@ export default function Canvas2D({
     if (!ctx) return;
 
     const rect = container.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+    const newWidth = rect.width;
+    const newHeight = rect.height;
+    
+    let drawingImageData: ImageData | null = null;
+    
+    if (drawingCanvas && drawingCanvas.width > 0 && drawingCanvas.height > 0) {
+      const drawingCtx = drawingCanvas.getContext('2d');
+      if (drawingCtx) {
+        try {
+          drawingImageData = drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
+        } catch (e) {
+          // Handle CORS or other errors
+        }
+      }
+    }
+    
+    if (canvas.width !== newWidth || canvas.height !== newHeight) {
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+    }
     
     if (drawingCanvas) {
-      drawingCanvas.width = rect.width;
-      drawingCanvas.height = rect.height;
+      if (drawingCanvas.width !== newWidth || drawingCanvas.height !== newHeight) {
+        drawingCanvas.width = newWidth;
+        drawingCanvas.height = newHeight;
+      }
+      
+      if (drawingImageData) {
+        const drawingCtx = drawingCanvas.getContext('2d');
+        if (drawingCtx) {
+          try {
+            drawingCtx.putImageData(drawingImageData, 0, 0);
+          } catch (e) {
+            // Handle errors silently
+          }
+        }
+      }
     }
 
     const bounds = calculateCanvasBounds(canvas.width, canvas.height, zoomLevel);

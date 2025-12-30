@@ -275,10 +275,11 @@ export default function ExamReport() {
                 <div 
                   key={view.id} 
                   className="flex items-center gap-3 p-2.5 rounded hover:bg-slate-100 transition-colors cursor-pointer group"
+                  onClick={() => toggleView(view.id)}
                 >
                   <Checkbox
                     checked={view.enabled}
-                    onChange={() => toggleView(view.id)}
+                    onCheckedChange={() => toggleView(view.id)}
                     className="cursor-pointer"
                     data-testid={`checkbox-view-${view.id}`}
                   />

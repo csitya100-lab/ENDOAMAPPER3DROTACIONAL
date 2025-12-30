@@ -358,10 +358,32 @@ export default function ExamReport() {
                       key={card.id}
                       className="border-2 border-slate-300 rounded-lg overflow-hidden flex flex-col bg-white hover:shadow-lg transition-shadow"
                     >
-                      <div className="h-40 bg-gradient-to-br from-slate-200 via-slate-300 to-slate-200 flex items-center justify-center border-b-2 border-slate-300">
+                      <div className="h-40 bg-gradient-to-br from-slate-200 via-slate-300 to-slate-200 flex items-center justify-center border-b-2 border-slate-300 relative">
                         <div className="text-slate-500 text-xs font-mono text-center px-4">
                           <div className="mb-1">📐 {card.viewName}</div>
                           <div className="text-[10px] text-slate-400">[Espaço para imagem]</div>
+                        </div>
+                        <div className="absolute top-2 right-2 flex items-center gap-1">
+                          <button
+                            onClick={() => activeRecording === card.id ? stopDictation() : startDictation(card.id)}
+                            className={`p-1.5 rounded flex items-center justify-center transition-colors ${
+                              activeRecording === card.id 
+                                ? 'bg-red-100 text-red-600' 
+                                : 'bg-white text-slate-600 hover:bg-slate-100'
+                            }`}
+                            title={activeRecording === card.id ? 'Parar ditado' : 'Iniciar ditado por voz'}
+                            data-testid={`button-dictation-${card.id}`}
+                          >
+                            {activeRecording === card.id ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                          </button>
+                          <button
+                            onClick={() => correctSpelling(card.id)}
+                            className="p-1.5 rounded flex items-center justify-center bg-white text-blue-600 hover:bg-blue-50 transition-colors"
+                            title="Corrigir ortografia e gramática"
+                            data-testid={`button-spellcheck-${card.id}`}
+                          >
+                            <SpellCheck className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
 
@@ -374,40 +396,14 @@ export default function ExamReport() {
                           data-testid={`input-card-title-${card.id}`}
                         />
 
-                        <div className="flex-1 flex flex-col">
-                          <textarea
-                            value={card.description}
-                            onChange={(e) => updateCard(card.id, 'description', e.target.value)}
-                            className="text-xs text-slate-700 leading-tight bg-white border border-slate-200 rounded p-2 flex-1 resize-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
-                            placeholder="Digite ou dite a descrição..."
-                            spellCheck={true}
-                            data-testid={`textarea-card-description-${card.id}`}
-                          />
-                          <div className="flex items-center gap-1 mt-2">
-                            <button
-                              onClick={() => activeRecording === card.id ? stopDictation() : startDictation(card.id)}
-                              className={`p-1.5 rounded text-xs flex items-center gap-1 transition-colors ${
-                                activeRecording === card.id 
-                                  ? 'bg-red-100 text-red-600 border border-red-300' 
-                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
-                              }`}
-                              title={activeRecording === card.id ? 'Parar ditado' : 'Iniciar ditado por voz'}
-                              data-testid={`button-dictation-${card.id}`}
-                            >
-                              {activeRecording === card.id ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-                              {activeRecording === card.id ? 'Parar' : 'Ditar'}
-                            </button>
-                            <button
-                              onClick={() => correctSpelling(card.id)}
-                              className="p-1.5 rounded text-xs flex items-center gap-1 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors"
-                              title="Corrigir ortografia e gramática"
-                              data-testid={`button-spellcheck-${card.id}`}
-                            >
-                              <SpellCheck className="w-3.5 h-3.5" />
-                              Corrigir
-                            </button>
-                          </div>
-                        </div>
+                        <textarea
+                          value={card.description}
+                          onChange={(e) => updateCard(card.id, 'description', e.target.value)}
+                          className="text-xs text-slate-700 leading-tight bg-white border border-slate-200 rounded p-2 flex-1 resize-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                          placeholder="Digite ou dite a descrição..."
+                          spellCheck={true}
+                          data-testid={`textarea-card-description-${card.id}`}
+                        />
                       </div>
                     </div>
                   );

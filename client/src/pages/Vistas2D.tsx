@@ -41,6 +41,7 @@ export default function Vistas2D() {
   const [drawingColor, setDrawingColor] = useState('#ffffff');
   const [drawingSize, setDrawingSize] = useState(3);
   const [selectedViewsForExport, setSelectedViewsForExport] = useState<Set<ViewType>>(new Set());
+  const [focusedView, setFocusedView] = useState<ViewType | null>(null);
   const canvasRefs = useRef<Record<ViewType, HTMLCanvasElement | null>>({
     'sagittal-avf': null,
     'sagittal-rvf': null,
@@ -124,8 +125,9 @@ export default function Vistas2D() {
               variant="ghost"
               size="icon"
               onClick={() => setDrawingTool('select')}
-              className={`h-8 w-8 ${drawingTool === 'select' ? 'bg-slate-700' : ''}`}
-              title="Selecionar"
+              disabled={!focusedView}
+              className={`h-8 w-8 ${drawingTool === 'select' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={focusedView ? "Selecionar" : "Selecione uma vista para editar"}
               data-testid="button-tool-select"
             >
               <Pointer className="w-4 h-4" />
@@ -134,8 +136,9 @@ export default function Vistas2D() {
               variant="ghost"
               size="icon"
               onClick={() => setDrawingTool('pen')}
-              className={`h-8 w-8 ${drawingTool === 'pen' ? 'bg-slate-700' : ''}`}
-              title="Desenhar"
+              disabled={!focusedView}
+              className={`h-8 w-8 ${drawingTool === 'pen' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={focusedView ? "Desenhar" : "Selecione uma vista para editar"}
               data-testid="button-tool-pen"
             >
               <Pen className="w-4 h-4" />
@@ -144,8 +147,9 @@ export default function Vistas2D() {
               variant="ghost"
               size="icon"
               onClick={() => setDrawingTool('eraser')}
-              className={`h-8 w-8 ${drawingTool === 'eraser' ? 'bg-slate-700' : ''}`}
-              title="Borracha"
+              disabled={!focusedView}
+              className={`h-8 w-8 ${drawingTool === 'eraser' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={focusedView ? "Borracha" : "Selecione uma vista para editar"}
               data-testid="button-tool-eraser"
             >
               <Eraser className="w-4 h-4" />
@@ -154,8 +158,9 @@ export default function Vistas2D() {
               variant="ghost"
               size="icon"
               onClick={() => setDrawingTool('line')}
-              className={`h-8 w-8 ${drawingTool === 'line' ? 'bg-slate-700' : ''}`}
-              title="Linha"
+              disabled={!focusedView}
+              className={`h-8 w-8 ${drawingTool === 'line' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={focusedView ? "Linha" : "Selecione uma vista para editar"}
               data-testid="button-tool-line"
             >
               <Minus className="w-4 h-4" />
@@ -164,8 +169,9 @@ export default function Vistas2D() {
               variant="ghost"
               size="icon"
               onClick={() => setDrawingTool('circle')}
-              className={`h-8 w-8 ${drawingTool === 'circle' ? 'bg-slate-700' : ''}`}
-              title="Círculo"
+              disabled={!focusedView}
+              className={`h-8 w-8 ${drawingTool === 'circle' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={focusedView ? "Círculo" : "Selecione uma vista para editar"}
               data-testid="button-tool-circle"
             >
               <Circle className="w-4 h-4" />
@@ -174,8 +180,9 @@ export default function Vistas2D() {
               variant="ghost"
               size="icon"
               onClick={() => setDrawingTool('circle-filled')}
-              className={`h-8 w-8 ${drawingTool === 'circle-filled' ? 'bg-slate-700' : ''}`}
-              title="Círculo Preenchido"
+              disabled={!focusedView}
+              className={`h-8 w-8 ${drawingTool === 'circle-filled' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={focusedView ? "Círculo Preenchido" : "Selecione uma vista para editar"}
               data-testid="button-tool-circle-filled"
             >
               <Circle className="w-4 h-4 fill-current" />
@@ -184,14 +191,15 @@ export default function Vistas2D() {
               variant="ghost"
               size="icon"
               onClick={() => setDrawingTool('text')}
-              className={`h-8 w-8 ${drawingTool === 'text' ? 'bg-slate-700' : ''}`}
-              title="Texto"
+              disabled={!focusedView}
+              className={`h-8 w-8 ${drawingTool === 'text' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={focusedView ? "Texto" : "Selecione uma vista para editar"}
               data-testid="button-tool-text"
             >
               <Type className="w-4 h-4" />
             </Button>
             
-            {drawingTool !== 'select' && (
+            {focusedView && drawingTool !== 'select' && (
               <>
                 <div className="h-6 w-px bg-slate-700" />
                 <input
@@ -279,35 +287,106 @@ export default function Vistas2D() {
           </div>
         </div>
 
-        <div className="grid grid-cols-12 gap-6 h-[calc(100vh-160px)]">
-          <div className="col-span-12">
-            <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
-              {VIEW_TYPES.map((viewType) => (
-                <div key={viewType} className="h-full min-h-0 relative group">
-                  <Canvas2D
-                    viewType={viewType}
-                    zoomLevel={zoomLevel}
-                    editMode={editMode}
-                    drawingTool={drawingTool}
-                    drawingColor={drawingColor}
-                    drawingSize={drawingSize}
-                    onCanvasRef={(canvas) => { canvasRefs.current[viewType] = canvas; }}
+        {focusedView ? (
+          <div className="grid grid-cols-12 gap-4 h-[calc(100vh-160px)]">
+            <div className="col-span-9">
+              <div className="h-full min-h-0 relative group rounded-lg overflow-hidden border-2 border-pink-500 shadow-lg shadow-pink-500/30">
+                <Canvas2D
+                  viewType={focusedView}
+                  zoomLevel={zoomLevel}
+                  editMode={editMode}
+                  drawingTool={drawingTool}
+                  drawingColor={drawingColor}
+                  drawingSize={drawingSize}
+                  onCanvasRef={(canvas) => { canvasRefs.current[focusedView] = canvas; }}
+                />
+                <label className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-3 py-2 rounded cursor-pointer hover:bg-black/80 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={selectedViewsForExport.has(focusedView)}
+                    onChange={() => toggleViewSelection(focusedView)}
+                    className="cursor-pointer"
+                    data-testid={`checkbox-export-${focusedView}`}
                   />
-                  <label className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-3 py-2 rounded cursor-pointer hover:bg-black/80 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={selectedViewsForExport.has(viewType)}
-                      onChange={() => toggleViewSelection(viewType)}
-                      className="cursor-pointer"
-                      data-testid={`checkbox-export-${viewType}`}
+                  <span className="text-xs font-medium text-white">{VIEW_LABELS[focusedView]}</span>
+                </label>
+              </div>
+            </div>
+            <div className="col-span-3 flex flex-col gap-2">
+              {VIEW_TYPES.map((viewType) => (
+                viewType !== focusedView && (
+                  <div
+                    key={viewType}
+                    onClick={() => setFocusedView(viewType)}
+                    className="h-24 min-h-0 relative group rounded border border-slate-600 hover:border-pink-500 cursor-pointer transition-all hover:shadow-lg hover:shadow-pink-500/20 overflow-hidden"
+                  >
+                    <Canvas2D
+                      viewType={viewType}
+                      zoomLevel={0.5}
+                      editMode={false}
+                      drawingTool="select"
+                      drawingColor="#ffffff"
+                      drawingSize={1}
+                      onCanvasRef={(canvas) => { canvasRefs.current[viewType] = canvas; }}
                     />
-                    <span className="text-xs font-medium text-white">{VIEW_LABELS[viewType]}</span>
-                  </label>
-                </div>
+                    <label className="absolute top-1 left-1 flex items-center gap-1 bg-black/60 px-2 py-1 rounded cursor-pointer hover:bg-black/80 transition-colors text-xs" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedViewsForExport.has(viewType)}
+                        onChange={() => toggleViewSelection(viewType)}
+                        className="cursor-pointer"
+                        data-testid={`checkbox-export-${viewType}`}
+                      />
+                      <span className="text-xs font-medium text-white">{VIEW_LABELS[viewType]}</span>
+                    </label>
+                  </div>
+                )
               ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFocusedView(null)}
+                className="mt-auto text-white border-slate-600 hover:border-slate-500"
+              >
+                Sair do Foco
+              </Button>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-12 gap-6 h-[calc(100vh-160px)]">
+            <div className="col-span-12">
+              <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
+                {VIEW_TYPES.map((viewType) => (
+                  <div
+                    key={viewType}
+                    onClick={() => setFocusedView(viewType)}
+                    className="h-full min-h-0 relative group rounded-lg border border-slate-700 hover:border-pink-500 cursor-pointer transition-all hover:shadow-lg hover:shadow-pink-500/20 overflow-hidden"
+                  >
+                    <Canvas2D
+                      viewType={viewType}
+                      zoomLevel={zoomLevel}
+                      editMode={editMode}
+                      drawingTool={drawingTool}
+                      drawingColor={drawingColor}
+                      drawingSize={drawingSize}
+                      onCanvasRef={(canvas) => { canvasRefs.current[viewType] = canvas; }}
+                    />
+                    <label className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-3 py-2 rounded cursor-pointer hover:bg-black/80 transition-colors" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedViewsForExport.has(viewType)}
+                        onChange={() => toggleViewSelection(viewType)}
+                        className="cursor-pointer"
+                        data-testid={`checkbox-export-${viewType}`}
+                      />
+                      <span className="text-xs font-medium text-white">{VIEW_LABELS[viewType]}</span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-4 flex items-center justify-end gap-4">
           <div className="flex items-center gap-3">

@@ -81,6 +81,7 @@ export default function Canvas2D({
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
+    const drawingCanvas = drawingCanvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
 
@@ -90,6 +91,11 @@ export default function Canvas2D({
     const rect = container.getBoundingClientRect();
     canvas.width = rect.width;
     canvas.height = rect.height;
+    
+    if (drawingCanvas) {
+      drawingCanvas.width = rect.width;
+      drawingCanvas.height = rect.height;
+    }
 
     const bounds = calculateCanvasBounds(canvas.width, canvas.height, zoomLevel);
 

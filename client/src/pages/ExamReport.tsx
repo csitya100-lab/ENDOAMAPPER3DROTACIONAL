@@ -336,46 +336,24 @@ export default function ExamReport() {
               boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
             }}
           >
-            <div className="mb-6 pb-4 border-2 border-slate-400 bg-slate-50 p-4 rounded-lg">
-              <div className="grid grid-cols-3 gap-4 mb-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block mb-1">Paciente</label>
-                  <input
-                    type="text"
-                    value={patientData.name}
-                    onChange={(e) => updatePatientData('name', e.target.value)}
-                    className="w-full text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block mb-1">ID/Prontuário</label>
-                  <input
-                    type="text"
-                    value={patientData.id}
-                    onChange={(e) => updatePatientData('id', e.target.value)}
-                    className="w-full text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block mb-1">Examinador</label>
-                  <input
-                    type="text"
-                    value={patientData.examiner}
-                    onChange={(e) => updatePatientData('examiner', e.target.value)}
-                    className="w-full text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
-                  />
-                </div>
+            <div className="mb-6 pb-4 border-b-2 border-slate-300 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Paciente:</label>
+                <input
+                  type="text"
+                  value={patientData.name}
+                  onChange={(e) => updatePatientData('name', e.target.value)}
+                  className="text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                />
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Data do Exame:</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Data:</label>
                 <input
                   type="text"
                   value={patientData.date}
                   onChange={(e) => updatePatientData('date', e.target.value)}
-                  className="flex-1 text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                  className="text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
                 />
               </div>
             </div>

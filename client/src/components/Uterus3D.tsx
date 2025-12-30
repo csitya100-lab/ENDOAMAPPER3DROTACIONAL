@@ -2,10 +2,13 @@ import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { useLesionStore, Lesion, Severity } from '@/lib/lesionStore';
+import { useLesionStore, Lesion, Severity, MarkerType } from '@/lib/lesionStore';
 
 interface Uterus3DProps {
   severity: Severity;
+  markerSize?: number;
+  markerColor?: string;
+  markerType?: MarkerType;
   onLesionCountChange: (count: number) => void;
   onLesionsUpdate: (lesions: Lesion[]) => void;
 }
@@ -21,7 +24,7 @@ const COLORS = {
   deep: 0x3b82f6
 };
 
-export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLesionCountChange, onLesionsUpdate }, ref) => {
+export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, markerSize = 0.18, markerColor, markerType = 'circle', onLesionCountChange, onLesionsUpdate }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewMainRef = useRef<HTMLDivElement>(null);
   const viewSagittalRef = useRef<HTMLDivElement>(null);
@@ -31,6 +34,9 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
   const { lesions, addLesion, updateLesion, removeLesion, clearLesions } = useLesionStore();
   
   const currentSeverityRef = useRef(severity);
+  const currentMarkerSizeRef = useRef(markerSize);
+  const currentMarkerColorRef = useRef(markerColor);
+  const currentMarkerTypeRef = useRef(markerType);
   const viewsRef = useRef<any[]>([]);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const markerGroupsRef = useRef<{ [key: number]: THREE.Group }>({});
@@ -47,6 +53,18 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
   useEffect(() => {
     currentSeverityRef.current = severity;
   }, [severity]);
+
+  useEffect(() => {
+    currentMarkerSizeRef.current = markerSize;
+  }, [markerSize]);
+
+  useEffect(() => {
+    currentMarkerColorRef.current = markerColor;
+  }, [markerColor]);
+
+  useEffect(() => {
+    currentMarkerTypeRef.current = markerType;
+  }, [markerType]);
 
   useEffect(() => {
     onLesionCountChange(lesions.length);
@@ -79,7 +97,10 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
   const createLesionInStorage = (position: { x: number; y: number; z: number }, sev: Severity) => {
     addLesion({
       position,
-      severity: sev
+      severity: sev,
+      size: currentMarkerSizeRef.current,
+      color: currentMarkerColorRef.current,
+      markerType: currentMarkerTypeRef.current
     });
   };
 
@@ -108,13 +129,30 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
 
     const markerGroup = markerGroupsRef.current[viewIdx];
     
-    // Create a small sphere marker
-    const markerGeometry = new THREE.SphereGeometry(0.18, 12, 12);
+    const markerSize = lesion.size ?? 0.18;
+    const markerColor = lesion.color ? parseInt(lesion.color.replace('#', ''), 16) : COLORS[lesion.severity];
+    const markerType = lesion.markerType ?? 'circle';
+    
+    let markerGeometry: THREE.BufferGeometry;
+    
+    switch (markerType) {
+      case 'square':
+        markerGeometry = new THREE.BoxGeometry(markerSize * 1.5, markerSize * 1.5, markerSize * 1.5);
+        break;
+      case 'triangle':
+        markerGeometry = new THREE.ConeGeometry(markerSize, markerSize * 2, 3);
+        break;
+      case 'circle':
+      default:
+        markerGeometry = new THREE.SphereGeometry(markerSize, 12, 12);
+        break;
+    }
+    
     const markerMaterial = new THREE.MeshStandardMaterial({
-      color: COLORS[lesion.severity],
+      color: markerColor,
       roughness: 0.2,
       metalness: 0.6,
-      emissive: COLORS[lesion.severity],
+      emissive: markerColor,
       emissiveIntensity: 0.4
     });
     
@@ -122,7 +160,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
     marker.position.set(lesion.position.x, lesion.position.y, lesion.position.z);
     markerGroup.add(marker);
 
-    // Add a glow ring for orthogonal views
+    const ringRadius = markerSize * 1.4;
+    
     if (viewIdx > 0) {
       const ringGeometry = new THREE.BufferGeometry();
       const ringPositions = [];
@@ -130,14 +169,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
       for (let i = 0; i <= ringSegments; i++) {
         const angle = (i / ringSegments) * Math.PI * 2;
         ringPositions.push(
-          lesion.position.x + Math.cos(angle) * 0.25,
-          lesion.position.y + Math.sin(angle) * 0.25,
+          lesion.position.x + Math.cos(angle) * ringRadius,
+          lesion.position.y + Math.sin(angle) * ringRadius,
           lesion.position.z
         );
       }
       ringGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(ringPositions), 3));
       const ringMaterial = new THREE.LineBasicMaterial({
-        color: COLORS[lesion.severity],
+        color: markerColor,
         linewidth: 2,
         transparent: true,
         opacity: 0.7

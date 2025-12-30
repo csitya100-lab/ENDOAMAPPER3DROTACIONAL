@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react';
 import { Uterus3D, Uterus3DRef } from '@/components/Uterus3D';
-import { useLesionStore, Severity } from '@/lib/lesionStore';
+import { useLesionStore, Severity, MarkerType, Lesion } from '@/lib/lesionStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Circle, RotateCcw, Plus, FileText, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Circle, RotateCcw, Plus, FileText, Clock, CheckCircle, AlertCircle, Square, Triangle, Settings2 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
+import { Slider } from '@/components/ui/slider';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface ExamInfo {
   patient: string;
@@ -14,7 +16,10 @@ interface ExamInfo {
 
 export default function Home() {
   const [severity, setSeverity] = useState<Severity>('superficial');
-  const { lesions } = useLesionStore();
+  const [markerSize, setMarkerSize] = useState(0.18);
+  const [markerColor, setMarkerColor] = useState<string | undefined>(undefined);
+  const [markerType, setMarkerType] = useState<MarkerType>('circle');
+  const { lesions, updateLesion } = useLesionStore();
   const [examInfo] = useState<ExamInfo>({
     patient: 'Paciente A',
     date: new Date().toLocaleDateString('pt-BR'),
@@ -144,6 +149,79 @@ export default function Home() {
                 Deep
               </button>
             </div>
+
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
+              <button
+                onClick={() => setMarkerType('circle')}
+                className={`p-1.5 rounded-md transition-all ${markerType === 'circle' ? 'bg-purple-100 text-purple-700 border border-purple-300' : 'text-slate-600 hover:bg-white'}`}
+                title="Círculo"
+                data-testid="button-marker-circle"
+              >
+                <Circle className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setMarkerType('square')}
+                className={`p-1.5 rounded-md transition-all ${markerType === 'square' ? 'bg-purple-100 text-purple-700 border border-purple-300' : 'text-slate-600 hover:bg-white'}`}
+                title="Quadrado"
+                data-testid="button-marker-square"
+              >
+                <Square className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setMarkerType('triangle')}
+                className={`p-1.5 rounded-md transition-all ${markerType === 'triangle' ? 'bg-purple-100 text-purple-700 border border-purple-300' : 'text-slate-600 hover:bg-white'}`}
+                title="Triângulo"
+                data-testid="button-marker-triangle"
+              >
+                <Triangle className="w-4 h-4" />
+              </button>
+            </div>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-2 bg-slate-100 border-slate-200">
+                  <Settings2 className="w-4 h-4" />
+                  <span className="text-xs">Marcador</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-4" align="start">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-slate-700 mb-2 block">Tamanho: {markerSize.toFixed(2)}</label>
+                    <Slider
+                      value={[markerSize]}
+                      onValueChange={([v]) => setMarkerSize(v)}
+                      min={0.08}
+                      max={0.5}
+                      step={0.02}
+                      className="w-full"
+                      data-testid="slider-marker-size"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-700 mb-2 block">Cor personalizada</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={markerColor || '#ef4444'}
+                        onChange={(e) => setMarkerColor(e.target.value)}
+                        className="w-10 h-8 cursor-pointer rounded border border-slate-300"
+                        data-testid="input-marker-color"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMarkerColor(undefined)}
+                        className="text-xs h-8"
+                        data-testid="button-reset-color"
+                      >
+                        Usar cor padrão
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="flex items-center gap-6">
@@ -198,6 +276,9 @@ export default function Home() {
             <Uterus3D 
               ref={uterusRef}
               severity={severity}
+              markerSize={markerSize}
+              markerColor={markerColor}
+              markerType={markerType}
               onLesionCountChange={() => {}}
               onLesionsUpdate={() => {}}
             />
@@ -281,19 +362,89 @@ export default function Home() {
                       <div key={lesion.id} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-mono font-bold text-slate-700">#{idx + 1}</span>
-                          <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-medium ${getLesionStatusColor(lesionStatus)}`}>
-                            {getLesionStatusIcon(lesionStatus)}
-                            {lesionStatus}
+                          <div className="flex items-center gap-1">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button className="p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-700" data-testid={`button-edit-lesion-${idx}`}>
+                                  <Settings2 className="w-3 h-3" />
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-56 p-3" align="end">
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="text-[10px] font-medium text-slate-600 mb-1 block">Tamanho</label>
+                                    <Slider
+                                      value={[lesion.size ?? 0.18]}
+                                      onValueChange={([v]) => updateLesion(lesion.id, { size: v })}
+                                      min={0.08}
+                                      max={0.5}
+                                      step={0.02}
+                                      className="w-full"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-medium text-slate-600 mb-1 block">Tipo</label>
+                                    <div className="flex gap-1">
+                                      <button
+                                        onClick={() => updateLesion(lesion.id, { markerType: 'circle' })}
+                                        className={`p-1.5 rounded ${lesion.markerType === 'circle' || !lesion.markerType ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                                      >
+                                        <Circle className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => updateLesion(lesion.id, { markerType: 'square' })}
+                                        className={`p-1.5 rounded ${lesion.markerType === 'square' ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                                      >
+                                        <Square className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => updateLesion(lesion.id, { markerType: 'triangle' })}
+                                        className={`p-1.5 rounded ${lesion.markerType === 'triangle' ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                                      >
+                                        <Triangle className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-medium text-slate-600 mb-1 block">Cor</label>
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="color"
+                                        value={lesion.color || (lesion.severity === 'superficial' ? '#ef4444' : lesion.severity === 'moderate' ? '#f97316' : '#3b82f6')}
+                                        onChange={(e) => updateLesion(lesion.id, { color: e.target.value })}
+                                        className="w-8 h-6 cursor-pointer rounded border border-slate-300"
+                                      />
+                                      <button
+                                        onClick={() => updateLesion(lesion.id, { color: undefined })}
+                                        className="text-[9px] text-slate-500 hover:text-slate-700"
+                                      >
+                                        Padrão
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-medium ${getLesionStatusColor(lesionStatus)}`}>
+                              {getLesionStatusIcon(lesionStatus)}
+                              {lesionStatus}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 mb-1.5">
-                          <Circle 
-                            className="w-2.5 h-2.5 fill-current flex-shrink-0" 
-                            color={lesion.severity === 'superficial' ? '#ef4444' : lesion.severity === 'moderate' ? '#f97316' : '#3b82f6'}
-                          />
+                          {lesion.markerType === 'square' ? (
+                            <Square className="w-2.5 h-2.5 fill-current flex-shrink-0" style={{ color: lesion.color || (lesion.severity === 'superficial' ? '#ef4444' : lesion.severity === 'moderate' ? '#f97316' : '#3b82f6') }} />
+                          ) : lesion.markerType === 'triangle' ? (
+                            <Triangle className="w-2.5 h-2.5 fill-current flex-shrink-0" style={{ color: lesion.color || (lesion.severity === 'superficial' ? '#ef4444' : lesion.severity === 'moderate' ? '#f97316' : '#3b82f6') }} />
+                          ) : (
+                            <Circle className="w-2.5 h-2.5 fill-current flex-shrink-0" style={{ color: lesion.color || (lesion.severity === 'superficial' ? '#ef4444' : lesion.severity === 'moderate' ? '#f97316' : '#3b82f6') }} />
+                          )}
                           <span className="text-[10px] text-slate-600 font-medium capitalize">
                             {lesion.severity === 'superficial' ? 'Superficial' : lesion.severity === 'moderate' ? 'Moderada' : 'Profunda'}
                           </span>
+                          {lesion.size && lesion.size !== 0.18 && (
+                            <span className="text-[9px] text-slate-400">({lesion.size.toFixed(2)})</span>
+                          )}
                         </div>
                         <div className="text-[10px] text-slate-600 space-y-0.5 font-mono">
                           <div className="flex justify-between">

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Position3D } from '@shared/3d/projections';
 
 export type Severity = 'superficial' | 'moderate' | 'deep';
+export type MarkerType = 'circle' | 'square' | 'triangle';
 
 export interface Lesion {
   id: string;
@@ -9,6 +10,9 @@ export interface Lesion {
   severity: Severity;
   location?: string;
   observacoes?: string;
+  size?: number;
+  color?: string;
+  markerType?: MarkerType;
 }
 
 interface LesionStore {

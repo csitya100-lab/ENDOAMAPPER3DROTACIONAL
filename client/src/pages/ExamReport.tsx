@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FileDown, Printer, FileText } from 'lucide-react';
+import { FileDown, Printer, FileText, Mic, MicOff, SpellCheck } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 
 type LayoutType = '1x1' | '2x2' | '3x2' | 'Auto';
@@ -115,16 +115,101 @@ export default function ExamReport() {
     setPatientData({ ...patientData, [field]: value });
   };
 
+  const [activeRecording, setActiveRecording] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+
   const enabledViews = views.filter(v => v.enabled);
   const visibleCards = cards.filter(card => enabledViews.some(v => v.name === card.viewName));
 
   const layoutConfig = LAYOUT_CONFIGS[layout];
   const cardsToShow = visibleCards.slice(0, layoutConfig.count);
 
-  const getLesionForCard = (cardId: string) => {
+  const startDictation = useCallback((cardId: string) => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Seu navegador não suporta reconhecimento de voz. Use Chrome ou Edge.');
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event: any) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      
+      const card = cards.find(c => c.id === cardId);
+      if (card && event.results[event.results.length - 1].isFinal) {
+        const newDescription = card.description + (card.description ? ' ' : '') + transcript;
+        updateCard(cardId, 'description', newDescription);
+      }
+    };
+
+    recognition.onerror = () => {
+      setActiveRecording(null);
+    };
+
+    recognition.onend = () => {
+      setActiveRecording(null);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setActiveRecording(cardId);
+  }, [cards]);
+
+  const stopDictation = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setActiveRecording(null);
+  }, []);
+
+  const correctSpelling = useCallback(async (cardId: string) => {
     const card = cards.find(c => c.id === cardId);
-    return card ? MOCK_LESIONS.filter(l => card.relatedLesions.includes(l.id)) : [];
-  };
+    if (!card || !card.description.trim()) return;
+
+    const text = card.description;
+    
+    const corrections: Record<string, string> = {
+      'tanbem': 'também',
+      'nao': 'não',
+      'é': 'é',
+      'lesao': 'lesão',
+      'utero': 'útero',
+      'ovario': 'ovário',
+      'miometrio': 'miométrio',
+      'endometrio': 'endométrio',
+      'adenomiose': 'adenomiose',
+      'endometriose': 'endometriose',
+      'q ': 'que ',
+      'pq ': 'porque ',
+      'tb ': 'também ',
+      'vc ': 'você ',
+      'oq ': 'o que ',
+      ' q ': ' que ',
+      '  ': ' ',
+    };
+
+    let corrected = text;
+    Object.entries(corrections).forEach(([wrong, right]) => {
+      const regex = new RegExp(wrong, 'gi');
+      corrected = corrected.replace(regex, right);
+    });
+
+    corrected = corrected.replace(/\s+/g, ' ').trim();
+    
+    corrected = corrected.replace(/(^|[.!?]\s+)([a-záàâãéêíóôõúç])/g, (match, p1, p2) => p1 + p2.toUpperCase());
+    
+    if (corrected !== text) {
+      updateCard(cardId, 'description', corrected);
+    }
+  }, [cards]);
 
   const headerActions = (
     <>
@@ -305,7 +390,6 @@ export default function ExamReport() {
             {cardsToShow.length > 0 ? (
               <div className={`grid ${layoutConfig.grid} gap-5`}>
                 {cardsToShow.map((card) => {
-                  const relatedLesions = getLesionForCard(card.id);
                   return (
                     <div
                       key={card.id}
@@ -324,27 +408,43 @@ export default function ExamReport() {
                           value={card.title}
                           onChange={(e) => updateCard(card.id, 'title', e.target.value)}
                           className="text-sm font-bold text-slate-900 mb-2 bg-white border-b-2 border-slate-200 focus:border-blue-400 outline-none px-1 py-0.5"
+                          data-testid={`input-card-title-${card.id}`}
                         />
 
-                        {relatedLesions.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-2">
-                            {relatedLesions.map(lesion => (
-                              <div
-                                key={lesion.id}
-                                className={`inline-block text-[10px] px-2 py-1 rounded-full border font-medium whitespace-nowrap ${lesion.color}`}
-                              >
-                                {lesion.name} – {lesion.location}
-                              </div>
-                            ))}
+                        <div className="flex-1 flex flex-col">
+                          <textarea
+                            value={card.description}
+                            onChange={(e) => updateCard(card.id, 'description', e.target.value)}
+                            className="text-xs text-slate-700 leading-tight bg-white border border-slate-200 rounded p-2 flex-1 resize-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                            placeholder="Digite ou dite a descrição..."
+                            spellCheck={true}
+                            data-testid={`textarea-card-description-${card.id}`}
+                          />
+                          <div className="flex items-center gap-1 mt-2">
+                            <button
+                              onClick={() => activeRecording === card.id ? stopDictation() : startDictation(card.id)}
+                              className={`p-1.5 rounded text-xs flex items-center gap-1 transition-colors ${
+                                activeRecording === card.id 
+                                  ? 'bg-red-100 text-red-600 border border-red-300' 
+                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                              }`}
+                              title={activeRecording === card.id ? 'Parar ditado' : 'Iniciar ditado por voz'}
+                              data-testid={`button-dictation-${card.id}`}
+                            >
+                              {activeRecording === card.id ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                              {activeRecording === card.id ? 'Parar' : 'Ditar'}
+                            </button>
+                            <button
+                              onClick={() => correctSpelling(card.id)}
+                              className="p-1.5 rounded text-xs flex items-center gap-1 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors"
+                              title="Corrigir ortografia e gramática"
+                              data-testid={`button-spellcheck-${card.id}`}
+                            >
+                              <SpellCheck className="w-3.5 h-3.5" />
+                              Corrigir
+                            </button>
                           </div>
-                        )}
-
-                        <textarea
-                          value={card.description}
-                          onChange={(e) => updateCard(card.id, 'description', e.target.value)}
-                          className="text-xs text-slate-700 leading-tight bg-white border border-slate-200 rounded p-2 flex-1 resize-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
-                          placeholder="Descreva os achados e lesões vistos nesta vista..."
-                        />
+                        </div>
                       </div>
                     </div>
                   );

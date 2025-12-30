@@ -421,6 +421,9 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, onLe
 
     // Pointer down: Check if clicking on existing lesion or creating new one
     const handleViewClick = (viewIdx: number) => (event: PointerEvent) => {
+      // Only process left mouse button (button === 0)
+      if (event.button !== 0) return;
+      
       // First check if clicking on existing lesion
       const lesionId = detectLesionMarker(event, viewIdx);
       

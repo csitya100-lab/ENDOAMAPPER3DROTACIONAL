@@ -79,7 +79,13 @@ export default function PublicReport() {
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
     camera.position.set(0, 0, 5);
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    } catch (e) {
+      console.warn('WebGL not available');
+      return;
+    }
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 

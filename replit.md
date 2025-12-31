@@ -40,6 +40,11 @@ Minimalist UI: Removed thickness slider, export buttons, and unnecessary feature
 ### Application Pages
 1. **Home** (`/`): Main 3D visualization interface with lesion controls - synchronized across all 4 view perspectives
 2. **Vistas 2D** (`/vistas-2d`): Independent 2D views editor with drawing tools for precise lesion annotation
+3. **Relatório Público** (`/relatorio/:id`): Public report page for doctors to view via unique link
+   - Header: patient name, exam date, patient ID
+   - Left column (60%): Interactive 3D model with lesions
+   - Right column (40%): 2D views (sagittal, coronal, posterior) + exam photo gallery
+   - Footer: Lesion summary with severity colors (Superficial=Rosa, Moderada=Laranja, Profunda=Amarelo)
 
 ### Critical Architecture Rules
 - **NEVER modify**: Home.tsx, Uterus3D.tsx, or lesionStore.ts - 3D model sync must remain intact

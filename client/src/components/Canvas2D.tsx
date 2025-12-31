@@ -255,14 +255,7 @@ export default function Canvas2D({
       ctx.fill();
     });
 
-    const viewColor = getViewColor(viewType);
-    const label = getViewLabel(viewType)?.toUpperCase() || viewType.toUpperCase();
-    ctx.font = 'bold 11px monospace';
-    const labelWidth = ctx.measureText(label).width + 20;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(8, 8, Math.max(labelWidth, 160), 28);
-    ctx.fillStyle = viewColor;
-    ctx.fillText(label, 16, 26);
+    // Label removed per user request
 
   }, [lesions, selectedLesionId, hoveredLesionId, zoomLevel, viewType, viewImage, canvasSize]);
 

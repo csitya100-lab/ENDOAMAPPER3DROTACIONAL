@@ -368,7 +368,6 @@ export default function Vistas2D() {
                     className="cursor-pointer"
                     data-testid={`checkbox-export-${focusedView}`}
                   />
-                  <span className="text-xs font-medium text-white">{VIEW_LABELS[focusedView]}</span>
                 </label>
               </div>
             </div>
@@ -398,7 +397,7 @@ export default function Vistas2D() {
                         className="cursor-pointer"
                         data-testid={`checkbox-export-${viewType}`}
                       />
-                      <span className="text-xs font-medium text-white">{VIEW_LABELS[viewType]}</span>
+
                     </label>
                   </div>
                 )
@@ -441,7 +440,7 @@ export default function Vistas2D() {
                         className="cursor-pointer"
                         data-testid={`checkbox-export-${viewType}`}
                       />
-                      <span className="text-xs font-medium text-white">{VIEW_LABELS[viewType]}</span>
+
                     </label>
                   </div>
                 ))}

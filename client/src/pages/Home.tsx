@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Uterus3D, Uterus3DRef } from '@/components/Uterus3D';
 import { useLesionStore, Severity, Lesion } from '@/lib/lesionStore';
+import { useReportStore } from '@/lib/reportStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2, FileText } from 'lucide-react';
@@ -34,11 +35,18 @@ export default function Home() {
     uterusRef.current?.clearLesions();
   };
 
+  const { images2D } = useReportStore();
+
   const handleGenerateReport = () => {
+    if (!images2D.sagittal && !images2D.coronal && !images2D.posterior) {
+      alert('Aviso: Nenhuma imagem das vistas 2D foi capturada ainda. Visite a página 2D primeiro.');
+    }
+
     const reportData = {
       patient: examInfo.patient,
       date: examInfo.date,
       type: examInfo.type,
+      images2D: images2D,
       lesions: lesions.map(l => ({
         id: l.id,
         severity: l.severity,
@@ -47,8 +55,8 @@ export default function Home() {
       })),
       timestamp: new Date().toISOString()
     };
-    console.log('Dados coletados para o relatório:', reportData);
-    alert('Relatório gerado no console (F12)!');
+    console.log('Dados completos do relatório (incluindo imagens 2D):', reportData);
+    alert('Relatório gerado no console (F12) com imagens 2D!');
   };
 
   const getLesionCount = (sev: Severity) => lesions.filter(l => l.severity === sev).length;

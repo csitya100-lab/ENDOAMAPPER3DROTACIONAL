@@ -5,6 +5,8 @@ import { ViewType } from '@shared/3d/projections';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useReportStore } from '@/lib/reportStore';
+import { useEffect } from 'react';
 import {
   ZoomIn,
   ZoomOut,
@@ -41,6 +43,22 @@ export default function Vistas2D() {
   const [drawingSize, setDrawingSize] = useState(3);
   const [selectedViewsForExport, setSelectedViewsForExport] = useState<Set<ViewType>>(new Set());
   const [focusedView, setFocusedView] = useState<ViewType | null>(null);
+  const { setImages2D } = useReportStore();
+
+  useEffect(() => {
+    const captureImages = () => {
+      const images = {
+        sagittal: canvasRefs.current['sagittal-avf']?.toDataURL('image/png') || '',
+        coronal: canvasRefs.current['coronal']?.toDataURL('image/png') || '',
+        posterior: canvasRefs.current['posterior']?.toDataURL('image/png') || '',
+      };
+      setImages2D(images);
+    };
+
+    const interval = setInterval(captureImages, 2000);
+    return () => clearInterval(interval);
+  }, [setImages2D]);
+
   const canvasRefs = useRef<Record<ViewType, HTMLCanvasElement | null>>({
     'sagittal-avf': null,
     'sagittal-rvf': null,

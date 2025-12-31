@@ -31,6 +31,13 @@ export interface Report {
   createdAt: string;
 }
 
+export interface PdfImage {
+  data: string;
+  label: string;
+  width: number;
+  height: number;
+}
+
 interface ReportState {
   draftImages2D: {
     'sagittal-avf': string;
@@ -47,12 +54,18 @@ interface ReportState {
   reports: Record<string, Report>;
   hydrated: boolean;
   
+  pdfImages: PdfImage[];
+  
   setDraftImages2D: (images: { 'sagittal-avf': string; 'sagittal-rvf': string; coronal: string; posterior: string }) => void;
   setDraftImageNote: (view: keyof Report['images2D'], note: string) => void;
   clearDraftImages2D: () => void;
   createReport: (report: Omit<Report, 'id' | 'createdAt'>) => string;
   getReport: (id: string) => Report | undefined;
   deleteReport: (id: string) => void;
+  
+  addPdfImage: (image: PdfImage) => void;
+  removePdfImage: (index: number) => void;
+  clearPdfImages: () => void;
 }
 
 let isHydrated = false;
@@ -96,6 +109,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
   },
   reports: initialReports,
   hydrated: isHydrated,
+  pdfImages: [],
 
   setDraftImages2D: (images) => set({ draftImages2D: images }),
   
@@ -146,6 +160,16 @@ export const useReportStore = create<ReportState>((set, get) => ({
       return { reports: rest };
     });
   },
+  
+  addPdfImage: (image) => set((state) => ({
+    pdfImages: [...state.pdfImages, image]
+  })),
+  
+  removePdfImage: (index) => set((state) => ({
+    pdfImages: state.pdfImages.filter((_, i) => i !== index)
+  })),
+  
+  clearPdfImages: () => set({ pdfImages: [] }),
 }));
 
 export const images2D = {

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useReportStore } from '@/lib/reportStore';
-import { useEffect } from 'react';
+import { generatePdfReport } from '@/lib/pdfGenerator';
 import {
   ZoomIn,
   ZoomOut,
@@ -22,7 +22,10 @@ import {
   Minus,
   Circle,
   Ruler,
-  FileText
+  FileText,
+  Plus,
+  Trash2,
+  FileDown
 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { DrawingTool } from '@/components/Canvas2D';
@@ -64,7 +67,7 @@ export default function Vistas2D() {
   }));
   const [selectedViewsForExport, setSelectedViewsForExport] = useState<Set<ViewType>>(new Set());
   const [focusedView, setFocusedView] = useState<ViewType | null>(null);
-  const { setDraftImages2D } = useReportStore();
+  const { setDraftImages2D, pdfImages, addPdfImage, clearPdfImages } = useReportStore();
 
   const updateViewSetting = <K extends keyof ViewSettings>(
     view: ViewType,
@@ -129,6 +132,25 @@ export default function Vistas2D() {
         updateViewSetting(focusedView, 'zoomLevel', Math.max(viewSettings[focusedView].zoomLevel - 0.1, 0.3));
       }
     }
+  };
+
+  const handleAddToReport = () => {
+    if (!focusedView || !canvasRefs.current[focusedView]) return;
+    
+    const canvas = canvasRefs.current[focusedView];
+    if (!canvas) return;
+    
+    const imgData = canvas.toDataURL('image/png');
+    addPdfImage({
+      data: imgData,
+      label: VIEW_LABELS[focusedView],
+      width: canvas.width,
+      height: canvas.height
+    });
+  };
+
+  const handleGeneratePdf = () => {
+    generatePdfReport(pdfImages);
   };
 
   return (
@@ -324,22 +346,44 @@ export default function Vistas2D() {
               </Button>
             </div>
 
+            <div className="flex items-center gap-2 bg-slate-800/50 rounded-lg px-3 py-2">
+              <Button
+                onClick={handleAddToReport}
+                disabled={!focusedView}
+                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
+                data-testid="button-add-to-report"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar ao Relatório
+              </Button>
+              
+              {pdfImages.length > 0 && (
+                <>
+                  <span className="text-sm text-slate-400">
+                    {pdfImages.length} {pdfImages.length === 1 ? 'imagem' : 'imagens'}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={clearPdfImages}
+                    className="h-8 w-8 text-red-400 hover:text-red-300"
+                    title="Limpar fila"
+                    data-testid="button-clear-queue"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+
             <Button
-              onClick={() => {
-                const images = {
-                  'sagittal-avf': canvasRefs.current['sagittal-avf']?.toDataURL('image/png') || '',
-                  'sagittal-rvf': canvasRefs.current['sagittal-rvf']?.toDataURL('image/png') || '',
-                  coronal: canvasRefs.current['coronal']?.toDataURL('image/png') || '',
-                  posterior: canvasRefs.current['posterior']?.toDataURL('image/png') || '',
-                };
-                setDraftImages2D(images);
-                setLocation('/imprimir');
-              }}
-              className="bg-pink-600 hover:bg-pink-700"
-              data-testid="button-generate-report"
+              onClick={handleGeneratePdf}
+              disabled={pdfImages.length === 0}
+              className="bg-pink-600 hover:bg-pink-700 disabled:opacity-50"
+              data-testid="button-generate-pdf"
             >
-              <FileText className="w-4 h-4 mr-2" />
-              Gerar Relatório
+              <FileDown className="w-4 h-4 mr-2" />
+              Gerar PDF A4
             </Button>
 
           </div>

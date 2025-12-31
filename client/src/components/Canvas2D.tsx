@@ -553,7 +553,7 @@ export default function Canvas2D({
   return (
     <div 
       ref={containerRef} 
-      className="relative w-full h-full bg-slate-900 rounded-lg overflow-hidden border border-slate-700"
+      className="relative w-full h-full bg-white rounded-lg overflow-hidden border border-slate-300 shadow-sm"
       data-testid={`canvas-2d-${viewType}`}
     >
       <canvas

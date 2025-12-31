@@ -348,7 +348,7 @@ export default function Vistas2D() {
         {focusedView ? (
           <div className="grid grid-cols-12 gap-4 h-[calc(100vh-160px)]" onWheel={handleWheel}>
             <div className="col-span-9">
-              <div className="h-full min-h-0 relative group rounded-lg overflow-hidden border-2 border-pink-500 shadow-lg shadow-pink-500/30">
+              <div className="h-full min-h-0 relative group rounded-lg border border-slate-300 shadow-lg bg-white">
                 <Canvas2D
                   viewType={focusedView}
                   zoomLevel={viewSettings[focusedView].zoomLevel}
@@ -377,7 +377,7 @@ export default function Vistas2D() {
                 viewType !== focusedView && (
                   <div
                     key={viewType}
-                    className="h-24 min-h-0 relative group rounded border border-slate-600 transition-all overflow-hidden cursor-pointer"
+                    className="h-24 min-h-0 relative group rounded border border-slate-600 transition-all overflow-hidden cursor-pointer bg-white"
                     onClick={() => setFocusedView(viewType)}
                   >
                     <Canvas2D
@@ -420,7 +420,7 @@ export default function Vistas2D() {
                 {VIEW_TYPES.map((viewType) => (
                   <div
                     key={viewType}
-                    className="h-full min-h-0 relative group rounded-lg border border-slate-700 transition-all overflow-hidden cursor-pointer"
+                    className="h-full min-h-0 relative group rounded-lg border border-slate-700 transition-all overflow-hidden cursor-pointer bg-white"
                     onClick={() => setFocusedView(viewType)}
                   >
                     <Canvas2D

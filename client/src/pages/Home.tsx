@@ -29,10 +29,6 @@ export default function Home() {
   const uterusRef = useRef<Uterus3DRef>(null);
   const [, setLocation] = useLocation();
 
-  const handleAddTestLesion = () => {
-    uterusRef.current?.addTestLesion();
-  };
-
   const handleClearLesions = () => {
     uterusRef.current?.clearLesions();
   };
@@ -250,16 +246,6 @@ export default function Home() {
                 Gerar Relatório
               </Button>
 
-              <Button 
-                size="sm" 
-                onClick={handleAddTestLesion}
-                className="text-xs h-9 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200"
-                variant="outline"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1.5" />
-                Adicionar Lesão
-              </Button>
-              
               <Button 
                 size="sm" 
                 onClick={handleClearLesions}

@@ -71,6 +71,7 @@ export default function Canvas2D({
   const [showTextInput, setShowTextInput] = useState(false);
   const drawingRestoredRef = useRef(false);
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  const drawingBaseRef = useRef<ImageData | null>(null);
 
   useEffect(() => {
     const imagePath = VIEW_IMAGES[viewType];
@@ -377,6 +378,14 @@ export default function Canvas2D({
     const ctx = drawingCanvas.getContext('2d');
     if (!ctx) return;
 
+    if (drawingTool === 'line' || drawingTool === 'circle' || drawingTool === 'circle-filled') {
+      try {
+        drawingBaseRef.current = ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
+      } catch (e) {
+        drawingBaseRef.current = null;
+      }
+    }
+
     ctx.lineWidth = drawingSize;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -410,8 +419,15 @@ export default function Canvas2D({
       ctx.lineTo(x, y);
       ctx.stroke();
     } else if (drawingTool === 'line' || drawingTool === 'circle' || drawingTool === 'circle-filled') {
-      ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+      if (drawingBaseRef.current) {
+        ctx.putImageData(drawingBaseRef.current, 0, 0);
+      } else {
+        ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+      }
+      
       ctx.lineWidth = drawingSize;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.strokeStyle = drawingColor;
       ctx.fillStyle = drawingColor;
 
@@ -442,7 +458,13 @@ export default function Canvas2D({
         const y = e.clientY - rect.top;
         const ctx = drawingCanvas.getContext('2d');
         if (ctx) {
+          if (drawingBaseRef.current) {
+            ctx.putImageData(drawingBaseRef.current, 0, 0);
+          }
+          
           ctx.lineWidth = drawingSize;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
           ctx.strokeStyle = drawingColor;
           ctx.fillStyle = drawingColor;
 
@@ -463,6 +485,7 @@ export default function Canvas2D({
           }
         }
       }
+      drawingBaseRef.current = null;
     }
     if (isDrawing) {
       saveDrawing();

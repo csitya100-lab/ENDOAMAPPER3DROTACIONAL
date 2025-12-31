@@ -21,6 +21,12 @@ export interface Report {
     coronal: string;
     posterior: string;
   };
+  imageNotes: {
+    'sagittal-avf': string;
+    'sagittal-rvf': string;
+    coronal: string;
+    posterior: string;
+  };
   lesions: ReportLesion[];
   createdAt: string;
 }
@@ -32,10 +38,17 @@ interface ReportState {
     coronal: string;
     posterior: string;
   };
+  draftImageNotes: {
+    'sagittal-avf': string;
+    'sagittal-rvf': string;
+    coronal: string;
+    posterior: string;
+  };
   reports: Record<string, Report>;
   hydrated: boolean;
   
   setDraftImages2D: (images: { 'sagittal-avf': string; 'sagittal-rvf': string; coronal: string; posterior: string }) => void;
+  setDraftImageNote: (view: keyof Report['images2D'], note: string) => void;
   clearDraftImages2D: () => void;
   createReport: (report: Omit<Report, 'id' | 'createdAt'>) => string;
   getReport: (id: string) => Report | undefined;
@@ -75,13 +88,29 @@ export const useReportStore = create<ReportState>((set, get) => ({
     coronal: '',
     posterior: '',
   },
+  draftImageNotes: {
+    'sagittal-avf': '',
+    'sagittal-rvf': '',
+    coronal: '',
+    posterior: '',
+  },
   reports: initialReports,
   hydrated: isHydrated,
 
   setDraftImages2D: (images) => set({ draftImages2D: images }),
   
+  setDraftImageNote: (view, note) => set((state) => ({
+    draftImageNotes: { ...state.draftImageNotes, [view]: note }
+  })),
+
   clearDraftImages2D: () => set({
     draftImages2D: {
+      'sagittal-avf': '',
+      'sagittal-rvf': '',
+      coronal: '',
+      posterior: '',
+    },
+    draftImageNotes: {
       'sagittal-avf': '',
       'sagittal-rvf': '',
       coronal: '',

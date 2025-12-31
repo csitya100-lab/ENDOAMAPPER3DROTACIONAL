@@ -1,27 +1,122 @@
 import { create } from 'zustand';
+import { Lesion, Severity } from './lesionStore';
 
-interface ReportState {
+export interface ReportLesion {
+  id: string;
+  name: string;
+  location: string;
+  severity: Severity;
+  position: { x: number; y: number; z: number };
+}
+
+export interface Report {
+  id: string;
+  patientName: string;
+  patientId: string;
+  examDate: string;
+  examType: string;
   images2D: {
     sagittal: string;
     coronal: string;
     posterior: string;
   };
-  setImages2D: (images: { sagittal: string; coronal: string; posterior: string }) => void;
-  clearImages2D: () => void;
+  lesions: ReportLesion[];
+  createdAt: string;
 }
 
-export const useReportStore = create<ReportState>((set) => ({
-  images2D: {
+interface ReportState {
+  draftImages2D: {
+    sagittal: string;
+    coronal: string;
+    posterior: string;
+  };
+  reports: Record<string, Report>;
+  hydrated: boolean;
+  
+  setDraftImages2D: (images: { sagittal: string; coronal: string; posterior: string }) => void;
+  clearDraftImages2D: () => void;
+  createReport: (report: Omit<Report, 'id' | 'createdAt'>) => string;
+  getReport: (id: string) => Report | undefined;
+  deleteReport: (id: string) => void;
+}
+
+let isHydrated = false;
+
+const loadReportsFromStorage = (): Record<string, Report> => {
+  try {
+    const stored = localStorage.getItem('medicalReports');
+    if (stored) {
+      isHydrated = true;
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.warn('Failed to load reports from localStorage:', e);
+  }
+  isHydrated = true;
+  return {};
+};
+
+const saveReportsToStorage = (reports: Record<string, Report>) => {
+  try {
+    localStorage.setItem('medicalReports', JSON.stringify(reports));
+  } catch (e) {
+    console.warn('Failed to save reports to localStorage:', e);
+  }
+};
+
+const initialReports = loadReportsFromStorage();
+
+export const useReportStore = create<ReportState>((set, get) => ({
+  draftImages2D: {
     sagittal: '',
     coronal: '',
     posterior: '',
   },
-  setImages2D: (images) => set({ images2D: images }),
-  clearImages2D: () => set({
-    images2D: {
+  reports: initialReports,
+  hydrated: isHydrated,
+
+  setDraftImages2D: (images) => set({ draftImages2D: images }),
+  
+  clearDraftImages2D: () => set({
+    draftImages2D: {
       sagittal: '',
       coronal: '',
       posterior: '',
     }
   }),
+
+  createReport: (reportData) => {
+    const id = `RPT-${Date.now().toString(36).toUpperCase()}`;
+    const newReport: Report = {
+      ...reportData,
+      id,
+      createdAt: new Date().toISOString(),
+    };
+    
+    set((state) => {
+      const updatedReports = { ...state.reports, [id]: newReport };
+      saveReportsToStorage(updatedReports);
+      return { reports: updatedReports };
+    });
+    
+    return id;
+  },
+
+  getReport: (id) => {
+    return get().reports[id];
+  },
+
+  deleteReport: (id) => {
+    set((state) => {
+      const { [id]: removed, ...rest } = state.reports;
+      saveReportsToStorage(rest);
+      return { reports: rest };
+    });
+  },
 }));
+
+export const images2D = {
+  get sagittal() { return useReportStore.getState().draftImages2D.sagittal; },
+  get coronal() { return useReportStore.getState().draftImages2D.coronal; },
+  get posterior() { return useReportStore.getState().draftImages2D.posterior; },
+};

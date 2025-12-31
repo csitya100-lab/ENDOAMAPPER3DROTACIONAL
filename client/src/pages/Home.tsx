@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useLocation } from 'wouter';
 import { Uterus3D, Uterus3DRef } from '@/components/Uterus3D';
 import { useLesionStore, Severity, Lesion } from '@/lib/lesionStore';
 import { useReportStore } from '@/lib/reportStore';
@@ -26,6 +27,7 @@ export default function Home() {
     type: 'Mapeamento 3D/2D',
   });
   const uterusRef = useRef<Uterus3DRef>(null);
+  const [, setLocation] = useLocation();
 
   const handleAddTestLesion = () => {
     uterusRef.current?.addTestLesion();
@@ -35,28 +37,32 @@ export default function Home() {
     uterusRef.current?.clearLesions();
   };
 
-  const { images2D } = useReportStore();
+  const { draftImages2D, createReport, clearDraftImages2D } = useReportStore();
 
   const handleGenerateReport = () => {
-    if (!images2D.sagittal && !images2D.coronal && !images2D.posterior) {
-      alert('Aviso: Nenhuma imagem das vistas 2D foi capturada ainda. Visite a página 2D primeiro.');
+    if (!draftImages2D.sagittal && !draftImages2D.coronal && !draftImages2D.posterior) {
+      const proceed = confirm('Nenhuma imagem 2D foi capturada ainda. Deseja continuar mesmo assim?');
+      if (!proceed) return;
     }
 
-    const reportData = {
-      patient: examInfo.patient,
-      date: examInfo.date,
-      type: examInfo.type,
-      images2D: images2D,
-      lesions: lesions.map(l => ({
+    const reportId = createReport({
+      patientName: examInfo.patient,
+      patientId: `PAC-${Date.now().toString(36).toUpperCase()}`,
+      examDate: examInfo.date,
+      examType: examInfo.type,
+      images2D: draftImages2D,
+      lesions: lesions.map((l, idx) => ({
         id: l.id,
+        name: `Lesão ${String.fromCharCode(65 + idx)}`,
+        location: l.location || (l.severity === 'superficial' ? 'Região Superficial' : l.severity === 'moderate' ? 'Região Moderada' : 'Região Profunda'),
         severity: l.severity,
-        location: l.severity === 'superficial' ? 'Superficial' : l.severity === 'moderate' ? 'Moderada' : 'Profunda',
         position: l.position
       })),
-      timestamp: new Date().toISOString()
-    };
-    console.log('Dados completos do relatório (incluindo imagens 2D):', reportData);
-    alert('Relatório gerado no console (F12) com imagens 2D!');
+    });
+
+    console.log('Relatório criado com ID:', reportId);
+    clearDraftImages2D();
+    setLocation(`/relatorio/${reportId}`);
   };
 
   const getLesionCount = (sev: Severity) => lesions.filter(l => l.severity === sev).length;

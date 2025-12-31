@@ -3,69 +3,40 @@ import { useParams } from 'wouter';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useReportStore, Report } from '@/lib/reportStore';
+import { Severity } from '@/lib/lesionStore';
 
-interface LesionData {
-  id: string;
-  name: string;
-  location: string;
-  severity: 'superficial' | 'moderate' | 'deep';
-  position: { x: number; y: number; z: number };
-}
-
-interface ReportData {
-  reportId: string;
-  patientName: string;
-  examDate: string;
-  patientId: string;
-  images2D: {
-    sagittal: string;
-    coronal: string;
-    posterior: string;
-  };
-  examPhotos: string[];
-  lesions: LesionData[];
-}
-
-const SEVERITY_COLORS = {
+const SEVERITY_COLORS: Record<Severity, { hex: string; label: string; bg: string; text: string; border: string }> = {
   superficial: { hex: '#ec4899', label: 'Superficial', bg: 'bg-pink-100', text: 'text-pink-700', border: 'border-pink-300' },
   moderate: { hex: '#f97316', label: 'Moderada', bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-300' },
   deep: { hex: '#eab308', label: 'Profunda', bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-300' }
-};
-
-const MOCK_REPORT: ReportData = {
-  reportId: 'ABC123',
-  patientName: 'Maria Silva',
-  examDate: '31/12/2024',
-  patientId: 'PAC-2024-0001',
-  images2D: {
-    sagittal: '',
-    coronal: '',
-    posterior: ''
-  },
-  examPhotos: [],
-  lesions: [
-    { id: '1', name: 'Lesão A', location: 'Ovário Direito', severity: 'deep', position: { x: 1.2, y: 0.5, z: 0.3 } },
-    { id: '2', name: 'Lesão B', location: 'Miométrio Anterior', severity: 'moderate', position: { x: -0.8, y: 0.2, z: 1.1 } },
-    { id: '3', name: 'Lesão C', location: 'Ligamento Uterossacro', severity: 'superficial', position: { x: 0.3, y: -0.6, z: -0.9 } }
-  ]
 };
 
 export default function PublicReport() {
   const { id } = useParams<{ id: string }>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [report, setReport] = useState<ReportData | null>(null);
+  const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
+  const { getReport, hydrated } = useReportStore();
 
   useEffect(() => {
-    setTimeout(() => {
-      setReport({ ...MOCK_REPORT, reportId: id || 'ABC123' });
+    if (!hydrated) return;
+    
+    if (!id) {
       setLoading(false);
-    }, 500);
-  }, [id]);
+      return;
+    }
+
+    const storedReport = getReport(id);
+    if (storedReport) {
+      setReport(storedReport);
+    }
+    setLoading(false);
+  }, [id, getReport, hydrated]);
 
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current || !report) return;
@@ -202,21 +173,25 @@ export default function PublicReport() {
 
   if (!report) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-slate-600">Relatório não encontrado</div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center flex-col gap-4">
+        <div className="text-slate-600 text-xl font-medium">Relatório não encontrado</div>
+        <p className="text-slate-400 text-sm">O relatório com ID "{id}" não existe ou foi removido.</p>
+        <a href="/" className="text-pink-600 hover:text-pink-700 text-sm underline">Voltar para o início</a>
       </div>
     );
   }
 
+  const examPhotos: string[] = [];
+
   const nextPhoto = () => {
-    if (report.examPhotos.length > 0) {
-      setPhotoIndex((prev) => (prev + 1) % report.examPhotos.length);
+    if (examPhotos.length > 0) {
+      setPhotoIndex((prev) => (prev + 1) % examPhotos.length);
     }
   };
 
   const prevPhoto = () => {
-    if (report.examPhotos.length > 0) {
-      setPhotoIndex((prev) => (prev - 1 + report.examPhotos.length) % report.examPhotos.length);
+    if (examPhotos.length > 0) {
+      setPhotoIndex((prev) => (prev - 1 + examPhotos.length) % examPhotos.length);
     }
   };
 
@@ -240,7 +215,7 @@ export default function PublicReport() {
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-400">Relatório</p>
-            <p className="text-sm font-mono text-slate-600" data-testid="text-report-id">{report.reportId}</p>
+            <p className="text-sm font-mono text-slate-600" data-testid="text-report-id">{report.id}</p>
           </div>
         </div>
       </header>
@@ -294,18 +269,18 @@ export default function PublicReport() {
                 <h2 className="text-sm font-semibold text-slate-700">Fotos do Exame</h2>
               </div>
               <div className="p-4">
-                {report.examPhotos.length > 0 ? (
+                {examPhotos.length > 0 ? (
                   <div className="relative">
                     <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden">
                       <img 
-                        src={report.examPhotos[photoIndex]} 
+                        src={examPhotos[photoIndex]} 
                         alt={`Foto ${photoIndex + 1}`}
                         className="w-full h-full object-cover cursor-pointer"
-                        onClick={() => setExpandedPhoto(report.examPhotos[photoIndex])}
+                        onClick={() => setExpandedPhoto(examPhotos[photoIndex])}
                         data-testid={`img-exam-photo-${photoIndex}`}
                       />
                     </div>
-                    {report.examPhotos.length > 1 && (
+                    {examPhotos.length > 1 && (
                       <>
                         <button 
                           onClick={prevPhoto}
@@ -324,7 +299,7 @@ export default function PublicReport() {
                       </>
                     )}
                     <div className="flex justify-center gap-1.5 mt-3">
-                      {report.examPhotos.map((_, idx) => (
+                      {examPhotos.map((_, idx) => (
                         <button
                           key={idx}
                           onClick={() => setPhotoIndex(idx)}

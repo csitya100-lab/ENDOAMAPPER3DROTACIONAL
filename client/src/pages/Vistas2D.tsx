@@ -43,7 +43,7 @@ export default function Vistas2D() {
   const [drawingSize, setDrawingSize] = useState(3);
   const [selectedViewsForExport, setSelectedViewsForExport] = useState<Set<ViewType>>(new Set());
   const [focusedView, setFocusedView] = useState<ViewType | null>(null);
-  const { setImages2D } = useReportStore();
+  const { setDraftImages2D } = useReportStore();
 
   useEffect(() => {
     const captureImages = () => {
@@ -52,12 +52,12 @@ export default function Vistas2D() {
         coronal: canvasRefs.current['coronal']?.toDataURL('image/png') || '',
         posterior: canvasRefs.current['posterior']?.toDataURL('image/png') || '',
       };
-      setImages2D(images);
+      setDraftImages2D(images);
     };
 
     const interval = setInterval(captureImages, 2000);
     return () => clearInterval(interval);
-  }, [setImages2D]);
+  }, [setDraftImages2D]);
 
   const canvasRefs = useRef<Record<ViewType, HTMLCanvasElement | null>>({
     'sagittal-avf': null,

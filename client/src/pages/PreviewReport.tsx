@@ -101,44 +101,45 @@ export default function PreviewReport() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-6 print:gap-4">
+              <div className="space-y-8 print:space-y-6">
                 {pdfImages.map((image, index) => (
                   <div 
                     key={`${image.viewType}-${index}`} 
-                    className="border border-gray-200 rounded-lg overflow-hidden print:border-gray-300"
+                    className="border border-gray-200 rounded-lg overflow-hidden print:border-gray-300 print:break-inside-avoid"
                     data-testid={`preview-card-${index}`}
                   >
-                    <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex items-center justify-between print:bg-gray-50">
-                      <h3 className="font-medium text-gray-800 text-sm">{image.label}</h3>
+                    <div className="bg-gray-100 px-4 py-3 border-b border-gray-200 flex items-center justify-between print:bg-gray-50">
+                      <h3 className="font-semibold text-gray-800 text-lg">{image.label}</h3>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => removePdfImage(index)}
-                        className="h-7 w-7 p-0 text-gray-400 hover:text-red-500 print:hidden"
+                        className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 print:hidden"
                         data-testid={`button-remove-${index}`}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </Button>
                     </div>
                     
-                    <div className="aspect-square bg-white flex items-center justify-center p-4">
+                    <div className="bg-white flex items-center justify-center p-6" style={{ minHeight: '500px' }}>
                       <img
                         src={image.data}
                         alt={image.label}
-                        className="max-w-full max-h-full object-contain"
+                        className="max-w-full object-contain"
+                        style={{ maxHeight: '600px', width: 'auto' }}
                         draggable={false}
                       />
                     </div>
 
-                    <div className="border-t border-gray-200 p-3 bg-gray-50">
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <div className="border-t border-gray-200 p-4 bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-600 mb-2">
                         Observações
                       </label>
                       <Textarea
                         value={image.observation}
                         onChange={(e) => updatePdfImageObservation(index, e.target.value)}
                         placeholder="Adicione observações para o cirurgião..."
-                        className="min-h-[60px] text-sm resize-none print:hidden"
+                        className="min-h-[80px] text-sm resize-none print:hidden"
                         data-testid={`textarea-observation-${index}`}
                       />
                       <p className="hidden print:block text-sm text-gray-700 min-h-[40px]">

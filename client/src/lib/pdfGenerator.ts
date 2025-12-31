@@ -6,8 +6,7 @@ const A4_HEIGHT = 297;
 const MARGIN = 10;
 
 const SLOTS = [
-  { x: 15, y: 25, w: 80, h: 60 },
-  { x: 15, y: 100, w: 80, h: 60 }
+  { x: 10, y: 30, w: 190, h: 240 }
 ];
 
 function addImageInSlot(
@@ -19,32 +18,35 @@ function addImageInSlot(
   label: string,
   observation: string
 ) {
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(80, 80, 80);
+  pdf.text(label, slot.x, slot.y - 3);
+
+  const reservedForObs = observation && observation.trim() ? 20 : 0;
+  const availableH = slot.h - reservedForObs;
+  
   const ratio = origHeight / origWidth;
   let imgW = slot.w;
   let imgH = imgW * ratio;
 
-  if (imgH > slot.h - 15) {
-    imgH = slot.h - 15;
+  if (imgH > availableH) {
+    imgH = availableH;
     imgW = imgH / ratio;
   }
 
   const x = slot.x + (slot.w - imgW) / 2;
-  const y = slot.y + 5;
-
-  pdf.setFontSize(10);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(80, 80, 80);
-  pdf.text(label, slot.x, slot.y - 1);
+  const y = slot.y;
 
   pdf.addImage(imgData, 'PNG', x, y, imgW, imgH);
   
   if (observation && observation.trim()) {
-    pdf.setFontSize(8);
+    pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(100, 100, 100);
-    const obsY = y + imgH + 3;
-    const lines = pdf.splitTextToSize(observation, slot.w);
-    pdf.text(lines.slice(0, 2), slot.x, obsY);
+    pdf.setTextColor(60, 60, 60);
+    const obsY = slot.y + slot.h - 10;
+    const lines = pdf.splitTextToSize(`Obs: ${observation}`, slot.w);
+    pdf.text(lines.slice(0, 3), slot.x, obsY);
   }
 }
 

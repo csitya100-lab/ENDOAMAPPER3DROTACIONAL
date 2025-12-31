@@ -36,7 +36,7 @@ const VIEW_LABELS: Record<ViewType, string> = {
 
 export default function Vistas2D() {
   const [, setLocation] = useLocation();
-  const [zoomLevel, setZoomLevel] = useState(1);
+  const [zoomLevel, setZoomLevel] = useState(1.5);
   const [editMode, setEditMode] = useState(true);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('pen');
   const [drawingColor, setDrawingColor] = useState('#ffffff');

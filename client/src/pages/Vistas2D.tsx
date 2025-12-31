@@ -105,7 +105,7 @@ export default function Vistas2D() {
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Grid3x3 className="w-6 h-6 text-pink-500" />
-                Editor de Vistas 2D
+                EndoMapper 2D
               </h1>
               <p className="text-slate-400 text-sm">
                 Edite lesões com precisão em vistas planares

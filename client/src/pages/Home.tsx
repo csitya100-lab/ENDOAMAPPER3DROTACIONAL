@@ -24,7 +24,7 @@ export default function Home() {
   const [examInfo] = useState<ExamInfo>({
     patient: 'Paciente A',
     date: new Date().toLocaleDateString('pt-BR'),
-    type: 'Mapeamento 3D/2D',
+    type: 'Mapeamento EndoMapper',
   });
   const uterusRef = useRef<Uterus3DRef>(null);
   const [, setLocation] = useLocation();
@@ -45,7 +45,7 @@ export default function Home() {
       patientName: examInfo.patient,
       patientId: `PAC-${Date.now().toString(36).toUpperCase()}`,
       examDate: examInfo.date,
-      examType: examInfo.type,
+      examType: 'Mapeamento EndoMapper',
       images2D: draftImages2D,
       lesions: lesions.map((l, idx) => ({
         id: l.id,
@@ -131,7 +131,7 @@ export default function Home() {
                  <span className="text-white font-bold text-sm">3D</span>
                </div>
                <h1 className="text-xl font-bold tracking-tight text-slate-900 font-sans">
-                 Uterus<span className="text-rose-600">Mapper</span>
+                 Endo<span className="text-rose-600">Mapper</span>
                </h1>
             </div>
 

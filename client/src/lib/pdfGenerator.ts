@@ -16,25 +16,36 @@ function addImageInSlot(
   slot: { x: number; y: number; w: number; h: number },
   origWidth: number,
   origHeight: number,
-  label: string
+  label: string,
+  observation: string
 ) {
   const ratio = origHeight / origWidth;
   let imgW = slot.w;
   let imgH = imgW * ratio;
 
-  if (imgH > slot.h) {
-    imgH = slot.h;
+  if (imgH > slot.h - 15) {
+    imgH = slot.h - 15;
     imgW = imgH / ratio;
   }
 
   const x = slot.x + (slot.w - imgW) / 2;
-  const y = slot.y + (slot.h - imgH) / 2;
+  const y = slot.y + 5;
+
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(80, 80, 80);
+  pdf.text(label, slot.x, slot.y - 1);
 
   pdf.addImage(imgData, 'PNG', x, y, imgW, imgH);
   
-  pdf.setFontSize(10);
-  pdf.setTextColor(80, 80, 80);
-  pdf.text(label, slot.x, slot.y - 3);
+  if (observation && observation.trim()) {
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(100, 100, 100);
+    const obsY = y + imgH + 3;
+    const lines = pdf.splitTextToSize(observation, slot.w);
+    pdf.text(lines.slice(0, 2), slot.x, obsY);
+  }
 }
 
 function addHeader(pdf: jsPDF, pageNum: number, totalPages: number) {
@@ -102,7 +113,8 @@ export function generatePdfReport(images: PdfImage[]): void {
       SLOTS[slotIndex],
       img.width,
       img.height,
-      img.label
+      img.label,
+      img.observation
     );
   });
 

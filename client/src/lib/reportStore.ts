@@ -34,8 +34,10 @@ export interface Report {
 export interface PdfImage {
   data: string;
   label: string;
+  viewType: string;
   width: number;
   height: number;
+  observation: string;
 }
 
 interface ReportState {
@@ -66,6 +68,7 @@ interface ReportState {
   addPdfImage: (image: PdfImage) => void;
   removePdfImage: (index: number) => void;
   clearPdfImages: () => void;
+  updatePdfImageObservation: (index: number, observation: string) => void;
 }
 
 let isHydrated = false;
@@ -170,6 +173,12 @@ export const useReportStore = create<ReportState>((set, get) => ({
   })),
   
   clearPdfImages: () => set({ pdfImages: [] }),
+  
+  updatePdfImageObservation: (index, observation) => set((state) => ({
+    pdfImages: state.pdfImages.map((img, i) => 
+      i === index ? { ...img, observation } : img
+    )
+  })),
 }));
 
 export const images2D = {

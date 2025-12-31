@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import Vistas2D from "@/pages/Vistas2D";
 import PublicReport from "@/pages/PublicReport";
 import PrintReport from "@/pages/PrintReport";
+import PreviewReport from "@/pages/PreviewReport";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/vistas-2d" component={Vistas2D} />
       <Route path="/relatorio/:id" component={PublicReport} />
       <Route path="/imprimir" component={PrintReport} />
+      <Route path="/preview-report" component={PreviewReport} />
       <Route component={NotFound} />
     </Switch>
   );

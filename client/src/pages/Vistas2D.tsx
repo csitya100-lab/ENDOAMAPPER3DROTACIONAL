@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useReportStore } from '@/lib/reportStore';
-import { generatePdfReport } from '@/lib/pdfGenerator';
 import {
   ZoomIn,
   ZoomOut,
@@ -137,20 +136,31 @@ export default function Vistas2D() {
   const handleAddToReport = () => {
     if (!focusedView || !canvasRefs.current[focusedView]) return;
     
-    const canvas = canvasRefs.current[focusedView];
-    if (!canvas) return;
+    const sourceCanvas = canvasRefs.current[focusedView];
+    if (!sourceCanvas) return;
     
-    const imgData = canvas.toDataURL('image/png');
+    const scale = 2;
+    const highResCanvas = document.createElement('canvas');
+    highResCanvas.width = sourceCanvas.width * scale;
+    highResCanvas.height = sourceCanvas.height * scale;
+    
+    const ctx = highResCanvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.scale(scale, scale);
+    ctx.drawImage(sourceCanvas, 0, 0);
+    
+    const imgData = highResCanvas.toDataURL('image/png');
     addPdfImage({
       data: imgData,
       label: VIEW_LABELS[focusedView],
-      width: canvas.width,
-      height: canvas.height
+      viewType: focusedView,
+      width: highResCanvas.width,
+      height: highResCanvas.height,
+      observation: ''
     });
-  };
-
-  const handleGeneratePdf = () => {
-    generatePdfReport(pdfImages);
   };
 
   return (
@@ -377,13 +387,13 @@ export default function Vistas2D() {
             </div>
 
             <Button
-              onClick={handleGeneratePdf}
+              onClick={() => setLocation('/preview-report')}
               disabled={pdfImages.length === 0}
               className="bg-pink-600 hover:bg-pink-700 disabled:opacity-50"
-              data-testid="button-generate-pdf"
+              data-testid="button-preview-report"
             >
-              <FileDown className="w-4 h-4 mr-2" />
-              Gerar PDF A4
+              <FileText className="w-4 h-4 mr-2" />
+              Ver Relatório
             </Button>
 
           </div>

@@ -70,6 +70,7 @@ export default function Canvas2D({
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
   const drawingRestoredRef = useRef(false);
+  const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
   useEffect(() => {
     const imagePath = VIEW_IMAGES[viewType];
@@ -85,28 +86,55 @@ export default function Canvas2D({
   }, [onCanvasRef]);
 
   useEffect(() => {
-    if (drawingData && !drawingRestoredRef.current) {
-      const drawingCanvas = drawingCanvasRef.current;
-      const container = containerRef.current;
-      if (!drawingCanvas || !container) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-      const rect = container.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        drawingCanvas.width = rect.width;
-        drawingCanvas.height = rect.height;
-
-        const img = new Image();
-        img.onload = () => {
-          const ctx = drawingCanvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
-          }
-          drawingRestoredRef.current = true;
-        };
-        img.src = drawingData;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        const roundedWidth = Math.floor(width);
+        const roundedHeight = Math.floor(height);
+        
+        if (roundedWidth > 0 && roundedHeight > 0) {
+          setCanvasSize(prev => {
+            if (Math.abs(prev.width - roundedWidth) > 1 || Math.abs(prev.height - roundedHeight) > 1) {
+              return { width: roundedWidth, height: roundedHeight };
+            }
+            return prev;
+          });
+        }
       }
+    });
+
+    resizeObserver.observe(container);
+    
+    const rect = container.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setCanvasSize({ width: Math.floor(rect.width), height: Math.floor(rect.height) });
     }
-  }, [drawingData]);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (drawingData && !drawingRestoredRef.current && canvasSize.width > 0 && canvasSize.height > 0) {
+      const drawingCanvas = drawingCanvasRef.current;
+      if (!drawingCanvas) return;
+
+      drawingCanvas.width = canvasSize.width;
+      drawingCanvas.height = canvasSize.height;
+
+      const img = new Image();
+      img.onload = () => {
+        const ctx = drawingCanvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
+        }
+        drawingRestoredRef.current = true;
+      };
+      img.src = drawingData;
+    }
+  }, [drawingData, canvasSize]);
 
   const saveDrawing = useCallback(() => {
     const drawingCanvas = drawingCanvasRef.current;
@@ -119,16 +147,11 @@ export default function Canvas2D({
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const drawingCanvas = drawingCanvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
+    if (!canvas || canvasSize.width === 0 || canvasSize.height === 0) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = container.getBoundingClientRect();
-    const newWidth = rect.width;
-    const newHeight = rect.height;
-    
     let drawingImageData: ImageData | null = null;
     
     if (drawingCanvas && drawingCanvas.width > 0 && drawingCanvas.height > 0) {
@@ -142,15 +165,15 @@ export default function Canvas2D({
       }
     }
     
-    if (canvas.width !== newWidth || canvas.height !== newHeight) {
-      canvas.width = newWidth;
-      canvas.height = newHeight;
+    if (canvas.width !== canvasSize.width || canvas.height !== canvasSize.height) {
+      canvas.width = canvasSize.width;
+      canvas.height = canvasSize.height;
     }
     
     if (drawingCanvas) {
-      if (drawingCanvas.width !== newWidth || drawingCanvas.height !== newHeight) {
-        drawingCanvas.width = newWidth;
-        drawingCanvas.height = newHeight;
+      if (drawingCanvas.width !== canvasSize.width || drawingCanvas.height !== canvasSize.height) {
+        drawingCanvas.width = canvasSize.width;
+        drawingCanvas.height = canvasSize.height;
       }
       
       if (drawingImageData) {
@@ -240,16 +263,10 @@ export default function Canvas2D({
     ctx.fillStyle = viewColor;
     ctx.fillText(label, 16, 26);
 
-  }, [lesions, selectedLesionId, hoveredLesionId, zoomLevel, viewType, viewImage]);
+  }, [lesions, selectedLesionId, hoveredLesionId, zoomLevel, viewType, viewImage, canvasSize]);
 
   useEffect(() => {
     drawCanvas();
-  }, [drawCanvas]);
-
-  useEffect(() => {
-    const handleResize = () => drawCanvas();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, [drawCanvas]);
 
   const getLesionAtPosition = useCallback((x: number, y: number): string | null => {

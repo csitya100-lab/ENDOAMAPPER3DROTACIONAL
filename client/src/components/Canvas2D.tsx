@@ -191,7 +191,7 @@ export default function Canvas2D({
 
     const bounds = calculateCanvasBounds(canvas.width, canvas.height, zoomLevel);
 
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if (viewImage) {

@@ -83,8 +83,14 @@ export default function Canvas2D({
   }, [viewType]);
 
   useEffect(() => {
-    onCanvasRef?.(canvasRef.current);
-  }, [onCanvasRef]);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      onCanvasRef?.(canvas);
+    }
+    return () => {
+      onCanvasRef?.(null);
+    };
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;

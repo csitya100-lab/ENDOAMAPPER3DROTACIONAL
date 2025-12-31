@@ -17,7 +17,7 @@ import {
   Send,
   Check
 } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { DrawingTool } from '@/components/Canvas2D';
 
 const VIEW_TYPES: ViewType[] = ['sagittal-avf', 'sagittal-rvf', 'coronal', 'posterior'];
@@ -60,6 +60,10 @@ export default function Vistas2D() {
     'coronal': null,
     'posterior': null
   });
+
+  const setCanvasRef = useCallback((viewType: ViewType) => (canvas: HTMLCanvasElement | null) => {
+    canvasRefs.current[viewType] = canvas;
+  }, []);
 
   const updateViewSetting = <K extends keyof ViewSettings>(
     view: ViewType,
@@ -292,7 +296,7 @@ export default function Vistas2D() {
                     drawingSize={viewSettings[viewType].drawingSize}
                     drawingData={viewSettings[viewType].drawingData}
                     onDrawingChange={(data) => updateViewSetting(viewType, 'drawingData', data)}
-                    onCanvasRef={(canvas) => { canvasRefs.current[viewType] = canvas; }}
+                    onCanvasRef={setCanvasRef(viewType)}
                   />
                 </div>
               </div>

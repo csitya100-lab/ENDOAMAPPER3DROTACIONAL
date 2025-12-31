@@ -3,7 +3,7 @@ import { Uterus3D, Uterus3DRef } from '@/components/Uterus3D';
 import { useLesionStore, Severity, Lesion } from '@/lib/lesionStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Circle, RotateCcw, Plus, FileText, Clock, CheckCircle, AlertCircle, Settings2 } from 'lucide-react';
+import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -230,15 +230,6 @@ export default function Home() {
                 Limpar
               </Button>
 
-              <Button
-                size="sm"
-                onClick={() => window.location.href = '/report'}
-                className="text-xs h-9 bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200"
-                variant="outline"
-              >
-                <FileText className="w-3.5 h-3.5 mr-1.5" />
-                Relatório
-              </Button>
             </div>
           </div>
         </header>

@@ -107,7 +107,8 @@ export default function Vistas2D() {
             viewType: viewType,
             width: highResCanvas.width,
             height: highResCanvas.height,
-            observation: ''
+            observation: '',
+            drawingData: viewSettings[viewType].drawingData
           });
         }
       }

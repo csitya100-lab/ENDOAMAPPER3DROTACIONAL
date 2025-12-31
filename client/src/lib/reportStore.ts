@@ -38,6 +38,7 @@ export interface PdfImage {
   width: number;
   height: number;
   observation: string;
+  drawingData: string;
 }
 
 interface ReportState {

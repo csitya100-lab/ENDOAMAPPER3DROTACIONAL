@@ -58,6 +58,13 @@ interface ReportState {
   
   pdfImages: PdfImage[];
   
+  selectedViews: {
+    'sagittal-avf': boolean;
+    'sagittal-rvf': boolean;
+    coronal: boolean;
+    posterior: boolean;
+  };
+  
   setDraftImages2D: (images: { 'sagittal-avf': string; 'sagittal-rvf': string; coronal: string; posterior: string }) => void;
   setDraftImageNote: (view: keyof Report['images2D'], note: string) => void;
   clearDraftImages2D: () => void;
@@ -69,6 +76,9 @@ interface ReportState {
   removePdfImage: (index: number) => void;
   clearPdfImages: () => void;
   updatePdfImageObservation: (index: number, observation: string) => void;
+  
+  toggleViewSelection: (view: keyof Report['images2D']) => void;
+  setSelectedViews: (views: { 'sagittal-avf': boolean; 'sagittal-rvf': boolean; coronal: boolean; posterior: boolean }) => void;
 }
 
 let isHydrated = false;
@@ -113,6 +123,12 @@ export const useReportStore = create<ReportState>((set, get) => ({
   reports: initialReports,
   hydrated: isHydrated,
   pdfImages: [],
+  selectedViews: {
+    'sagittal-avf': false,
+    'sagittal-rvf': false,
+    coronal: false,
+    posterior: false,
+  },
 
   setDraftImages2D: (images) => set({ draftImages2D: images }),
   
@@ -179,6 +195,12 @@ export const useReportStore = create<ReportState>((set, get) => ({
       i === index ? { ...img, observation } : img
     )
   })),
+  
+  toggleViewSelection: (view) => set((state) => ({
+    selectedViews: { ...state.selectedViews, [view]: !state.selectedViews[view] }
+  })),
+  
+  setSelectedViews: (views) => set({ selectedViews: views }),
 }));
 
 export const images2D = {

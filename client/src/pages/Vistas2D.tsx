@@ -3,15 +3,8 @@ import AppSidebar from '@/components/AppSidebar';
 import Canvas2D from '@/components/Canvas2D';
 import { ViewType } from '@shared/3d/projections';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { useReportStore } from '@/lib/reportStore';
 import {
-  ZoomIn,
-  ZoomOut,
-  Edit3,
-  Eye,
-  RotateCcw,
   Grid3x3,
   ArrowLeft,
   Pen,
@@ -21,10 +14,8 @@ import {
   Minus,
   Circle,
   Ruler,
-  FileText,
-  Plus,
-  Trash2,
-  FileDown
+  Send,
+  Check
 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { DrawingTool } from '@/components/Canvas2D';
@@ -39,20 +30,16 @@ const VIEW_LABELS: Record<ViewType, string> = {
 };
 
 interface ViewSettings {
-  zoomLevel: number;
   drawingTool: DrawingTool;
   drawingColor: string;
   drawingSize: number;
-  editMode: boolean;
   drawingData: string;
 }
 
 const createDefaultViewSettings = (): ViewSettings => ({
-  zoomLevel: 0.8,
   drawingTool: 'pen',
   drawingColor: '#ffffff',
   drawingSize: 3,
-  editMode: true,
   drawingData: '',
 });
 
@@ -64,9 +51,15 @@ export default function Vistas2D() {
     'coronal': createDefaultViewSettings(),
     'posterior': createDefaultViewSettings(),
   }));
-  const [selectedViewsForExport, setSelectedViewsForExport] = useState<Set<ViewType>>(new Set());
-  const [focusedView, setFocusedView] = useState<ViewType | null>(null);
-  const { setDraftImages2D, pdfImages, addPdfImage, clearPdfImages } = useReportStore();
+  const [activeView, setActiveView] = useState<ViewType | null>(null);
+  const { selectedViews, toggleViewSelection, addPdfImage, clearPdfImages } = useReportStore();
+
+  const canvasRefs = useRef<Record<ViewType, HTMLCanvasElement | null>>({
+    'sagittal-avf': null,
+    'sagittal-rvf': null,
+    'coronal': null,
+    'posterior': null
+  });
 
   const updateViewSetting = <K extends keyof ViewSettings>(
     view: ViewType,
@@ -79,96 +72,52 @@ export default function Vistas2D() {
     }));
   };
 
-  const getCurrentSettings = (): ViewSettings | null => {
-    return focusedView ? viewSettings[focusedView] : null;
-  };
+  const currentSettings = activeView ? viewSettings[activeView] : null;
 
-  const currentSettings = getCurrentSettings();
+  const selectedCount = Object.values(selectedViews).filter(Boolean).length;
 
-  const canvasRefs = useRef<Record<ViewType, HTMLCanvasElement | null>>({
-    'sagittal-avf': null,
-    'sagittal-rvf': null,
-    'coronal': null,
-    'posterior': null
-  });
-
-  const toggleViewSelection = (viewType: ViewType) => {
-    const newSet = new Set(selectedViewsForExport);
-    if (newSet.has(viewType)) {
-      newSet.delete(viewType);
-      if (focusedView === viewType) {
-        setFocusedView(null);
-      }
-    } else {
-      newSet.add(viewType);
-      setFocusedView(viewType);
-    }
-    setSelectedViewsForExport(newSet);
-  };
-
-  const handleZoomIn = () => {
-    if (focusedView) {
-      updateViewSetting(focusedView, 'zoomLevel', Math.min(viewSettings[focusedView].zoomLevel + 0.1, 3));
-    }
-  };
-  const handleZoomOut = () => {
-    if (focusedView) {
-      updateViewSetting(focusedView, 'zoomLevel', Math.max(viewSettings[focusedView].zoomLevel - 0.1, 0.3));
-    }
-  };
-  const handleResetZoom = () => {
-    if (focusedView) {
-      updateViewSetting(focusedView, 'zoomLevel', 0.8);
-    }
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    if (focusedView) {
-      if (e.deltaY < 0) {
-        updateViewSetting(focusedView, 'zoomLevel', Math.min(viewSettings[focusedView].zoomLevel + 0.1, 3));
-      } else {
-        updateViewSetting(focusedView, 'zoomLevel', Math.max(viewSettings[focusedView].zoomLevel - 0.1, 0.3));
-      }
-    }
-  };
-
-  const handleAddToReport = () => {
-    if (!focusedView || !canvasRefs.current[focusedView]) return;
-    
-    const sourceCanvas = canvasRefs.current[focusedView];
-    if (!sourceCanvas) return;
+  const handleSendToReport = () => {
+    clearPdfImages();
     
     const scale = 2;
-    const highResCanvas = document.createElement('canvas');
-    highResCanvas.width = sourceCanvas.width * scale;
-    highResCanvas.height = sourceCanvas.height * scale;
     
-    const ctx = highResCanvas.getContext('2d');
-    if (!ctx) return;
-    
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.scale(scale, scale);
-    ctx.drawImage(sourceCanvas, 0, 0);
-    
-    const imgData = highResCanvas.toDataURL('image/png');
-    addPdfImage({
-      data: imgData,
-      label: VIEW_LABELS[focusedView],
-      viewType: focusedView,
-      width: highResCanvas.width,
-      height: highResCanvas.height,
-      observation: ''
+    VIEW_TYPES.forEach((viewType) => {
+      if (selectedViews[viewType] && canvasRefs.current[viewType]) {
+        const sourceCanvas = canvasRefs.current[viewType]!;
+        
+        const highResCanvas = document.createElement('canvas');
+        highResCanvas.width = sourceCanvas.width * scale;
+        highResCanvas.height = sourceCanvas.height * scale;
+        
+        const ctx = highResCanvas.getContext('2d');
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.scale(scale, scale);
+          ctx.drawImage(sourceCanvas, 0, 0);
+          
+          const imgData = highResCanvas.toDataURL('image/png');
+          addPdfImage({
+            data: imgData,
+            label: VIEW_LABELS[viewType],
+            viewType: viewType,
+            width: highResCanvas.width,
+            height: highResCanvas.height,
+            observation: ''
+          });
+        }
+      }
     });
+    
+    setLocation('/preview-report');
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
       <AppSidebar />
       
-      <main className="flex-1 ml-16 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <main className="flex-1 ml-16 p-4 flex flex-col">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -182,12 +131,12 @@ export default function Vistas2D() {
             </Button>
             <div className="h-6 w-px bg-slate-700" />
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Grid3x3 className="w-6 h-6 text-pink-500" />
-                EndoMapper 2D
+              <h1 className="text-xl font-bold flex items-center gap-2">
+                <Grid3x3 className="w-5 h-5 text-pink-500" />
+                Editor 2D
               </h1>
-              <p className="text-slate-400 text-sm">
-                Edite lesões com precisão em vistas planares
+              <p className="text-slate-400 text-xs">
+                Clique em uma figura para editar, marque as que deseja enviar
               </p>
             </div>
           </div>
@@ -196,10 +145,10 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => focusedView && updateViewSetting(focusedView, 'drawingTool', 'select')}
-              disabled={!focusedView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'select' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={focusedView ? "Selecionar" : "Selecione uma vista para editar"}
+              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'select')}
+              disabled={!activeView}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === 'select' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              title="Selecionar"
               data-testid="button-tool-select"
             >
               <Pointer className="w-4 h-4" />
@@ -207,10 +156,10 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => focusedView && updateViewSetting(focusedView, 'drawingTool', 'pen')}
-              disabled={!focusedView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'pen' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={focusedView ? "Desenhar" : "Selecione uma vista para editar"}
+              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'pen')}
+              disabled={!activeView}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === 'pen' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              title="Desenhar"
               data-testid="button-tool-pen"
             >
               <Pen className="w-4 h-4" />
@@ -218,10 +167,10 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => focusedView && updateViewSetting(focusedView, 'drawingTool', 'eraser')}
-              disabled={!focusedView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'eraser' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={focusedView ? "Borracha" : "Selecione uma vista para editar"}
+              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'eraser')}
+              disabled={!activeView}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === 'eraser' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              title="Borracha"
               data-testid="button-tool-eraser"
             >
               <Eraser className="w-4 h-4" />
@@ -229,10 +178,10 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => focusedView && updateViewSetting(focusedView, 'drawingTool', 'line')}
-              disabled={!focusedView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'line' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={focusedView ? "Linha" : "Selecione uma vista para editar"}
+              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'line')}
+              disabled={!activeView}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === 'line' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              title="Linha"
               data-testid="button-tool-line"
             >
               <Minus className="w-4 h-4" />
@@ -240,10 +189,10 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => focusedView && updateViewSetting(focusedView, 'drawingTool', 'circle')}
-              disabled={!focusedView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'circle' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={focusedView ? "Círculo" : "Selecione uma vista para editar"}
+              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'circle')}
+              disabled={!activeView}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === 'circle' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              title="Círculo"
               data-testid="button-tool-circle"
             >
               <Circle className="w-4 h-4" />
@@ -251,10 +200,10 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => focusedView && updateViewSetting(focusedView, 'drawingTool', 'circle-filled')}
-              disabled={!focusedView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'circle-filled' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={focusedView ? "Círculo Preenchido" : "Selecione uma vista para editar"}
+              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'circle-filled')}
+              disabled={!activeView}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === 'circle-filled' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              title="Círculo Preenchido"
               data-testid="button-tool-circle-filled"
             >
               <Circle className="w-4 h-4 fill-current" />
@@ -262,10 +211,10 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => focusedView && updateViewSetting(focusedView, 'drawingTool', 'text')}
-              disabled={!focusedView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'text' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={focusedView ? "Texto" : "Selecione uma vista para editar"}
+              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'text')}
+              disabled={!activeView}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === 'text' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              title="Texto"
               data-testid="button-tool-text"
             >
               <Type className="w-4 h-4" />
@@ -273,22 +222,22 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => focusedView && updateViewSetting(focusedView, 'drawingTool', 'ruler')}
-              disabled={!focusedView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'ruler' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={focusedView ? "Régua" : "Selecione uma vista para editar"}
+              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'ruler')}
+              disabled={!activeView}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === 'ruler' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              title="Régua"
               data-testid="button-tool-ruler"
             >
               <Ruler className="w-4 h-4" />
             </Button>
             
-            {focusedView && currentSettings?.drawingTool !== 'select' && (
+            {activeView && currentSettings?.drawingTool !== 'select' && (
               <>
                 <div className="h-6 w-px bg-slate-700" />
                 <input
                   type="color"
                   value={currentSettings?.drawingColor || '#ffffff'}
-                  onChange={(e) => focusedView && updateViewSetting(focusedView, 'drawingColor', e.target.value)}
+                  onChange={(e) => activeView && updateViewSetting(activeView, 'drawingColor', e.target.value)}
                   className="w-8 h-8 cursor-pointer rounded border border-slate-600"
                   title="Cor"
                   data-testid="input-drawing-color"
@@ -296,213 +245,76 @@ export default function Vistas2D() {
               </>
             )}
           </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-slate-800/50 rounded-lg px-3 py-2">
-              <Label htmlFor="edit-mode" className="text-sm text-slate-400">Modo</Label>
-              <Switch
-                id="edit-mode"
-                checked={currentSettings?.editMode ?? true}
-                onCheckedChange={(v) => focusedView && updateViewSetting(focusedView, 'editMode', v)}
-                disabled={!focusedView}
-                data-testid="switch-edit-mode"
-              />
-              <span className="text-sm font-medium">
-                {currentSettings?.editMode ? (
-                  <span className="flex items-center gap-1 text-pink-400">
-                    <Edit3 className="w-4 h-4" /> Edição
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-slate-400">
-                    <Eye className="w-4 h-4" /> Visualização
-                  </span>
-                )}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 bg-slate-800/50 rounded-lg px-3 py-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleZoomOut}
-                disabled={!focusedView || (currentSettings?.zoomLevel ?? 0.8) <= 0.3}
-                className="h-8 w-8"
-                data-testid="button-zoom-out"
-              >
-                <ZoomOut className="w-4 h-4" />
-              </Button>
-              <span className="text-sm font-mono w-16 text-center">
-                {Math.round((currentSettings?.zoomLevel ?? 0.8) * 100)}%
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleZoomIn}
-                disabled={!focusedView || (currentSettings?.zoomLevel ?? 0.8) >= 3}
-                className="h-8 w-8"
-                data-testid="button-zoom-in"
-              >
-                <ZoomIn className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleResetZoom}
-                disabled={!focusedView}
-                className="h-8 w-8"
-                data-testid="button-zoom-reset"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2 bg-slate-800/50 rounded-lg px-3 py-2">
-              <Button
-                onClick={handleAddToReport}
-                disabled={!focusedView}
-                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
-                data-testid="button-add-to-report"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar ao Relatório
-              </Button>
-              
-              {pdfImages.length > 0 && (
-                <>
-                  <span className="text-sm text-slate-400">
-                    {pdfImages.length} {pdfImages.length === 1 ? 'imagem' : 'imagens'}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={clearPdfImages}
-                    className="h-8 w-8 text-red-400 hover:text-red-300"
-                    title="Limpar fila"
-                    data-testid="button-clear-queue"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-
-            <Button
-              onClick={() => setLocation('/preview-report')}
-              disabled={pdfImages.length === 0}
-              className="bg-pink-600 hover:bg-pink-700 disabled:opacity-50"
-              data-testid="button-preview-report"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Ver Relatório
-            </Button>
-
-          </div>
         </div>
 
-        {focusedView ? (
-          <div className="grid grid-cols-12 gap-4 h-[calc(100vh-160px)]" onWheel={handleWheel}>
-            <div className="col-span-9">
-              <div className="h-full min-h-0 relative group rounded-lg border border-slate-300 shadow-lg bg-white">
-                <Canvas2D
-                  viewType={focusedView}
-                  zoomLevel={viewSettings[focusedView].zoomLevel}
-                  editMode={viewSettings[focusedView].editMode}
-                  drawingTool={viewSettings[focusedView].drawingTool}
-                  drawingColor={viewSettings[focusedView].drawingColor}
-                  drawingSize={viewSettings[focusedView].drawingSize}
-                  drawingData={viewSettings[focusedView].drawingData}
-                  onDrawingChange={(data) => updateViewSetting(focusedView, 'drawingData', data)}
-                  onCanvasRef={(canvas) => { canvasRefs.current[focusedView] = canvas; }}
-                />
-                <label className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-3 py-2 rounded cursor-pointer hover:bg-black/80 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={selectedViewsForExport.has(focusedView)}
-                    onChange={() => toggleViewSelection(focusedView)}
-                    className="cursor-pointer"
-                    data-testid={`checkbox-export-${focusedView}`}
-                  />
-                </label>
-              </div>
-            </div>
-            <div className="col-span-3 flex flex-col gap-2">
-              {VIEW_TYPES.map((viewType) => (
-                viewType !== focusedView && (
-                  <div
-                    key={viewType}
-                    className="h-24 min-h-0 relative group rounded border border-slate-600 transition-all overflow-hidden cursor-pointer bg-white"
-                    onClick={() => setFocusedView(viewType)}
-                  >
-                    <Canvas2D
-                      viewType={viewType}
-                      zoomLevel={viewSettings[viewType].zoomLevel}
-                      editMode={false}
-                      drawingTool="select"
-                      drawingColor={viewSettings[viewType].drawingColor}
-                      drawingSize={viewSettings[viewType].drawingSize}
-                      drawingData={viewSettings[viewType].drawingData}
-                      onCanvasRef={(canvas) => { canvasRefs.current[viewType] = canvas; }}
-                    />
-                    <label className="absolute top-1 left-1 flex items-center gap-1 bg-black/60 px-2 py-1 rounded cursor-pointer hover:bg-black/80 transition-colors text-xs" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selectedViewsForExport.has(viewType)}
-                        onChange={() => toggleViewSelection(viewType)}
-                        className="cursor-pointer"
-                        data-testid={`checkbox-export-${viewType}`}
-                      />
-
-                    </label>
-                  </div>
-                )
-              ))}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setFocusedView(null)}
-                className="mt-auto text-white border-slate-600 hover:border-slate-500"
+        <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-3">
+          {VIEW_TYPES.map((viewType) => {
+            const isSelected = selectedViews[viewType];
+            const isActive = activeView === viewType;
+            
+            return (
+              <div
+                key={viewType}
+                className={`relative rounded-lg overflow-hidden transition-all ${
+                  isActive 
+                    ? 'ring-2 ring-pink-500 ring-offset-2 ring-offset-slate-950' 
+                    : 'border border-slate-700 hover:border-slate-500'
+                }`}
+                onClick={() => setActiveView(viewType)}
+                data-testid={`card-${viewType}`}
               >
-                Sair do Foco
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-12 gap-6 h-[calc(100vh-160px)]">
-            <div className="col-span-12">
-              <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
-                {VIEW_TYPES.map((viewType) => (
-                  <div
-                    key={viewType}
-                    className="h-full min-h-0 relative group rounded-lg border border-slate-700 transition-all overflow-hidden cursor-pointer bg-white"
-                    onClick={() => setFocusedView(viewType)}
-                  >
-                    <Canvas2D
-                      viewType={viewType}
-                      zoomLevel={viewSettings[viewType].zoomLevel}
-                      editMode={false}
-                      drawingTool="select"
-                      drawingColor={viewSettings[viewType].drawingColor}
-                      drawingSize={viewSettings[viewType].drawingSize}
-                      drawingData={viewSettings[viewType].drawingData}
-                      onCanvasRef={(canvas) => { canvasRefs.current[viewType] = canvas; }}
-                    />
-                    <label className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-3 py-2 rounded cursor-pointer hover:bg-black/80 transition-colors" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selectedViewsForExport.has(viewType)}
-                        onChange={() => toggleViewSelection(viewType)}
-                        className="cursor-pointer"
-                        data-testid={`checkbox-export-${viewType}`}
-                      />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleViewSelection(viewType);
+                  }}
+                  className={`absolute top-3 left-3 z-20 w-8 h-8 rounded-md flex items-center justify-center transition-all ${
+                    isSelected 
+                      ? 'bg-emerald-500 text-white shadow-lg' 
+                      : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700 border border-slate-600'
+                  }`}
+                  data-testid={`checkbox-${viewType}`}
+                >
+                  {isSelected && <Check className="w-5 h-5" />}
+                </button>
 
-                    </label>
-                  </div>
-                ))}
+                <div className="absolute top-3 right-3 z-20 bg-black/70 px-2 py-1 rounded text-xs font-medium">
+                  {VIEW_LABELS[viewType]}
+                </div>
+
+                <div className="h-full w-full bg-white">
+                  <Canvas2D
+                    viewType={viewType}
+                    zoomLevel={1}
+                    editMode={isActive}
+                    drawingTool={isActive ? viewSettings[viewType].drawingTool : 'select'}
+                    drawingColor={viewSettings[viewType].drawingColor}
+                    drawingSize={viewSettings[viewType].drawingSize}
+                    drawingData={viewSettings[viewType].drawingData}
+                    onDrawingChange={(data) => updateViewSetting(viewType, 'drawingData', data)}
+                    onCanvasRef={(canvas) => { canvasRefs.current[viewType] = canvas; }}
+                  />
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+            );
+          })}
+        </div>
 
+        <div className="mt-4 flex justify-center">
+          <Button
+            onClick={handleSendToReport}
+            disabled={selectedCount === 0}
+            className={`h-14 px-8 text-lg font-semibold transition-all ${
+              selectedCount > 0
+                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/30'
+                : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+            }`}
+            data-testid="button-send-to-report"
+          >
+            <Send className="w-5 h-5 mr-3" />
+            Enviar {selectedCount > 0 ? `${selectedCount} ` : ''}Selecionada{selectedCount !== 1 ? 's' : ''} ao Relatório
+          </Button>
+        </div>
       </main>
     </div>
   );

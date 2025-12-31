@@ -1,0 +1,52 @@
+REFATORAR UX DE VISTAS2D - FLUXO COM CHECKBOX DINÂMICO:
+
+=== REQUISITOS CLAROS ===
+
+1. REMOVER ZOOM DO CANVAS:
+   - Figuras devem ocupar 100% do espaço do card (sem zoom)
+   - Isso elimina problema de sincronização/memória do Canvas
+   - Usuário edita direto na figura grande
+
+2. ADICIONAR CHECKBOX VISÍVEL EM CADA CARD:
+   - Checkbox GRANDE e bem visível (canto superior esquerdo do card)
+   - Totalmente DINÂMICO: pode marcar/desmarcar infinitas vezes
+   - Estados: ☐ (não marcado) ou ☑ (marcado)
+   - Cada figura tem seu próprio checkbox independente
+
+3. EDIÇÃO PERMANENTE:
+   - Ferramentas de edição continuam visíveis (menu superior)
+   - Usuário pode DESENHAR, APAGAR, EDITAR mesmo após enviar ao relatório
+   - Ao voltar da prévia: desenhos continuam intactos no canvas
+   - Pode editar/apagar qualquer coisa e remarcar checkbox
+
+4. BOTÃO ENVIAR ("Enviar Selecionadas ao Relatório"):
+   - Posição: parte inferior, GRANDE e DESTACADO
+   - Só ativa se houver ☑ checado
+   - Ao clicar: captura TODAS as figuras com checkbox ☑
+   - Envia para preview
+
+5. FLUXO BIDIRECIONAL (MÃO DUPLA):
+   - Médico marca ☑ algumas figuras → clica "Enviar"
+   - Vai para preview, vê as imagens
+   - Quer mudar algo → volta clicando "Voltar ao Editor"
+   - Retorna em Vistas2D, checkboxes continuam ☑
+   - Edita a figura (desenha/apaga)
+   - Clica "Enviar" de novo → atualiza AUTOMATICAMENTE no preview
+   - Sem avisos, sem confirmações
+
+6. PERSISTÊNCIA DE DADOS:
+   - Desenhos no canvas NUNCA são perdidos
+   - Checkboxes NUNCA são perdidos até o usuário desmarcar
+   - Estado do reportStore sincroniza automaticamente
+
+=== ARQUITETURA ===
+
+- reportStore: guardar quais figuras estão ☑ (array de booleans)
+- Canvas2D: sem zoom, figura ocupa 100% do card
+- Vistas2D: grid 2x2 com checkbox em cada card + botão grande na base
+- PreviewReport: mostrar preview e botão "Voltar ao Editor"
+
+=== PRIORIDADE ===
+- UX clara e intuitiva
+- Sem confusão entre "selecionar" e "editar"
+- Fluxo natural: marca → envia → vê → edita → envia de novo

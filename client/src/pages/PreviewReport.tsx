@@ -5,8 +5,6 @@ import { useReportStore } from '@/lib/reportStore';
 import { generatePdfReport } from '@/lib/pdfGenerator';
 import { ArrowLeft, FileDown, Printer, Trash2 } from 'lucide-react';
 
-const VIEW_ORDER = ['sagittal-avf', 'sagittal-rvf', 'coronal', 'posterior'] as const;
-
 export default function PreviewReport() {
   const [, setLocation] = useLocation();
   const { pdfImages, updatePdfImageObservation, removePdfImage, clearPdfImages } = useReportStore();
@@ -19,19 +17,7 @@ export default function PreviewReport() {
     window.print();
   };
 
-  const getImageByViewType = (viewType: string) => {
-    return pdfImages.find(img => img.viewType === viewType);
-  };
-
-  const getImageIndex = (viewType: string) => {
-    return pdfImages.findIndex(img => img.viewType === viewType);
-  };
-
-  const orderedImages = VIEW_ORDER
-    .map(viewType => ({ viewType, image: getImageByViewType(viewType), index: getImageIndex(viewType) }))
-    .filter(item => item.image !== undefined);
-
-  const hasImages = orderedImages.length > 0;
+  const hasImages = pdfImages.length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50 print:bg-white">
@@ -116,20 +102,20 @@ export default function PreviewReport() {
               </div>
 
               <div className="grid grid-cols-2 gap-6 print:gap-4">
-                {orderedImages.map(({ viewType, image, index }) => (
+                {pdfImages.map((image, index) => (
                   <div 
-                    key={viewType} 
+                    key={`${image.viewType}-${index}`} 
                     className="border border-gray-200 rounded-lg overflow-hidden print:border-gray-300"
-                    data-testid={`preview-card-${viewType}`}
+                    data-testid={`preview-card-${index}`}
                   >
                     <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex items-center justify-between print:bg-gray-50">
-                      <h3 className="font-medium text-gray-800 text-sm">{image!.label}</h3>
+                      <h3 className="font-medium text-gray-800 text-sm">{image.label}</h3>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => removePdfImage(index)}
                         className="h-7 w-7 p-0 text-gray-400 hover:text-red-500 print:hidden"
-                        data-testid={`button-remove-${viewType}`}
+                        data-testid={`button-remove-${index}`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -137,8 +123,8 @@ export default function PreviewReport() {
                     
                     <div className="aspect-square bg-white flex items-center justify-center p-4">
                       <img
-                        src={image!.data}
-                        alt={image!.label}
+                        src={image.data}
+                        alt={image.label}
                         className="max-w-full max-h-full object-contain"
                         draggable={false}
                       />
@@ -149,14 +135,14 @@ export default function PreviewReport() {
                         Observações
                       </label>
                       <Textarea
-                        value={image!.observation}
+                        value={image.observation}
                         onChange={(e) => updatePdfImageObservation(index, e.target.value)}
                         placeholder="Adicione observações para o cirurgião..."
                         className="min-h-[60px] text-sm resize-none print:hidden"
-                        data-testid={`textarea-observation-${viewType}`}
+                        data-testid={`textarea-observation-${index}`}
                       />
                       <p className="hidden print:block text-sm text-gray-700 min-h-[40px]">
-                        {image!.observation || "—"}
+                        {image.observation || "—"}
                       </p>
                     </div>
                   </div>

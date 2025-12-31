@@ -10,7 +10,7 @@ import {
 } from '@shared/3d/projections';
 import { Lesion, Severity } from '@/lib/lesionStore';
 
-export type DrawingTool = 'select' | 'pen' | 'eraser' | 'line' | 'text' | 'circle' | 'circle-filled';
+export type DrawingTool = 'select' | 'pen' | 'eraser' | 'line' | 'text' | 'circle' | 'circle-filled' | 'ruler';
 
 interface Canvas2DProps {
   viewType: ViewType;
@@ -378,7 +378,7 @@ export default function Canvas2D({
     const ctx = drawingCanvas.getContext('2d');
     if (!ctx) return;
 
-    if (drawingTool === 'line' || drawingTool === 'circle' || drawingTool === 'circle-filled') {
+    if (drawingTool === 'line' || drawingTool === 'circle' || drawingTool === 'circle-filled' || drawingTool === 'ruler') {
       try {
         drawingBaseRef.current = ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
       } catch (e) {
@@ -418,7 +418,7 @@ export default function Canvas2D({
     if (drawingTool === 'pen' || drawingTool === 'eraser') {
       ctx.lineTo(x, y);
       ctx.stroke();
-    } else if (drawingTool === 'line' || drawingTool === 'circle' || drawingTool === 'circle-filled') {
+    } else if (drawingTool === 'line' || drawingTool === 'circle' || drawingTool === 'circle-filled' || drawingTool === 'ruler') {
       if (drawingBaseRef.current) {
         ctx.putImageData(drawingBaseRef.current, 0, 0);
       } else {
@@ -436,6 +436,34 @@ export default function Canvas2D({
         ctx.moveTo(startPos.x, startPos.y);
         ctx.lineTo(x, y);
         ctx.stroke();
+      } else if (drawingTool === 'ruler') {
+        const distance = Math.sqrt(Math.pow(x - startPos.x, 2) + Math.pow(y - startPos.y, 2));
+        ctx.beginPath();
+        ctx.moveTo(startPos.x, startPos.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        const markerSize = 6;
+        ctx.beginPath();
+        ctx.moveTo(startPos.x - markerSize, startPos.y - markerSize);
+        ctx.lineTo(startPos.x + markerSize, startPos.y + markerSize);
+        ctx.moveTo(startPos.x + markerSize, startPos.y - markerSize);
+        ctx.lineTo(startPos.x - markerSize, startPos.y + markerSize);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x - markerSize, y - markerSize);
+        ctx.lineTo(x + markerSize, y + markerSize);
+        ctx.moveTo(x + markerSize, y - markerSize);
+        ctx.lineTo(x - markerSize, y + markerSize);
+        ctx.stroke();
+        const midX = (startPos.x + x) / 2;
+        const midY = (startPos.y + y) / 2;
+        const text = `${distance.toFixed(1)}px`;
+        ctx.font = '14px sans-serif';
+        ctx.fillStyle = drawingColor;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.strokeText(text, midX + 5, midY - 5);
+        ctx.fillText(text, midX + 5, midY - 5);
       } else {
         const radius = Math.sqrt(Math.pow(x - startPos.x, 2) + Math.pow(y - startPos.y, 2));
         ctx.beginPath();
@@ -450,7 +478,7 @@ export default function Canvas2D({
   }, [isDrawing, startPos, drawingTool, drawingColor, drawingSize]);
 
   const handleDrawingPointerUp = useCallback((e: React.PointerEvent) => {
-    if (drawingTool === 'line' || drawingTool === 'circle' || drawingTool === 'circle-filled') {
+    if (drawingTool === 'line' || drawingTool === 'circle' || drawingTool === 'circle-filled' || drawingTool === 'ruler') {
       const drawingCanvas = drawingCanvasRef.current;
       if (drawingCanvas && startPos && isDrawing) {
         const rect = drawingCanvas.getBoundingClientRect();
@@ -473,6 +501,34 @@ export default function Canvas2D({
             ctx.moveTo(startPos.x, startPos.y);
             ctx.lineTo(x, y);
             ctx.stroke();
+          } else if (drawingTool === 'ruler') {
+            const distance = Math.sqrt(Math.pow(x - startPos.x, 2) + Math.pow(y - startPos.y, 2));
+            ctx.beginPath();
+            ctx.moveTo(startPos.x, startPos.y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            const markerSize = 6;
+            ctx.beginPath();
+            ctx.moveTo(startPos.x - markerSize, startPos.y - markerSize);
+            ctx.lineTo(startPos.x + markerSize, startPos.y + markerSize);
+            ctx.moveTo(startPos.x + markerSize, startPos.y - markerSize);
+            ctx.lineTo(startPos.x - markerSize, startPos.y + markerSize);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x - markerSize, y - markerSize);
+            ctx.lineTo(x + markerSize, y + markerSize);
+            ctx.moveTo(x + markerSize, y - markerSize);
+            ctx.lineTo(x - markerSize, y + markerSize);
+            ctx.stroke();
+            const midX = (startPos.x + x) / 2;
+            const midY = (startPos.y + y) / 2;
+            const text = `${distance.toFixed(1)}px`;
+            ctx.font = '14px sans-serif';
+            ctx.fillStyle = drawingColor;
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.strokeText(text, midX + 5, midY - 5);
+            ctx.fillText(text, midX + 5, midY - 5);
           } else {
             const radius = Math.sqrt(Math.pow(x - startPos.x, 2) + Math.pow(y - startPos.y, 2));
             ctx.beginPath();

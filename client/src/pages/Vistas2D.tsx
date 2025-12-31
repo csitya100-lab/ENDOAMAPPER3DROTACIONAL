@@ -20,7 +20,8 @@ import {
   Pointer,
   Type,
   Minus,
-  Circle
+  Circle,
+  Ruler
 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { DrawingTool } from '@/components/Canvas2D';
@@ -249,6 +250,17 @@ export default function Vistas2D() {
               data-testid="button-tool-text"
             >
               <Type className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => focusedView && updateViewSetting(focusedView, 'drawingTool', 'ruler')}
+              disabled={!focusedView}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === 'ruler' ? 'bg-slate-700' : ''} ${!focusedView ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={focusedView ? "Régua" : "Selecione uma vista para editar"}
+              data-testid="button-tool-ruler"
+            >
+              <Ruler className="w-4 h-4" />
             </Button>
             
             {focusedView && currentSettings?.drawingTool !== 'select' && (

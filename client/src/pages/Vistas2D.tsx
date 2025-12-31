@@ -36,7 +36,7 @@ const VIEW_LABELS: Record<ViewType, string> = {
 
 export default function Vistas2D() {
   const [, setLocation] = useLocation();
-  const [zoomLevel, setZoomLevel] = useState(1.5);
+  const [zoomLevel, setZoomLevel] = useState(0.8);
   const [editMode, setEditMode] = useState(true);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('pen');
   const [drawingColor, setDrawingColor] = useState('#ffffff');
@@ -80,9 +80,18 @@ export default function Vistas2D() {
     setSelectedViewsForExport(newSet);
   };
 
-  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 3));
-  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
-  const handleResetZoom = () => setZoomLevel(1);
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.1, 3));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.1, 0.3));
+  const handleResetZoom = () => setZoomLevel(0.8);
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      setZoomLevel(prev => Math.min(prev + 0.1, 3));
+    } else {
+      setZoomLevel(prev => Math.max(prev - 0.1, 0.3));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex">
@@ -268,7 +277,7 @@ export default function Vistas2D() {
         </div>
 
         {focusedView ? (
-          <div className="grid grid-cols-12 gap-4 h-[calc(100vh-160px)]">
+          <div className="grid grid-cols-12 gap-4 h-[calc(100vh-160px)]" onWheel={handleWheel}>
             <div className="col-span-9">
               <div className="h-full min-h-0 relative group rounded-lg overflow-hidden border-2 border-pink-500 shadow-lg shadow-pink-500/30">
                 <Canvas2D
@@ -332,7 +341,7 @@ export default function Vistas2D() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-12 gap-6 h-[calc(100vh-160px)]">
+          <div className="grid grid-cols-12 gap-6 h-[calc(100vh-160px)]" onWheel={handleWheel}>
             <div className="col-span-12">
               <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
                 {VIEW_TYPES.map((viewType) => (

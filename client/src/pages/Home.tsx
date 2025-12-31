@@ -3,7 +3,7 @@ import { Uterus3D, Uterus3DRef } from '@/components/Uterus3D';
 import { useLesionStore, Severity, Lesion } from '@/lib/lesionStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2 } from 'lucide-react';
+import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2, FileText } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -32,6 +32,23 @@ export default function Home() {
 
   const handleClearLesions = () => {
     uterusRef.current?.clearLesions();
+  };
+
+  const handleGenerateReport = () => {
+    const reportData = {
+      patient: examInfo.patient,
+      date: examInfo.date,
+      type: examInfo.type,
+      lesions: lesions.map(l => ({
+        id: l.id,
+        severity: l.severity,
+        location: l.severity === 'superficial' ? 'Superficial' : l.severity === 'moderate' ? 'Moderada' : 'Profunda',
+        position: l.position
+      })),
+      timestamp: new Date().toISOString()
+    };
+    console.log('Dados coletados para o relatório:', reportData);
+    alert('Relatório gerado no console (F12)!');
   };
 
   const getLesionCount = (sev: Severity) => lesions.filter(l => l.severity === sev).length;
@@ -210,6 +227,15 @@ export default function Home() {
                 {lesionCount} lesão{lesionCount !== 1 ? 's' : ''}
               </Badge>
               
+              <Button 
+                size="sm" 
+                onClick={handleGenerateReport}
+                className="text-xs h-9 bg-indigo-600 text-white hover:bg-indigo-700 border border-indigo-500"
+              >
+                <FileText className="w-3.5 h-3.5 mr-1.5" />
+                Gerar Relatório
+              </Button>
+
               <Button 
                 size="sm" 
                 onClick={handleAddTestLesion}

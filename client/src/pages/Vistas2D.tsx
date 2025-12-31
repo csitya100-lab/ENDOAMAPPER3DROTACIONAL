@@ -18,8 +18,7 @@ import {
   Pointer,
   Type,
   Minus,
-  Circle,
-  FileText
+  Circle
 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { DrawingTool } from '@/components/Canvas2D';
@@ -63,37 +62,9 @@ export default function Vistas2D() {
     setSelectedViewsForExport(newSet);
   };
 
-  const selectAllViews = () => {
-    if (selectedViewsForExport.size === VIEW_TYPES.length) {
-      setSelectedViewsForExport(new Set());
-    } else {
-      setSelectedViewsForExport(new Set(VIEW_TYPES));
-    }
-  };
-
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
   const handleResetZoom = () => setZoomLevel(1);
-
-  const handleExportView = () => {
-    if (selectedViewsForExport.size === 0) {
-      alert('Selecione uma ou mais vistas para exportar');
-      return;
-    }
-
-    const exportedViews = Array.from(selectedViewsForExport).map(viewType => {
-      const canvas = canvasRefs.current[viewType];
-      if (!canvas) return null;
-      return {
-        viewType,
-        viewLabel: VIEW_LABELS[viewType],
-        imageData: canvas.toDataURL('image/png'),
-      };
-    }).filter(Boolean);
-
-    localStorage.setItem('exportedViews', JSON.stringify(exportedViews));
-    setLocation('/report');
-  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex">
@@ -377,31 +348,6 @@ export default function Vistas2D() {
           </div>
         )}
 
-        <div className="mt-4 flex items-center justify-end gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-500">
-              {selectedViewsForExport.size === 0 
-                ? 'Nenhuma vista selecionada' 
-                : `${selectedViewsForExport.size} vista${selectedViewsForExport.size !== 1 ? 's' : ''} selecionada${selectedViewsForExport.size !== 1 ? 's' : ''}`}
-            </span>
-            <Button
-              onClick={selectAllViews}
-              className="bg-slate-600 hover:bg-slate-700 text-white text-xs h-8"
-              data-testid="button-select-all-views"
-            >
-              {selectedViewsForExport.size === VIEW_TYPES.length ? 'Desselecionar Todas' : 'Selecionar Todas'}
-            </Button>
-            <Button
-              onClick={handleExportView}
-              disabled={selectedViewsForExport.size === 0}
-              className="bg-pink-600 hover:bg-pink-700 text-white text-xs h-8"
-              data-testid="button-export-to-report"
-            >
-              <FileText className="w-3.5 h-3.5 mr-1" />
-              Enviar ao Laudo
-            </Button>
-          </div>
-        </div>
       </main>
     </div>
   );

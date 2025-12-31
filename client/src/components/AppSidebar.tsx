@@ -1,10 +1,6 @@
 import { useLocation } from 'wouter';
 import { 
-  LayoutDashboard, 
   MapPin, 
-  FileText, 
-  Mic, 
-  FolderOpen,
   Settings,
   HelpCircle,
   Grid3x3
@@ -20,12 +16,6 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    path: '/dashboard',
-    label: 'Dashboard',
-    icon: <LayoutDashboard className="w-5 h-5" />,
-    description: 'Visão geral dos exames'
-  },
-  {
     path: '/',
     label: '3D',
     icon: <MapPin className="w-5 h-5" />,
@@ -36,24 +26,6 @@ const NAV_ITEMS: NavItem[] = [
     label: '2D',
     icon: <Grid3x3 className="w-5 h-5" />,
     description: 'Editor de vistas planares'
-  },
-  {
-    path: '/report',
-    label: 'Relatório',
-    icon: <FileText className="w-5 h-5" />,
-    description: 'Gerar laudo clínico'
-  },
-  {
-    path: '/ditado-ia',
-    label: 'Ditado IA',
-    icon: <Mic className="w-5 h-5" />,
-    description: 'Transcrição por voz'
-  },
-  {
-    path: '/modelos',
-    label: 'Modelos',
-    icon: <FolderOpen className="w-5 h-5" />,
-    description: 'Gerenciar templates'
   },
 ];
 

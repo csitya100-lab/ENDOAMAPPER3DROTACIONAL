@@ -549,30 +549,34 @@ export default function Canvas2D({
       className="relative w-full h-full bg-white rounded-lg overflow-hidden border border-slate-300 shadow-sm"
       data-testid={`canvas-2d-${viewType}`}
     >
-      <canvas
-        ref={canvasRef}
-        className="w-full h-full touch-none"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-        onDoubleClick={handleDoubleClick}
-        data-testid={`canvas-${viewType}`}
-      />
-      
-      <canvas
-        ref={drawingCanvasRef}
-        className={`absolute inset-0 touch-none ${drawingTool !== 'select' ? 'cursor-crosshair' : 'cursor-default'}`}
-        onPointerDown={handleDrawingPointerDown}
-        onPointerMove={handleDrawingPointerMove}
-        onPointerUp={handleDrawingPointerUp}
-        onPointerLeave={handleDrawingPointerUp}
-        data-testid={`drawing-canvas-${viewType}`}
-      />
+      <div className="absolute inset-0">
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 touch-none"
+          style={{ width: '100%', height: '100%' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+          onDoubleClick={handleDoubleClick}
+          data-testid={`canvas-${viewType}`}
+        />
+        
+        <canvas
+          ref={drawingCanvasRef}
+          className={`absolute inset-0 touch-none ${drawingTool !== 'select' ? 'cursor-crosshair' : 'cursor-default'}`}
+          style={{ width: '100%', height: '100%' }}
+          onPointerDown={handleDrawingPointerDown}
+          onPointerMove={handleDrawingPointerMove}
+          onPointerUp={handleDrawingPointerUp}
+          onPointerLeave={handleDrawingPointerUp}
+          data-testid={`drawing-canvas-${viewType}`}
+        />
+      </div>
       
       {showTextInput && startPos && (
         <div
-          className="absolute bg-slate-800 border border-slate-600 rounded p-2"
+          className="absolute bg-slate-800 border border-slate-600 rounded p-2 z-20"
           style={{ left: `${startPos.x}px`, top: `${startPos.y}px` }}
         >
           <input
@@ -604,7 +608,7 @@ export default function Canvas2D({
       )}
       
       {hoveredLesionId && !isDragging && drawingTool === 'select' && (
-        <div className="absolute bottom-2 left-2 bg-black/80 text-white text-xs px-2 py-1 rounded pointer-events-none">
+        <div className="absolute bottom-2 left-2 bg-black/80 text-white text-xs px-2 py-1 rounded pointer-events-none z-10">
           {editMode ? 'Arraste para mover · Duplo-clique para editar' : 'Clique para selecionar'}
         </div>
       )}

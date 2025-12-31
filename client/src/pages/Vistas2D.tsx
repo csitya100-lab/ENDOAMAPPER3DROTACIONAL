@@ -21,7 +21,8 @@ import {
   Type,
   Minus,
   Circle,
-  Ruler
+  Ruler,
+  FileText
 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { DrawingTool } from '@/components/Canvas2D';
@@ -81,20 +82,6 @@ export default function Vistas2D() {
   };
 
   const currentSettings = getCurrentSettings();
-
-  useEffect(() => {
-    const captureImages = () => {
-      const images = {
-        sagittal: canvasRefs.current['sagittal-avf']?.toDataURL('image/png') || '',
-        coronal: canvasRefs.current['coronal']?.toDataURL('image/png') || '',
-        posterior: canvasRefs.current['posterior']?.toDataURL('image/png') || '',
-      };
-      setDraftImages2D(images);
-    };
-
-    const interval = setInterval(captureImages, 2000);
-    return () => clearInterval(interval);
-  }, [setDraftImages2D]);
 
   const canvasRefs = useRef<Record<ViewType, HTMLCanvasElement | null>>({
     'sagittal-avf': null,
@@ -336,6 +323,24 @@ export default function Vistas2D() {
                 <RotateCcw className="w-4 h-4" />
               </Button>
             </div>
+
+            <Button
+              onClick={() => {
+                const images = {
+                  'sagittal-avf': canvasRefs.current['sagittal-avf']?.toDataURL('image/png') || '',
+                  'sagittal-rvf': canvasRefs.current['sagittal-rvf']?.toDataURL('image/png') || '',
+                  coronal: canvasRefs.current['coronal']?.toDataURL('image/png') || '',
+                  posterior: canvasRefs.current['posterior']?.toDataURL('image/png') || '',
+                };
+                setDraftImages2D(images);
+                setLocation('/imprimir');
+              }}
+              className="bg-pink-600 hover:bg-pink-700"
+              data-testid="button-generate-report"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Gerar Relatório
+            </Button>
 
           </div>
         </div>

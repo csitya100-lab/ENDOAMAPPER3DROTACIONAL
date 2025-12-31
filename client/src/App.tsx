@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Vistas2D from "@/pages/Vistas2D";
 import PublicReport from "@/pages/PublicReport";
+import PrintReport from "@/pages/PrintReport";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/vistas-2d" component={Vistas2D} />
       <Route path="/relatorio/:id" component={PublicReport} />
+      <Route path="/imprimir" component={PrintReport} />
       <Route component={NotFound} />
     </Switch>
   );

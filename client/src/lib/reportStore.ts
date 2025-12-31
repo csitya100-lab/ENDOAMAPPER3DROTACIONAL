@@ -16,7 +16,8 @@ export interface Report {
   examDate: string;
   examType: string;
   images2D: {
-    sagittal: string;
+    'sagittal-avf': string;
+    'sagittal-rvf': string;
     coronal: string;
     posterior: string;
   };
@@ -26,14 +27,15 @@ export interface Report {
 
 interface ReportState {
   draftImages2D: {
-    sagittal: string;
+    'sagittal-avf': string;
+    'sagittal-rvf': string;
     coronal: string;
     posterior: string;
   };
   reports: Record<string, Report>;
   hydrated: boolean;
   
-  setDraftImages2D: (images: { sagittal: string; coronal: string; posterior: string }) => void;
+  setDraftImages2D: (images: { 'sagittal-avf': string; 'sagittal-rvf': string; coronal: string; posterior: string }) => void;
   clearDraftImages2D: () => void;
   createReport: (report: Omit<Report, 'id' | 'createdAt'>) => string;
   getReport: (id: string) => Report | undefined;
@@ -68,7 +70,8 @@ const initialReports = loadReportsFromStorage();
 
 export const useReportStore = create<ReportState>((set, get) => ({
   draftImages2D: {
-    sagittal: '',
+    'sagittal-avf': '',
+    'sagittal-rvf': '',
     coronal: '',
     posterior: '',
   },
@@ -79,7 +82,8 @@ export const useReportStore = create<ReportState>((set, get) => ({
   
   clearDraftImages2D: () => set({
     draftImages2D: {
-      sagittal: '',
+      'sagittal-avf': '',
+      'sagittal-rvf': '',
       coronal: '',
       posterior: '',
     }
@@ -116,7 +120,8 @@ export const useReportStore = create<ReportState>((set, get) => ({
 }));
 
 export const images2D = {
-  get sagittal() { return useReportStore.getState().draftImages2D.sagittal; },
+  get 'sagittal-avf'() { return useReportStore.getState().draftImages2D['sagittal-avf']; },
+  get 'sagittal-rvf'() { return useReportStore.getState().draftImages2D['sagittal-rvf']; },
   get coronal() { return useReportStore.getState().draftImages2D.coronal; },
   get posterior() { return useReportStore.getState().draftImages2D.posterior; },
 };

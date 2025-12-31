@@ -40,6 +40,7 @@ interface ViewSettings {
   drawingColor: string;
   drawingSize: number;
   editMode: boolean;
+  drawingData: string;
 }
 
 const createDefaultViewSettings = (): ViewSettings => ({
@@ -48,6 +49,7 @@ const createDefaultViewSettings = (): ViewSettings => ({
   drawingColor: '#ffffff',
   drawingSize: 3,
   editMode: true,
+  drawingData: '',
 });
 
 export default function Vistas2D() {
@@ -337,6 +339,8 @@ export default function Vistas2D() {
                   drawingTool={viewSettings[focusedView].drawingTool}
                   drawingColor={viewSettings[focusedView].drawingColor}
                   drawingSize={viewSettings[focusedView].drawingSize}
+                  drawingData={viewSettings[focusedView].drawingData}
+                  onDrawingChange={(data) => updateViewSetting(focusedView, 'drawingData', data)}
                   onCanvasRef={(canvas) => { canvasRefs.current[focusedView] = canvas; }}
                 />
                 <label className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-3 py-2 rounded cursor-pointer hover:bg-black/80 transition-colors">
@@ -366,6 +370,7 @@ export default function Vistas2D() {
                       drawingTool="select"
                       drawingColor={viewSettings[viewType].drawingColor}
                       drawingSize={viewSettings[viewType].drawingSize}
+                      drawingData={viewSettings[viewType].drawingData}
                       onCanvasRef={(canvas) => { canvasRefs.current[viewType] = canvas; }}
                     />
                     <label className="absolute top-1 left-1 flex items-center gap-1 bg-black/60 px-2 py-1 rounded cursor-pointer hover:bg-black/80 transition-colors text-xs" onClick={(e) => e.stopPropagation()}>
@@ -408,6 +413,7 @@ export default function Vistas2D() {
                       drawingTool="select"
                       drawingColor={viewSettings[viewType].drawingColor}
                       drawingSize={viewSettings[viewType].drawingSize}
+                      drawingData={viewSettings[viewType].drawingData}
                       onCanvasRef={(canvas) => { canvasRefs.current[viewType] = canvas; }}
                     />
                     <label className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-3 py-2 rounded cursor-pointer hover:bg-black/80 transition-colors" onClick={(e) => e.stopPropagation()}>

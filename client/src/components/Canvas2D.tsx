@@ -21,10 +21,12 @@ interface Canvas2DProps {
   drawingTool?: DrawingTool;
   drawingColor?: string;
   drawingSize?: number;
+  drawingData?: string;
   onLesionSelect?: (id: string | null) => void;
   onLesionMove?: (id: string, position: Position3D) => void;
   onLesionCreate?: (position: Position3D) => void;
   onCanvasRef?: (canvas: HTMLCanvasElement | null) => void;
+  onDrawingChange?: (dataUrl: string) => void;
 }
 
 const SEVERITY_COLORS: Record<Severity, string> = {
@@ -49,10 +51,12 @@ export default function Canvas2D({
   drawingTool = 'select',
   drawingColor = '#ffffff',
   drawingSize = 3,
+  drawingData,
   onLesionSelect,
   onLesionMove,
   onLesionCreate,
-  onCanvasRef
+  onCanvasRef,
+  onDrawingChange
 }: Canvas2DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -65,6 +69,7 @@ export default function Canvas2D({
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
+  const drawingRestoredRef = useRef(false);
 
   useEffect(() => {
     const imagePath = VIEW_IMAGES[viewType];
@@ -78,6 +83,38 @@ export default function Canvas2D({
   useEffect(() => {
     onCanvasRef?.(canvasRef.current);
   }, [onCanvasRef]);
+
+  useEffect(() => {
+    if (drawingData && !drawingRestoredRef.current) {
+      const drawingCanvas = drawingCanvasRef.current;
+      const container = containerRef.current;
+      if (!drawingCanvas || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        drawingCanvas.width = rect.width;
+        drawingCanvas.height = rect.height;
+
+        const img = new Image();
+        img.onload = () => {
+          const ctx = drawingCanvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
+          }
+          drawingRestoredRef.current = true;
+        };
+        img.src = drawingData;
+      }
+    }
+  }, [drawingData]);
+
+  const saveDrawing = useCallback(() => {
+    const drawingCanvas = drawingCanvasRef.current;
+    if (drawingCanvas && onDrawingChange) {
+      const dataUrl = drawingCanvas.toDataURL('image/png');
+      onDrawingChange(dataUrl);
+    }
+  }, [onDrawingChange]);
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -410,9 +447,12 @@ export default function Canvas2D({
         }
       }
     }
+    if (isDrawing) {
+      saveDrawing();
+    }
     setIsDrawing(false);
     setStartPos(null);
-  }, [isDrawing, startPos, drawingTool, drawingColor, drawingSize]);
+  }, [isDrawing, startPos, drawingTool, drawingColor, drawingSize, saveDrawing]);
 
   return (
     <div 
@@ -461,6 +501,7 @@ export default function Canvas2D({
                     ctx.fillText(textInput, startPos.x, startPos.y);
                   }
                 }
+                saveDrawing();
                 setShowTextInput(false);
                 setTextInput('');
                 setStartPos(null);

@@ -134,8 +134,8 @@ export default function Canvas2D({
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if (viewImage) {
-      const maxSize = Math.max(canvas.width, canvas.height) * 1.2 * zoomLevel;
-      const scale = maxSize / Math.max(viewImage.width, viewImage.height);
+      const baseSize = Math.min(canvas.width, canvas.height) * 0.9;
+      const scale = (baseSize / Math.max(viewImage.width, viewImage.height)) * zoomLevel;
       const scaledWidth = viewImage.width * scale;
       const scaledHeight = viewImage.height * scale;
       const x = (canvas.width - scaledWidth) / 2;

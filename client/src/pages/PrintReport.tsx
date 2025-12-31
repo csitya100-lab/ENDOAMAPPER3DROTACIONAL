@@ -11,6 +11,8 @@ const VIEW_LABELS: Record<string, string> = {
   'posterior': 'Posterior'
 };
 
+const VIEW_ORDER = ['sagittal-avf', 'sagittal-rvf', 'coronal', 'posterior'] as const;
+
 export default function PrintReport() {
   const [, setLocation] = useLocation();
   const { draftImages2D, draftImageNotes, setDraftImageNote } = useReportStore();
@@ -19,7 +21,21 @@ export default function PrintReport() {
     window.print();
   };
 
-  const hasImages = Object.values(draftImages2D).some(img => img && img.length > 0);
+  const availableViews = VIEW_ORDER.filter(key => draftImages2D[key] && draftImages2D[key].length > 0);
+  const hasImages = availableViews.length > 0;
+
+  const getGridClass = () => {
+    switch (availableViews.length) {
+      case 1:
+        return 'grid-cols-1';
+      case 2:
+        return 'grid-cols-2';
+      case 3:
+        return 'grid-cols-2';
+      default:
+        return 'grid-cols-2';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -51,9 +67,9 @@ export default function PrintReport() {
         </div>
       </div>
 
-      <div className="p-8 max-w-5xl mx-auto print:p-0 print:max-w-none">
-        <div className="text-center mb-12 print:mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 print:text-2xl">EndoMapper - Relatório de Vistas 2D</h1>
+      <div className="p-6 max-w-[210mm] mx-auto print:p-4 print:max-w-none">
+        <div className="text-center mb-6 print:mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 print:text-xl">EndoMapper - Relatório de Vistas 2D</h1>
           <p className="text-gray-600 text-sm mt-1">
             Gerado em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}
           </p>
@@ -65,45 +81,47 @@ export default function PrintReport() {
             <p className="text-sm mt-2">Volte ao editor 2D e faça suas anotações nas vistas.</p>
           </div>
         ) : (
-          <div className="space-y-12 print:space-y-8">
-            {(['sagittal-avf', 'sagittal-rvf', 'coronal', 'posterior'] as const).map((viewKey) => {
+          <div className={`grid ${getGridClass()} gap-4 print:gap-3`}>
+            {availableViews.map((viewKey) => {
               const imageData = draftImages2D[viewKey];
-              if (!imageData) return null;
 
               return (
                 <div
                   key={viewKey}
-                  className="flex flex-col gap-4 print:break-inside-avoid"
+                  className="flex flex-col print:break-inside-avoid"
                   data-testid={`report-view-container-${viewKey}`}
                 >
-                  <div className="bg-gray-50 px-4 py-2 border-l-4 border-pink-500">
-                    <h3 className="font-bold text-gray-900 text-lg uppercase tracking-wide">
+                  <div className="bg-gray-100 px-3 py-1.5 border border-gray-300 border-b-0 rounded-t">
+                    <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wide">
                       {VIEW_LABELS[viewKey]}
                     </h3>
                   </div>
                   
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm flex items-center justify-center p-4">
+                  <div 
+                    className="border border-gray-300 bg-white flex items-center justify-center overflow-hidden"
+                    style={{ aspectRatio: '1 / 1' }}
+                  >
                     <img
                       src={imageData}
                       alt={VIEW_LABELS[viewKey]}
-                      className="w-full max-h-[800px] object-contain bg-white"
-                      style={{ filter: 'brightness(1.05)' }}
+                      className="w-full h-full object-contain"
+                      style={{ imageRendering: 'auto' }}
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Observações:</p>
+                  <div className="border border-gray-300 border-t-0 rounded-b p-2 bg-gray-50">
+                    <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Observações:</p>
                     <div className="print:hidden">
                       <Textarea
                         value={draftImageNotes[viewKey]}
                         onChange={(e) => setDraftImageNote(viewKey, e.target.value)}
-                        placeholder={`Digite observações para ${VIEW_LABELS[viewKey]}...`}
-                        className="min-h-[100px] border-gray-300 focus:border-pink-500 focus:ring-pink-500"
+                        placeholder={`Observações...`}
+                        className="min-h-[60px] text-xs border-gray-300 focus:border-pink-500 focus:ring-pink-500 resize-none"
                         data-testid={`textarea-note-${viewKey}`}
                       />
                     </div>
-                    <div className="hidden print:block min-h-[60px] p-3 border border-gray-200 rounded bg-gray-50 text-gray-800 text-sm whitespace-pre-wrap">
-                      {draftImageNotes[viewKey] || "Nenhuma observação registrada."}
+                    <div className="hidden print:block min-h-[40px] text-xs text-gray-800 whitespace-pre-wrap">
+                      {draftImageNotes[viewKey] || "—"}
                     </div>
                   </div>
                 </div>
@@ -112,19 +130,18 @@ export default function PrintReport() {
           </div>
         )}
 
-        <div className="mt-16 pt-8 border-t border-gray-200 print:mt-12 print:pt-6">
-          <div className="grid grid-cols-2 gap-8 mb-8 print:hidden">
-            <div className="border border-dashed border-gray-300 p-8 rounded-lg text-center text-gray-400">
-              Espaço para Assinatura do Médico
+        <div className="mt-8 pt-4 border-t border-gray-200 print:mt-6 print:pt-4">
+          <div className="grid grid-cols-2 gap-6 mb-4 print:gap-4">
+            <div className="border border-dashed border-gray-300 p-4 rounded text-center text-gray-400 text-sm">
+              Assinatura do Médico
             </div>
-            <div className="border border-dashed border-gray-300 p-8 rounded-lg text-center text-gray-400">
-              Carimbo da Instituição
+            <div className="border border-dashed border-gray-300 p-4 rounded text-center text-gray-400 text-sm">
+              Carimbo
             </div>
           </div>
           
           <div className="text-center text-gray-400 text-xs">
-            <p>Este documento é parte integrante do prontuário médico.</p>
-            <p>© {new Date().getFullYear()} EndoMapper System - Todos os direitos reservados.</p>
+            <p>© {new Date().getFullYear()} EndoMapper System</p>
           </div>
         </div>
       </div>
@@ -132,8 +149,8 @@ export default function PrintReport() {
       <style>{`
         @media print {
           @page {
-            size: A4;
-            margin: 1.5cm;
+            size: A4 portrait;
+            margin: 10mm;
           }
           body {
             background-color: white !important;
@@ -143,6 +160,9 @@ export default function PrintReport() {
           }
           .print\\:hidden { display: none !important; }
           .print\\:block { display: block !important; }
+          img {
+            image-rendering: auto;
+          }
         }
       `}</style>
     </div>

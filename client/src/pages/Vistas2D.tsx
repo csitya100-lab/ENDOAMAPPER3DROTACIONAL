@@ -1,9 +1,9 @@
-import { useLocation } from 'wouter';
-import AppSidebar from '@/components/AppSidebar';
-import Canvas2D from '@/components/Canvas2D';
-import { ViewType } from '@shared/3d/projections';
-import { Button } from '@/components/ui/button';
-import { useReportStore } from '@/lib/reportStore';
+import { useLocation } from "wouter";
+import AppSidebar from "@/components/AppSidebar";
+import Canvas2D from "@/components/Canvas2D";
+import { ViewType } from "@shared/3d/projections";
+import { Button } from "@/components/ui/button";
+import { useReportStore } from "@/lib/reportStore";
 import {
   Grid3x3,
   ArrowLeft,
@@ -15,18 +15,23 @@ import {
   Circle,
   Ruler,
   Send,
-  Check
-} from 'lucide-react';
-import { useState, useRef, useCallback } from 'react';
-import { DrawingTool } from '@/components/Canvas2D';
+  Check,
+} from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { DrawingTool } from "@/components/Canvas2D";
 
-const VIEW_TYPES: ViewType[] = ['sagittal-avf', 'sagittal-rvf', 'coronal', 'posterior'];
+const VIEW_TYPES: ViewType[] = [
+  "sagittal-avf",
+  "sagittal-rvf",
+  "coronal",
+  "posterior",
+];
 
 const VIEW_LABELS: Record<ViewType, string> = {
-  'sagittal-avf': 'Sagittal (AVF)',
-  'sagittal-rvf': 'Sagittal (RVF)',
-  'coronal': 'Coronal',
-  'posterior': 'Posterior'
+  "sagittal-avf": "Sagittal (AVF)",
+  "sagittal-rvf": "Sagittal (RVF)",
+  coronal: "Coronal",
+  posterior: "Posterior",
 };
 
 interface ViewSettings {
@@ -37,42 +42,47 @@ interface ViewSettings {
 }
 
 const createDefaultViewSettings = (): ViewSettings => ({
-  drawingTool: 'pen',
-  drawingColor: '#ffffff',
+  drawingTool: "pen",
+  drawingColor: "#ffffff",
   drawingSize: 3,
-  drawingData: '',
+  drawingData: "",
 });
 
 export default function Vistas2D() {
   const [, setLocation] = useLocation();
-  const [viewSettings, setViewSettings] = useState<Record<ViewType, ViewSettings>>(() => ({
-    'sagittal-avf': createDefaultViewSettings(),
-    'sagittal-rvf': createDefaultViewSettings(),
-    'coronal': createDefaultViewSettings(),
-    'posterior': createDefaultViewSettings(),
+  const [viewSettings, setViewSettings] = useState<
+    Record<ViewType, ViewSettings>
+  >(() => ({
+    "sagittal-avf": createDefaultViewSettings(),
+    "sagittal-rvf": createDefaultViewSettings(),
+    coronal: createDefaultViewSettings(),
+    posterior: createDefaultViewSettings(),
   }));
   const [activeView, setActiveView] = useState<ViewType | null>(null);
-  const { selectedViews, toggleViewSelection, addPdfImage, clearPdfImages } = useReportStore();
-
-  const canvasRefs = useRef<Record<ViewType, HTMLCanvasElement | null>>({
-    'sagittal-avf': null,
-    'sagittal-rvf': null,
-    'coronal': null,
-    'posterior': null
+  const { selectedViews, toggleViewSelection, addPdfImage, clearPdfImages } =
+    useReportStore();
+  const canvasRefs = useRef<Record<ViewType, { main: HTMLCanvasElement | null; drawing: HTMLCanvasElement | null }>>({
+    "sagittal-avf": { main: null, drawing: null },
+    "sagittal-rvf": { main: null, drawing: null },
+    coronal: { main: null, drawing: null },
+    posterior: { main: null, drawing: null },
   });
 
-  const setCanvasRef = useCallback((viewType: ViewType) => (canvas: HTMLCanvasElement | null) => {
-    canvasRefs.current[viewType] = canvas;
-  }, []);
+  const setCanvasRef = useCallback(
+    (viewType: ViewType) => (canvas: HTMLCanvasElement | null, drawingCanvas: HTMLCanvasElement | null) => {
+      canvasRefs.current[viewType] = { main: canvas, drawing: drawingCanvas };
+    },
+    [],
+  );
 
   const updateViewSetting = <K extends keyof ViewSettings>(
     view: ViewType,
     key: K,
-    value: ViewSettings[K]
+    value: ViewSettings[K],
   ) => {
-    setViewSettings(prev => ({
+    setViewSettings((prev) => ({
       ...prev,
-      [view]: { ...prev[view], [key]: value }
+      [view]: { ...prev[view], [key]: value },
     }));
   };
 
@@ -82,52 +92,56 @@ export default function Vistas2D() {
 
   const handleSendToReport = () => {
     clearPdfImages();
-    
+
     const scale = 2;
-    
+
     VIEW_TYPES.forEach((viewType) => {
-      if (selectedViews[viewType] && canvasRefs.current[viewType]) {
-        const sourceCanvas = canvasRefs.current[viewType]!;
-        
-        const highResCanvas = document.createElement('canvas');
-        highResCanvas.width = sourceCanvas.width * scale;
-        highResCanvas.height = sourceCanvas.height * scale;
-        
-        const ctx = highResCanvas.getContext('2d');
+      const refs = canvasRefs.current[viewType];
+      if (selectedViews[viewType] && refs.main) {
+        const mainCanvas = refs.main;
+        const drawingCanvas = refs.drawing;
+
+        const mergedCanvas = document.createElement("canvas");
+        mergedCanvas.width = mainCanvas.width * scale;
+        mergedCanvas.height = mainCanvas.height * scale;
+
+        const ctx = mergedCanvas.getContext("2d");
         if (ctx) {
           ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
+          ctx.imageSmoothingQuality = "high";
           ctx.scale(scale, scale);
-          ctx.drawImage(sourceCanvas, 0, 0);
           
-          const imgData = highResCanvas.toDataURL('image/png');
+          ctx.drawImage(mainCanvas, 0, 0);
+          
+          if (drawingCanvas) {
+            ctx.drawImage(drawingCanvas, 0, 0);
+          }
+
+          const imgData = mergedCanvas.toDataURL("image/png");
           addPdfImage({
             data: imgData,
             label: VIEW_LABELS[viewType],
             viewType: viewType,
-            width: highResCanvas.width,
-            height: highResCanvas.height,
-            observation: '',
-            drawingData: viewSettings[viewType].drawingData
+            observation: "",
           });
         }
       }
     });
-    
-    setLocation('/preview-report');
+
+    setLocation("/preview-report");
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
       <AppSidebar />
-      
+
       <main className="flex-1 ml-16 p-4 flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setLocation('/')}
+              onClick={() => setLocation("/")}
               className="text-slate-400 hover:text-white"
               data-testid="button-back-3d"
             >
@@ -150,9 +164,12 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'select')}
+              onClick={() =>
+                activeView &&
+                updateViewSetting(activeView, "drawingTool", "select")
+              }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'select' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "select" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Selecionar"
               data-testid="button-tool-select"
             >
@@ -161,9 +178,12 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'pen')}
+              onClick={() =>
+                activeView &&
+                updateViewSetting(activeView, "drawingTool", "pen")
+              }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'pen' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "pen" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Desenhar"
               data-testid="button-tool-pen"
             >
@@ -172,9 +192,12 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'eraser')}
+              onClick={() =>
+                activeView &&
+                updateViewSetting(activeView, "drawingTool", "eraser")
+              }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'eraser' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "eraser" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Borracha"
               data-testid="button-tool-eraser"
             >
@@ -183,9 +206,12 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'line')}
+              onClick={() =>
+                activeView &&
+                updateViewSetting(activeView, "drawingTool", "line")
+              }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'line' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "line" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Linha"
               data-testid="button-tool-line"
             >
@@ -194,9 +220,12 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'circle')}
+              onClick={() =>
+                activeView &&
+                updateViewSetting(activeView, "drawingTool", "circle")
+              }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'circle' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "circle" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Círculo"
               data-testid="button-tool-circle"
             >
@@ -205,9 +234,12 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'circle-filled')}
+              onClick={() =>
+                activeView &&
+                updateViewSetting(activeView, "drawingTool", "circle-filled")
+              }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'circle-filled' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "circle-filled" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Círculo Preenchido"
               data-testid="button-tool-circle-filled"
             >
@@ -216,9 +248,12 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'text')}
+              onClick={() =>
+                activeView &&
+                updateViewSetting(activeView, "drawingTool", "text")
+              }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'text' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "text" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Texto"
               data-testid="button-tool-text"
             >
@@ -227,22 +262,32 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => activeView && updateViewSetting(activeView, 'drawingTool', 'ruler')}
+              onClick={() =>
+                activeView &&
+                updateViewSetting(activeView, "drawingTool", "ruler")
+              }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === 'ruler' ? 'bg-slate-700' : ''} ${!activeView ? 'opacity-50' : ''}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "ruler" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Régua"
               data-testid="button-tool-ruler"
             >
               <Ruler className="w-4 h-4" />
             </Button>
-            
-            {activeView && currentSettings?.drawingTool !== 'select' && (
+
+            {activeView && currentSettings?.drawingTool !== "select" && (
               <>
                 <div className="h-6 w-px bg-slate-700" />
                 <input
                   type="color"
-                  value={currentSettings?.drawingColor || '#ffffff'}
-                  onChange={(e) => activeView && updateViewSetting(activeView, 'drawingColor', e.target.value)}
+                  value={currentSettings?.drawingColor || "#ffffff"}
+                  onChange={(e) =>
+                    activeView &&
+                    updateViewSetting(
+                      activeView,
+                      "drawingColor",
+                      e.target.value,
+                    )
+                  }
                   className="w-8 h-8 cursor-pointer rounded border border-slate-600"
                   title="Cor"
                   data-testid="input-drawing-color"
@@ -256,14 +301,14 @@ export default function Vistas2D() {
           {VIEW_TYPES.map((viewType) => {
             const isSelected = selectedViews[viewType];
             const isActive = activeView === viewType;
-            
+
             return (
               <div
                 key={viewType}
                 className={`relative rounded-lg overflow-hidden transition-all ${
-                  isActive 
-                    ? 'ring-2 ring-pink-500 ring-offset-2 ring-offset-slate-950' 
-                    : 'border border-slate-700 hover:border-slate-500'
+                  isActive
+                    ? "ring-2 ring-pink-500 ring-offset-2 ring-offset-slate-950"
+                    : "border border-slate-700 hover:border-slate-500"
                 }`}
                 onClick={() => setActiveView(viewType)}
                 data-testid={`card-${viewType}`}
@@ -274,9 +319,9 @@ export default function Vistas2D() {
                     toggleViewSelection(viewType);
                   }}
                   className={`absolute top-3 left-3 z-20 w-8 h-8 rounded-md flex items-center justify-center transition-all ${
-                    isSelected 
-                      ? 'bg-emerald-500 text-white shadow-lg' 
-                      : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700 border border-slate-600'
+                    isSelected
+                      ? "bg-emerald-500 text-white shadow-lg"
+                      : "bg-slate-800/80 text-slate-400 hover:bg-slate-700 border border-slate-600"
                   }`}
                   data-testid={`checkbox-${viewType}`}
                 >
@@ -292,11 +337,15 @@ export default function Vistas2D() {
                     viewType={viewType}
                     zoomLevel={1}
                     editMode={isActive}
-                    drawingTool={isActive ? viewSettings[viewType].drawingTool : 'select'}
+                    drawingTool={
+                      isActive ? viewSettings[viewType].drawingTool : "select"
+                    }
                     drawingColor={viewSettings[viewType].drawingColor}
                     drawingSize={viewSettings[viewType].drawingSize}
                     drawingData={viewSettings[viewType].drawingData}
-                    onDrawingChange={(data) => updateViewSetting(viewType, 'drawingData', data)}
+                    onDrawingChange={(data) =>
+                      updateViewSetting(viewType, "drawingData", data)
+                    }
                     onCanvasRef={setCanvasRef(viewType)}
                   />
                 </div>
@@ -311,13 +360,14 @@ export default function Vistas2D() {
             disabled={selectedCount === 0}
             className={`h-14 px-8 text-lg font-semibold transition-all ${
               selectedCount > 0
-                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/30'
-                : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                ? "bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/30"
+                : "bg-slate-700 text-slate-400 cursor-not-allowed"
             }`}
             data-testid="button-send-to-report"
           >
             <Send className="w-5 h-5 mr-3" />
-            Enviar {selectedCount > 0 ? `${selectedCount} ` : ''}Selecionada{selectedCount !== 1 ? 's' : ''} ao Relatório
+            Enviar {selectedCount > 0 ? `${selectedCount} ` : ""}Selecionada
+            {selectedCount !== 1 ? "s" : ""} ao Relatório
           </Button>
         </div>
       </main>

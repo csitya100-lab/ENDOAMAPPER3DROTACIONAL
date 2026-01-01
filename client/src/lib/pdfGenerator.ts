@@ -109,12 +109,17 @@ export function generatePdfReport(images: PdfImage[]): void {
       addFooter(pdf);
     }
 
+    const tempImg = new Image();
+    tempImg.src = img.data;
+    const origWidth = tempImg.width || 800;
+    const origHeight = tempImg.height || 600;
+
     addImageInSlot(
       pdf,
       img.data,
       SLOTS[slotIndex],
-      img.width,
-      img.height,
+      origWidth,
+      origHeight,
       img.label,
       img.observation
     );

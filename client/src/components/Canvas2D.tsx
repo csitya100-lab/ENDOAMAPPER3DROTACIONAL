@@ -25,7 +25,7 @@ interface Canvas2DProps {
   onLesionSelect?: (id: string | null) => void;
   onLesionMove?: (id: string, position: Position3D) => void;
   onLesionCreate?: (position: Position3D) => void;
-  onCanvasRef?: (canvas: HTMLCanvasElement | null) => void;
+  onCanvasRef?: (canvas: HTMLCanvasElement | null, drawingCanvas: HTMLCanvasElement | null) => void;
   onDrawingChange?: (dataUrl: string) => void;
 }
 
@@ -84,11 +84,12 @@ export default function Canvas2D({
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const drawingCanvas = drawingCanvasRef.current;
     if (canvas) {
-      onCanvasRef?.(canvas);
+      onCanvasRef?.(canvas, drawingCanvas);
     }
     return () => {
-      onCanvasRef?.(null);
+      onCanvasRef?.(null, null);
     };
   }, []);
 

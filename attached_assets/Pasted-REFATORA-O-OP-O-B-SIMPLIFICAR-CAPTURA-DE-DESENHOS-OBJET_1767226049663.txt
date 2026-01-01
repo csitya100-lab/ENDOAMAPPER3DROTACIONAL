@@ -1,0 +1,68 @@
+REFATORAÇÃO OPÇÃO B - SIMPLIFICAR CAPTURA DE DESENHOS:
+
+**OBJETIVO**: Capturar a imagem COMPLETA do canvas COM todos os desenhos do usuário, de forma simples e confiável.
+
+**MUDANÇAS PRINCIPAIS**:
+
+1. **reportStore.ts - SIMPLIFICAR PdfImage**:
+   - REMOVER: drawingData (JSON)
+   - MANTER: data (PNG completo com desenhos), label, viewType, observation
+   - Novo interface:
+   ```typescript
+   interface PdfImage {
+     data: string;        // PNG com TUDO (imagem + desenhos)
+     label: string;
+     viewType: string;
+     observation: string;
+   }
+   ```
+
+2. **Vistas2D.tsx - MODIFICAR handleSendToReport**:
+   - Quando clica em "Enviar ao Relatório":
+     a) Pegar o canvas ref (canvasRefs.current[viewType])
+     b) Usar canvas.toDataURL('image/png') para capturar EXATAMENTE o que está visível
+     c) Isso inclui AUTOMATICAMENTE os desenhos porque estão renderizados no canvas
+   - Remover toda lógica de highResCanvas ou drawingData
+   - Código simples:
+   ```typescript
+   const canvas = canvasRefs.current[viewType];
+   if (canvas) {
+     const imageData = canvas.toDataURL('image/png');
+     addPdfImage({
+       data: imageData,
+       label: VIEW_LABELS[viewType],
+       viewType: viewType,
+       observation: ''
+     });
+   }
+   ```
+
+3. **Canvas2D.tsx - VERIFICAR renderização**:
+   - Certificar que a imagem 3D E os desenhos estão NO MESMO canvas
+   - Não há layers separadas - tudo renderizado junto
+   - Se houver problema, consolidar em um único canvas
+
+4. **PreviewReport.tsx - SEM MUDANÇAS**:
+   - Continua mostrando as imagens (agora com desenhos inclusos)
+   - Observações funcionam igual
+   - Delete button funciona igual
+
+5. **pdfGenerator.ts - SEM MUDANÇAS**:
+   - Continua funcionando com as imagens
+   - Agora as imagens já vêm COM os desenhos
+
+**RESULTADO ESPERADO**:
+- Usuário desenha na imagem ✓
+- Clica "Enviar ao Relatório" ✓
+- Imagem é capturada COM os desenhos visíveis ✓
+- Aparece no preview COM os desenhos ✓
+- Exporta PDF COM os desenhos ✓
+
+**VANTAGENS**:
+✓ Muito mais simples - sem JSON complexo
+✓ Sem bugs de sincronização
+✓ "What you see is what you get" - exatamente como na tela
+✓ Menos código para manter
+✓ Mais confiável
+
+Proceda com a refatoração!

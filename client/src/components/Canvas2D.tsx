@@ -22,6 +22,7 @@ interface Canvas2DProps {
   drawingColor?: string;
   drawingSize?: number;
   drawingData?: string;
+  fillTexture?: "none" | "solid" | "pattern";
   onLesionSelect?: (id: string | null) => void;
   onLesionMove?: (id: string, position: Position3D) => void;
   onLesionCreate?: (position: Position3D) => void;
@@ -52,6 +53,7 @@ export default function Canvas2D({
   drawingColor = '#ffffff',
   drawingSize = 3,
   drawingData,
+  fillTexture = "none",
   onLesionSelect,
   onLesionMove,
   onLesionCreate,
@@ -431,6 +433,23 @@ export default function Canvas2D({
       ctx.strokeStyle = drawingColor;
       ctx.fillStyle = drawingColor;
 
+      if (fillTexture === "pattern" && (drawingTool === 'circle' || drawingTool === 'circle-filled')) {
+        const patternCanvas = document.createElement('canvas');
+        const pCtx = patternCanvas.getContext('2d');
+        if (pCtx) {
+          patternCanvas.width = 10;
+          patternCanvas.height = 10;
+          pCtx.strokeStyle = drawingColor;
+          pCtx.lineWidth = 1;
+          pCtx.beginPath();
+          pCtx.moveTo(0, 10);
+          pCtx.lineTo(10, 0);
+          pCtx.stroke();
+          const pattern = ctx.createPattern(patternCanvas, 'repeat');
+          if (pattern) ctx.fillStyle = pattern;
+        }
+      }
+
       if (drawingTool === 'line') {
         ctx.beginPath();
         ctx.moveTo(startPos.x, startPos.y);
@@ -468,14 +487,13 @@ export default function Canvas2D({
         const radius = Math.sqrt(Math.pow(x - startPos.x, 2) + Math.pow(y - startPos.y, 2));
         ctx.beginPath();
         ctx.arc(startPos.x, startPos.y, radius, 0, Math.PI * 2);
-        if (drawingTool === 'circle-filled') {
+        if (drawingTool === 'circle-filled' || fillTexture !== 'none') {
           ctx.fill();
-        } else {
-          ctx.stroke();
         }
+        ctx.stroke();
       }
     }
-  }, [isDrawing, startPos, drawingTool, drawingColor, drawingSize]);
+  }, [isDrawing, startPos, drawingTool, drawingColor, drawingSize, fillTexture]);
 
   const handleDrawingPointerUp = useCallback((e: React.PointerEvent) => {
     if (drawingTool === 'line' || drawingTool === 'circle' || drawingTool === 'circle-filled' || drawingTool === 'ruler') {
@@ -495,6 +513,23 @@ export default function Canvas2D({
           ctx.lineJoin = 'round';
           ctx.strokeStyle = drawingColor;
           ctx.fillStyle = drawingColor;
+
+          if (fillTexture === "pattern" && (drawingTool === 'circle' || drawingTool === 'circle-filled')) {
+            const patternCanvas = document.createElement('canvas');
+            const pCtx = patternCanvas.getContext('2d');
+            if (pCtx) {
+              patternCanvas.width = 10;
+              patternCanvas.height = 10;
+              pCtx.strokeStyle = drawingColor;
+              pCtx.lineWidth = 1;
+              pCtx.beginPath();
+              pCtx.moveTo(0, 10);
+              pCtx.lineTo(10, 0);
+              pCtx.stroke();
+              const pattern = ctx.createPattern(patternCanvas, 'repeat');
+              if (pattern) ctx.fillStyle = pattern;
+            }
+          }
 
           if (drawingTool === 'line') {
             ctx.beginPath();
@@ -533,11 +568,10 @@ export default function Canvas2D({
             const radius = Math.sqrt(Math.pow(x - startPos.x, 2) + Math.pow(y - startPos.y, 2));
             ctx.beginPath();
             ctx.arc(startPos.x, startPos.y, radius, 0, Math.PI * 2);
-            if (drawingTool === 'circle-filled') {
+            if (drawingTool === 'circle-filled' || fillTexture !== 'none') {
               ctx.fill();
-            } else {
-              ctx.stroke();
             }
+            ctx.stroke();
           }
         }
       }
@@ -548,7 +582,7 @@ export default function Canvas2D({
     }
     setIsDrawing(false);
     setStartPos(null);
-  }, [isDrawing, startPos, drawingTool, drawingColor, drawingSize, saveDrawing]);
+  }, [isDrawing, startPos, drawingTool, drawingColor, drawingSize, fillTexture, saveDrawing]);
 
   return (
     <div 

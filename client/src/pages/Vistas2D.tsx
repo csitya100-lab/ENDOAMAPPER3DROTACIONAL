@@ -39,13 +39,15 @@ interface ViewSettings {
   drawingColor: string;
   drawingSize: number;
   drawingData: string;
+  fillTexture: "none" | "solid" | "pattern";
 }
 
 const createDefaultViewSettings = (): ViewSettings => ({
   drawingTool: "pen",
-  drawingColor: "#ffffff",
+  drawingColor: "#ff0000",
   drawingSize: 3,
   drawingData: "",
+  fillTexture: "none",
 });
 
 export default function Vistas2D() {
@@ -275,24 +277,71 @@ export default function Vistas2D() {
             </Button>
 
             {activeView && currentSettings?.drawingTool !== "select" && (
-              <>
-                <div className="h-6 w-px bg-slate-700" />
-                <input
-                  type="color"
-                  value={currentSettings?.drawingColor || "#ffffff"}
-                  onChange={(e) =>
-                    activeView &&
-                    updateViewSetting(
-                      activeView,
-                      "drawingColor",
-                      e.target.value,
-                    )
-                  }
-                  className="w-8 h-8 cursor-pointer rounded border border-slate-600"
-                  title="Cor"
-                  data-testid="input-drawing-color"
-                />
-              </>
+              <div className="flex items-center gap-3 ml-2 border-l border-slate-700 pl-3">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] uppercase text-slate-500 font-bold">Cor</span>
+                  <input
+                    type="color"
+                    value={currentSettings?.drawingColor || "#ff0000"}
+                    onChange={(e) =>
+                      activeView &&
+                      updateViewSetting(
+                        activeView,
+                        "drawingColor",
+                        e.target.value,
+                      )
+                    }
+                    className="w-8 h-8 cursor-pointer rounded bg-transparent border-none"
+                    title="Cor"
+                    data-testid="input-drawing-color"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1 w-24">
+                  <span className="text-[10px] uppercase text-slate-500 font-bold">Tamanho: {currentSettings?.drawingSize}px</span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    step="1"
+                    value={currentSettings?.drawingSize || 3}
+                    onChange={(e) =>
+                      activeView &&
+                      updateViewSetting(
+                        activeView,
+                        "drawingSize",
+                        parseInt(e.target.value),
+                      )
+                    }
+                    className="w-full accent-pink-500"
+                    title="Espessura"
+                    data-testid="input-drawing-size"
+                  />
+                </div>
+
+                {["circle", "circle-filled"].includes(currentSettings?.drawingTool || "") && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase text-slate-500 font-bold">Preenchimento</span>
+                    <select
+                      value={currentSettings?.fillTexture || "none"}
+                      onChange={(e) =>
+                        activeView &&
+                        updateViewSetting(
+                          activeView,
+                          "fillTexture",
+                          e.target.value as any,
+                        )
+                      }
+                      className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+                      data-testid="select-fill-texture"
+                    >
+                      <option value="none">Nenhum</option>
+                      <option value="solid">Sólido</option>
+                      <option value="pattern">Hachura</option>
+                    </select>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -346,6 +395,7 @@ export default function Vistas2D() {
                     onDrawingChange={(data) =>
                       updateViewSetting(viewType, "drawingData", data)
                     }
+                    fillTexture={isActive ? viewSettings[viewType].fillTexture : "none"}
                     onCanvasRef={setCanvasRef(viewType)}
                   />
                 </div>

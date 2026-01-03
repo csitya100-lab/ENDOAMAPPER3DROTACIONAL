@@ -12,6 +12,7 @@ import Vistas2D from "@/pages/Vistas2D";
 import PublicReport from "@/pages/PublicReport";
 import PrintReport from "@/pages/PrintReport";
 import PreviewReport from "@/pages/PreviewReport";
+import CaseViewer from "@/pages/CaseViewer";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/3d" component={Home} />
       <Route path="/vistas-2d" component={Vistas2D} />
+      <Route path="/view/:caseId" component={CaseViewer} />
       <Route path="/relatorio/:id" component={PublicReport} />
       <Route path="/imprimir" component={PrintReport} />
       <Route path="/preview-report" component={PreviewReport} />

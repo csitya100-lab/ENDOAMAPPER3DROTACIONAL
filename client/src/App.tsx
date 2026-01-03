@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
+import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import Vistas2D from "@/pages/Vistas2D";
 import PublicReport from "@/pages/PublicReport";
@@ -13,7 +14,8 @@ import PreviewReport from "@/pages/PreviewReport";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={Landing} />
+      <Route path="/3d" component={Home} />
       <Route path="/vistas-2d" component={Vistas2D} />
       <Route path="/relatorio/:id" component={PublicReport} />
       <Route path="/imprimir" component={PrintReport} />

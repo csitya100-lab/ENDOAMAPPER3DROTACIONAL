@@ -3,7 +3,9 @@ import {
   MapPin, 
   Settings,
   HelpCircle,
-  Grid3x3
+  Grid3x3,
+  Home,
+  FileText
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -17,6 +19,12 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   {
     path: '/',
+    label: 'Início',
+    icon: <Home className="w-5 h-5" />,
+    description: 'Página inicial'
+  },
+  {
+    path: '/3d',
     label: '3D',
     icon: <MapPin className="w-5 h-5" />,
     description: 'Modelo 3D rotacional'
@@ -26,6 +34,12 @@ const NAV_ITEMS: NavItem[] = [
     label: '2D',
     icon: <Grid3x3 className="w-5 h-5" />,
     description: 'Editor de vistas planares'
+  },
+  {
+    path: '/preview-report',
+    label: 'PDF',
+    icon: <FileText className="w-5 h-5" />,
+    description: 'Prévia do relatório'
   },
 ];
 

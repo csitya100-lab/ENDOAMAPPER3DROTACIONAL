@@ -143,7 +143,7 @@ export default function Vistas2D() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setLocation("/")}
+              onClick={() => setLocation("/3d")}
               className="text-slate-400 hover:text-white"
               data-testid="button-back-3d"
             >

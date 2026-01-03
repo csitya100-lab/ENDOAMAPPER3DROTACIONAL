@@ -31,12 +31,12 @@ export async function saveCaseToDb(caseData: Omit<CaseData, 'id' | 'created_at'>
   const id = `CASE-${Date.now().toString(36).toUpperCase()}`;
   
   const { error } = await client
-    .from('cases')
+    .from('casos')
     .insert({
       id,
-      patient_name: caseData.patient_name,
-      exam_date: caseData.exam_date,
-      lesions: caseData.lesions,
+      nome_do_paciente: caseData.patient_name,
+      data_exame: caseData.exam_date,
+      lesoes: caseData.lesions,
     });
   
   if (error) {
@@ -51,7 +51,7 @@ export async function loadCaseFromDb(caseId: string): Promise<CaseData | null> {
   const client = getSupabaseClient();
   
   const { data, error } = await client
-    .from('cases')
+    .from('casos')
     .select('*')
     .eq('id', caseId)
     .single();
@@ -64,7 +64,13 @@ export async function loadCaseFromDb(caseId: string): Promise<CaseData | null> {
     throw new Error(`Erro ao carregar caso: ${error.message}`);
   }
   
-  return data as CaseData;
+  return {
+    id: data.id,
+    patient_name: data.nome_do_paciente,
+    exam_date: data.data_exame,
+    lesions: data.lesoes,
+    created_at: data.criado_em,
+  };
 }
 
 export function isSupabaseConfigured(): boolean {

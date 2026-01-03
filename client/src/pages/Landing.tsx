@@ -140,7 +140,8 @@ export default function Landing() {
       </main>
 
       <footer className="py-6 text-center text-gray-500 dark:text-slate-500 text-sm border-t border-gray-200 dark:border-slate-800/50 ml-16">
-        EndoMapper © {new Date().getFullYear()} — Sistema de Mapeamento de Endometriose
+        <p>EndoMapper © {new Date().getFullYear()} — Sistema de Mapeamento de Endometriose</p>
+        <p className="mt-1">Desenvolvido por Cláudio Sityá</p>
       </footer>
     </div>
   );

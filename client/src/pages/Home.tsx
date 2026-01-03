@@ -5,7 +5,8 @@ import { useLesionStore, Severity, Lesion } from '@/lib/lesionStore';
 import { useReportStore } from '@/lib/reportStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2, FileText } from 'lucide-react';
+import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2, FileText, Download } from 'lucide-react';
+import { export3DModelAsHtml } from '@/lib/export3DHtml';
 import AppLayout from '@/components/AppLayout';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -31,6 +32,24 @@ export default function Home() {
 
   const handleClearLesions = () => {
     uterusRef.current?.clearLesions();
+  };
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportHtml = async () => {
+    if (lesions.length === 0) {
+      alert('Adicione pelo menos uma lesão antes de exportar.');
+      return;
+    }
+    setIsExporting(true);
+    try {
+      await export3DModelAsHtml(lesions);
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      alert('Erro ao exportar o modelo 3D. Tente novamente.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const { draftImages2D, createReport, clearDraftImages2D } = useReportStore();
@@ -237,6 +256,17 @@ export default function Home() {
                 {lesionCount} lesão{lesionCount !== 1 ? 's' : ''}
               </Badge>
               
+              <Button 
+                size="sm" 
+                onClick={handleExportHtml}
+                disabled={isExporting}
+                className="text-xs h-9 bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-500"
+                data-testid="button-export-3d"
+              >
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                {isExporting ? 'Exportando...' : 'Exportar 3D'}
+              </Button>
+
               <Button 
                 size="sm" 
                 onClick={handleGenerateReport}

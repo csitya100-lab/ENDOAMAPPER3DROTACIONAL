@@ -5,12 +5,30 @@ const COLORS: Record<string, number> = {
   deep: 0x3b82f6
 };
 
-export async function export3DModelAsHtml(lesions: Lesion[], modelUrl: string = '/model.glb'): Promise<void> {
-  const response = await fetch(modelUrl);
+const THREE_JS_CDN = 'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js';
+const ORBIT_CONTROLS_CDN = 'https://cdn.jsdelivr.net/npm/three@0.162.0/examples/js/controls/OrbitControls.js';
+const GLTF_LOADER_CDN = 'https://cdn.jsdelivr.net/npm/three@0.162.0/examples/js/loaders/GLTFLoader.js';
+
+async function fetchScript(url: string): Promise<string> {
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Erro ao carregar modelo 3D: ${response.status} ${response.statusText}`);
+    throw new Error(`Erro ao baixar script: ${url}`);
   }
-  const modelBlob = await response.blob();
+  return response.text();
+}
+
+export async function export3DModelAsHtml(lesions: Lesion[], modelUrl: string = '/model.glb'): Promise<void> {
+  const [modelResponse, threeJs, orbitControls, gltfLoader] = await Promise.all([
+    fetch(modelUrl),
+    fetchScript(THREE_JS_CDN),
+    fetchScript(ORBIT_CONTROLS_CDN),
+    fetchScript(GLTF_LOADER_CDN)
+  ]);
+  
+  if (!modelResponse.ok) {
+    throw new Error(`Erro ao carregar modelo 3D: ${modelResponse.status} ${modelResponse.statusText}`);
+  }
+  const modelBlob = await modelResponse.blob();
   const modelBase64 = await blobToBase64(modelBlob);
 
   const lesionsJson = JSON.stringify(lesions.map(l => ({
@@ -21,7 +39,8 @@ export async function export3DModelAsHtml(lesions: Lesion[], modelUrl: string = 
     markerType: l.markerType ?? 'circle'
   })));
 
-  const htmlContent = generateStandaloneHtml(modelBase64, lesionsJson);
+  const inlineScripts = `${threeJs}\n${orbitControls}\n${gltfLoader}`;
+  const htmlContent = generateStandaloneHtml(modelBase64, lesionsJson, inlineScripts);
   
   const blob = new Blob([htmlContent], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
@@ -44,7 +63,7 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-function generateStandaloneHtml(modelBase64: string, lesionsJson: string): string {
+function generateStandaloneHtml(modelBase64: string, lesionsJson: string, inlineScripts: string): string {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -213,9 +232,7 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/examples/js/controls/OrbitControls.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/examples/js/loaders/GLTFLoader.js"><\/script>
+  <script>${inlineScripts}<\/script>
   <script>
     (function() {
       var LESIONS = ${lesionsJson};

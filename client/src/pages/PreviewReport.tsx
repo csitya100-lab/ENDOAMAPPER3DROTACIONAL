@@ -142,7 +142,7 @@ export default function PreviewReport() {
                         className="min-h-[80px] text-sm resize-none print:hidden"
                         data-testid={`textarea-observation-${index}`}
                       />
-                      <p className="hidden print:block text-sm text-gray-700 min-h-[40px]">
+                        <p className="hidden print:block text-sm text-black bg-white min-h-[40px]">
                         {image.observation || "—"}
                       </p>
                     </div>

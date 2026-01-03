@@ -1,13 +1,15 @@
 import { useLocation } from 'wouter';
 import { 
   MapPin, 
-  Settings,
   HelpCircle,
   Grid3x3,
   Home,
-  FileText
+  FileText,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useThemeStore } from '@/lib/themeStore';
 
 interface NavItem {
   path: string;
@@ -45,9 +47,10 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function AppSidebar() {
   const [location, setLocation] = useLocation();
+  const { theme, toggleTheme } = useThemeStore();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-16 bg-slate-900 flex flex-col items-center py-4 z-50">
+    <aside className="fixed left-0 top-0 h-screen w-16 bg-slate-900 dark:bg-slate-900 flex flex-col items-center py-4 z-50">
       <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center mb-6">
         <MapPin className="w-5 h-5 text-white" />
       </div>
@@ -85,6 +88,23 @@ export default function AppSidebar() {
         <Tooltip delayDuration={100}>
           <TooltipTrigger asChild>
             <button 
+              onClick={toggleTheme}
+              className="w-full h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+              data-testid="nav-theme"
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
+            <p className="font-medium">{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</p>
+            <p className="text-xs text-slate-400">Alternar tema</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip delayDuration={100}>
+          <TooltipTrigger asChild>
+            <button 
+              onClick={() => setLocation('/')}
               className="w-full h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
               data-testid="nav-help"
             >
@@ -93,22 +113,7 @@ export default function AppSidebar() {
           </TooltipTrigger>
           <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
             <p className="font-medium">Ajuda</p>
-            <p className="text-xs text-slate-400">Guia de uso</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip delayDuration={100}>
-          <TooltipTrigger asChild>
-            <button 
-              className="w-full h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-              data-testid="nav-settings"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
-            <p className="font-medium">Configurações</p>
-            <p className="text-xs text-slate-400">Preferências do sistema</p>
+            <p className="text-xs text-slate-400">Instruções de uso</p>
           </TooltipContent>
         </Tooltip>
       </div>

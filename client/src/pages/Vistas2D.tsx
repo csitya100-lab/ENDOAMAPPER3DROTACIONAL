@@ -134,7 +134,7 @@ export default function Vistas2D() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-white flex flex-col transition-colors">
       <AppSidebar />
 
       <main className="flex-1 ml-16 p-4 flex flex-col">
@@ -144,25 +144,25 @@ export default function Vistas2D() {
               variant="ghost"
               size="sm"
               onClick={() => setLocation("/3d")}
-              className="text-slate-400 hover:text-white"
+              className="text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
               data-testid="button-back-3d"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Voltar ao 3D
             </Button>
-            <div className="h-6 w-px bg-slate-700" />
+            <div className="h-6 w-px bg-gray-300 dark:bg-slate-700" />
             <div>
               <h1 className="text-xl font-bold flex items-center gap-2">
                 <Grid3x3 className="w-5 h-5 text-pink-500" />
                 Editor 2D
               </h1>
-              <p className="text-slate-400 text-xs">
+              <p className="text-gray-500 dark:text-slate-400 text-xs">
                 Clique em uma figura para editar, marque as que deseja enviar
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-slate-800/50 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-3 bg-white dark:bg-slate-800/50 rounded-lg px-3 py-2 border border-gray-200 dark:border-transparent shadow-sm">
             <Button
               variant="ghost"
               size="icon"
@@ -332,7 +332,7 @@ export default function Vistas2D() {
                           e.target.value as any,
                         )
                       }
-                      className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+                      className="bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-gray-900 dark:text-white"
                       data-testid="select-fill-texture"
                     >
                       <option value="none">Nenhum</option>
@@ -356,8 +356,8 @@ export default function Vistas2D() {
                 key={viewType}
                 className={`relative rounded-lg overflow-hidden transition-all ${
                   isActive
-                    ? "ring-2 ring-pink-500 ring-offset-2 ring-offset-slate-950"
-                    : "border border-slate-700 hover:border-slate-500"
+                    ? "ring-2 ring-pink-500 ring-offset-2 ring-offset-gray-100 dark:ring-offset-slate-950"
+                    : "border border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-500"
                 }`}
                 onClick={() => setActiveView(viewType)}
                 data-testid={`card-${viewType}`}
@@ -370,14 +370,14 @@ export default function Vistas2D() {
                   className={`absolute top-3 left-3 z-20 w-8 h-8 rounded-md flex items-center justify-center transition-all ${
                     isSelected
                       ? "bg-emerald-500 text-white shadow-lg"
-                      : "bg-slate-800/80 text-slate-400 hover:bg-slate-700 border border-slate-600"
+                      : "bg-white/90 dark:bg-slate-800/80 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-300 dark:border-slate-600"
                   }`}
                   data-testid={`checkbox-${viewType}`}
                 >
                   {isSelected && <Check className="w-5 h-5" />}
                 </button>
 
-                <div className="absolute top-3 right-3 z-20 bg-black/70 px-2 py-1 rounded text-xs font-medium">
+                <div className="absolute top-3 right-3 z-20 bg-gray-900/80 dark:bg-black/70 px-2 py-1 rounded text-xs font-medium text-white">
                   {VIEW_LABELS[viewType]}
                 </div>
 
@@ -410,8 +410,8 @@ export default function Vistas2D() {
             disabled={selectedCount === 0}
             className={`h-14 px-8 text-lg font-semibold transition-all ${
               selectedCount > 0
-                ? "bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/30"
-                : "bg-slate-700 text-slate-400 cursor-not-allowed"
+                ? "bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/30 text-white"
+                : "bg-gray-300 dark:bg-slate-700 text-gray-500 dark:text-slate-400 cursor-not-allowed"
             }`}
             data-testid="button-send-to-report"
           >

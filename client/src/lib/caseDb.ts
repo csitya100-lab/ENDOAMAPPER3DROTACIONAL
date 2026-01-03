@@ -28,30 +28,29 @@ export interface CaseData {
 export async function saveCaseToDb(caseData: Omit<CaseData, 'id' | 'created_at'>): Promise<string> {
   const client = getSupabaseClient();
   
-  const id = `CASE-${Date.now().toString(36).toUpperCase()}`;
-  
-  const { error } = await client
-    .from('casos')
+  const { data, error } = await client
+    .from('cases')
     .insert({
-      id,
-      nome_do_paciente: caseData.patient_name,
-      data_exame: caseData.exam_date,
-      lesoes: caseData.lesions,
-    });
+      patient_name: caseData.patient_name,
+      exam_date: caseData.exam_date,
+      lesions: caseData.lesions,
+    })
+    .select()
+    .single();
   
   if (error) {
     console.error('Erro ao salvar caso:', error);
     throw new Error(`Erro ao salvar caso: ${error.message}`);
   }
   
-  return id;
+  return data.id;
 }
 
 export async function loadCaseFromDb(caseId: string): Promise<CaseData | null> {
   const client = getSupabaseClient();
   
   const { data, error } = await client
-    .from('casos')
+    .from('cases')
     .select('*')
     .eq('id', caseId)
     .single();
@@ -66,10 +65,10 @@ export async function loadCaseFromDb(caseId: string): Promise<CaseData | null> {
   
   return {
     id: data.id,
-    patient_name: data.nome_do_paciente,
-    exam_date: data.data_exame,
-    lesions: data.lesoes,
-    created_at: data.criado_em,
+    patient_name: data.patient_name,
+    exam_date: data.exam_date,
+    lesions: data.lesions,
+    created_at: data.created_at,
   };
 }
 

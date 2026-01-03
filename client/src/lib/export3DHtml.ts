@@ -287,16 +287,13 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string, inline
       try {
         var base64Parts = MODEL_DATA.split(',');
         var byteString = atob(base64Parts[1]);
-        var mimeString = base64Parts[0].split(':')[1].split(';')[0];
         var ab = new ArrayBuffer(byteString.length);
         var ia = new Uint8Array(ab);
         for (var i = 0; i < byteString.length; i++) {
           ia[i] = byteString.charCodeAt(i);
         }
-        var modelBlob = new Blob([ab], { type: mimeString });
-        var modelUrl = URL.createObjectURL(modelBlob);
 
-        loader.load(modelUrl, function(gltf) {
+        loader.parse(ab, '', function(gltf) {
           var model = gltf.scene;
           
           var box = new THREE.Box3().setFromObject(model);
@@ -366,8 +363,7 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string, inline
           });
 
           loading.style.display = 'none';
-          URL.revokeObjectURL(modelUrl);
-        }, undefined, function(error) {
+        }, function(error) {
           console.error('Erro ao carregar modelo:', error);
           loading.innerHTML = '<div style="color:#f43f5e">Erro ao carregar o modelo 3D</div>';
         });

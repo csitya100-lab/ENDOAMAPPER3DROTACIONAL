@@ -40,6 +40,7 @@ Minimalist UI: Removed thickness slider, export buttons, and unnecessary feature
 ### Application Pages
 1. **Landing** (`/`): Página inicial com instruções de uso e botões de navegação para as seções 3D, 2D e Relatório
 2. **Home/3D** (`/3d`): Main 3D visualization interface with lesion controls - synchronized across all 4 view perspectives
+   - **Exportar 3D**: Generates standalone HTML file with embedded 3D model and lesions for sharing
 3. **Vistas 2D** (`/vistas-2d`): Independent 2D views editor with drawing tools for precise lesion annotation
 4. **Preview Report** (`/preview-report`): Prévia do relatório com imagens capturadas, observações e exportação PDF
 5. **Relatório Público** (`/relatorio/:id`): Public report page for doctors to view via unique link

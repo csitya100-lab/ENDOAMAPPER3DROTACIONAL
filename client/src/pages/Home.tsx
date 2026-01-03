@@ -5,7 +5,7 @@ import { useLesionStore, Severity, Lesion } from '@/lib/lesionStore';
 import { useReportStore } from '@/lib/reportStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2, FileText, Download } from 'lucide-react';
+import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2, FileText, Download, Camera } from 'lucide-react';
 import { export3DModelAsHtml } from '@/lib/export3DHtml';
 import AppLayout from '@/components/AppLayout';
 import { Slider } from '@/components/ui/slider';
@@ -52,7 +52,22 @@ export default function Home() {
     }
   };
 
-  const { draftImages2D, createReport, clearDraftImages2D } = useReportStore();
+  const { draftImages2D, createReport, clearDraftImages2D, addPdfImage, pdfImages } = useReportStore();
+
+  const handleCapture3D = () => {
+    const imageData = uterusRef.current?.captureScreenshot();
+    if (imageData) {
+      addPdfImage({
+        data: imageData,
+        label: `Modelo 3D - Vista ${pdfImages.filter(img => img.viewType === '3d').length + 1}`,
+        viewType: '3d',
+        observation: ''
+      });
+      alert('Imagem 3D adicionada ao relatório!');
+    } else {
+      alert('Erro ao capturar a imagem. Tente novamente.');
+    }
+  };
 
   const handleGenerateReport = () => {
     if (!draftImages2D.sagittal && !draftImages2D.coronal && !draftImages2D.posterior) {
@@ -255,6 +270,16 @@ export default function Home() {
               <Badge variant="outline" className="font-mono hidden sm:flex bg-slate-100 border-slate-200 text-slate-700">
                 {lesionCount} lesão{lesionCount !== 1 ? 's' : ''}
               </Badge>
+
+              <Button 
+                size="sm" 
+                onClick={handleCapture3D}
+                className="text-xs h-9 bg-purple-600 text-white hover:bg-purple-700 border border-purple-500"
+                data-testid="button-capture-3d"
+              >
+                <Camera className="w-3.5 h-3.5 mr-1.5" />
+                Capturar 3D
+              </Button>
               
               <Button 
                 size="sm" 

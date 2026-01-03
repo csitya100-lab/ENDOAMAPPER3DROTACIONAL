@@ -16,6 +16,7 @@ interface Uterus3DProps {
 export interface Uterus3DRef {
   addTestLesion: () => void;
   clearLesions: () => void;
+  captureScreenshot: () => string | null;
 }
 
 const COLORS = {
@@ -91,6 +92,39 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, mark
     },
     clearLesions: () => {
       clearLesions();
+    },
+    captureScreenshot: () => {
+      const renderer = rendererRef.current;
+      const scene = sceneRef.current;
+      const mainView = viewsRef.current[0];
+      
+      if (!renderer || !scene || !mainView || !mainView.camera) {
+        console.warn('Screenshot: renderer, scene ou camera não inicializado');
+        return null;
+      }
+      
+      try {
+        const canvas = renderer.domElement;
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        renderer.setScissorTest(false);
+        renderer.setViewport(0, 0, width, height);
+        
+        mainView.camera.aspect = width / height;
+        mainView.camera.updateProjectionMatrix();
+        
+        renderer.render(scene, mainView.camera);
+        
+        const imageData = canvas.toDataURL('image/png');
+        
+        renderer.setScissorTest(true);
+        
+        return imageData;
+      } catch (e) {
+        console.error('Erro ao capturar screenshot:', e);
+        return null;
+      }
     }
   }));
 

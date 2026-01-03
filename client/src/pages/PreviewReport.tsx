@@ -139,7 +139,7 @@ export default function PreviewReport() {
                         value={image.observation}
                         onChange={(e) => updatePdfImageObservation(index, e.target.value)}
                         placeholder="Adicione observações para o cirurgião..."
-                        className="min-h-[80px] text-sm resize-none print:hidden"
+                        className="min-h-[80px] text-sm resize-none print:hidden bg-white text-black border-gray-300 focus:border-pink-500 placeholder:text-gray-400"
                         data-testid={`textarea-observation-${index}`}
                       />
                         <p className="hidden print:block text-sm text-black bg-white min-h-[40px]">

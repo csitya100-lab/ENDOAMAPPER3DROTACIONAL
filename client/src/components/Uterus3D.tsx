@@ -51,6 +51,16 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, mark
     viewIdx: number;
   }>({ isDragging: false, lesionId: null, viewIdx: 0 });
 
+  // Map lesion IDs to their marker objects for efficient add/remove/update
+  const markersByLesionRef = useRef<{ [lesionId: string]: THREE.Object3D[] }>({});
+  
+  // Track previous lesions for smart diffing
+  const prevLesionsRef = useRef<Lesion[]>([]);
+  
+  // Cached geometries and materials for reuse
+  const geometryCacheRef = useRef<{ [key: string]: THREE.BufferGeometry }>({});
+  const materialCacheRef = useRef<{ [key: string]: THREE.Material }>({});
+
   useEffect(() => {
     currentSeverityRef.current = severity;
   }, [severity]);
@@ -138,86 +148,205 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, mark
     });
   };
 
-  const updateAllMarkers = () => {
-    if (!sceneRef.current) return;
-    
-    Object.values(markerGroupsRef.current).forEach(group => {
-      while(group.children.length > 0) {
-        group.remove(group.children[0]);
+  // Get or create cached geometry
+  const getCachedGeometry = (type: string, size: number): THREE.BufferGeometry => {
+    const key = `${type}_${size.toFixed(2)}`;
+    if (!geometryCacheRef.current[key]) {
+      switch (type) {
+        case 'square':
+          geometryCacheRef.current[key] = new THREE.BoxGeometry(size * 1.5, size * 1.5, size * 1.5);
+          break;
+        case 'triangle':
+          geometryCacheRef.current[key] = new THREE.ConeGeometry(size, size * 2, 3);
+          break;
+        case 'circle':
+        default:
+          geometryCacheRef.current[key] = new THREE.SphereGeometry(size, 12, 12);
+          break;
       }
-    });
-
-    const currentLesions = useLesionStore.getState().lesions;
-    currentLesions.forEach(lesion => {
-      viewsRef.current.forEach((view, viewIdx) => {
-        createMarkerForView(lesion, viewIdx, view);
-      });
-    });
+    }
+    return geometryCacheRef.current[key];
   };
 
-  const createMarkerForView = (lesion: Lesion, viewIdx: number, view: any) => {
-    if (!markerGroupsRef.current[viewIdx]) {
-      markerGroupsRef.current[viewIdx] = new THREE.Group();
-      sceneRef.current?.add(markerGroupsRef.current[viewIdx]);
+  // Get or create cached material
+  const getCachedMaterial = (color: number): THREE.MeshStandardMaterial => {
+    const key = `mat_${color}`;
+    if (!materialCacheRef.current[key]) {
+      materialCacheRef.current[key] = new THREE.MeshStandardMaterial({
+        color: color,
+        roughness: 0.2,
+        metalness: 0.6,
+        emissive: color,
+        emissiveIntensity: 0.4
+      });
     }
+    return materialCacheRef.current[key] as THREE.MeshStandardMaterial;
+  };
 
-    const markerGroup = markerGroupsRef.current[viewIdx];
+  // Add markers for a single lesion (in all 4 views)
+  const addMarkersForLesion = (lesion: Lesion) => {
+    if (!sceneRef.current || markersByLesionRef.current[lesion.id]) return;
     
+    const markers: THREE.Object3D[] = [];
     const markerSize = lesion.size ?? 0.18;
     const markerColor = lesion.color ? parseInt(lesion.color.replace('#', ''), 16) : COLORS[lesion.severity];
     const markerType = lesion.markerType ?? 'circle';
     
-    let markerGeometry: THREE.BufferGeometry;
+    const geometry = getCachedGeometry(markerType, markerSize);
+    const material = getCachedMaterial(markerColor);
     
-    switch (markerType) {
-      case 'square':
-        markerGeometry = new THREE.BoxGeometry(markerSize * 1.5, markerSize * 1.5, markerSize * 1.5);
-        break;
-      case 'triangle':
-        markerGeometry = new THREE.ConeGeometry(markerSize, markerSize * 2, 3);
-        break;
-      case 'circle':
-      default:
-        markerGeometry = new THREE.SphereGeometry(markerSize, 12, 12);
-        break;
-    }
-    
-    const markerMaterial = new THREE.MeshStandardMaterial({
-      color: markerColor,
-      roughness: 0.2,
-      metalness: 0.6,
-      emissive: markerColor,
-      emissiveIntensity: 0.4
+    viewsRef.current.forEach((view, viewIdx) => {
+      if (!markerGroupsRef.current[viewIdx]) {
+        markerGroupsRef.current[viewIdx] = new THREE.Group();
+        sceneRef.current?.add(markerGroupsRef.current[viewIdx]);
+      }
+      
+      const markerGroup = markerGroupsRef.current[viewIdx];
+      
+      // Create marker mesh (clone geometry for independent transforms)
+      const marker = new THREE.Mesh(geometry.clone(), material);
+      marker.position.set(lesion.position.x, lesion.position.y, lesion.position.z);
+      marker.userData.lesionId = lesion.id;
+      markerGroup.add(marker);
+      markers.push(marker);
+      
+      // Add ring for orthographic views
+      if (viewIdx > 0) {
+        const ringRadius = markerSize * 1.4;
+        const ringGeometry = new THREE.BufferGeometry();
+        const ringPositions = [];
+        const ringSegments = 32;
+        for (let i = 0; i <= ringSegments; i++) {
+          const angle = (i / ringSegments) * Math.PI * 2;
+          ringPositions.push(
+            lesion.position.x + Math.cos(angle) * ringRadius,
+            lesion.position.y + Math.sin(angle) * ringRadius,
+            lesion.position.z
+          );
+        }
+        ringGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(ringPositions), 3));
+        const ringMaterial = new THREE.LineBasicMaterial({
+          color: markerColor,
+          linewidth: 2,
+          transparent: true,
+          opacity: 0.7
+        });
+        const ring = new THREE.Line(ringGeometry, ringMaterial);
+        ring.userData.lesionId = lesion.id;
+        markerGroup.add(ring);
+        markers.push(ring);
+      }
     });
     
-    const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-    marker.position.set(lesion.position.x, lesion.position.y, lesion.position.z);
-    markerGroup.add(marker);
+    markersByLesionRef.current[lesion.id] = markers;
+  };
 
-    const ringRadius = markerSize * 1.4;
+  // Remove markers for a single lesion
+  const removeMarkersForLesion = (lesionId: string) => {
+    const markers = markersByLesionRef.current[lesionId];
+    if (!markers) return;
     
-    if (viewIdx > 0) {
-      const ringGeometry = new THREE.BufferGeometry();
-      const ringPositions = [];
-      const ringSegments = 32;
-      for (let i = 0; i <= ringSegments; i++) {
-        const angle = (i / ringSegments) * Math.PI * 2;
-        ringPositions.push(
-          lesion.position.x + Math.cos(angle) * ringRadius,
-          lesion.position.y + Math.sin(angle) * ringRadius,
-          lesion.position.z
-        );
+    markers.forEach(marker => {
+      if (marker.parent) {
+        marker.parent.remove(marker);
       }
-      ringGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(ringPositions), 3));
-      const ringMaterial = new THREE.LineBasicMaterial({
-        color: markerColor,
-        linewidth: 2,
-        transparent: true,
-        opacity: 0.7
-      });
-      const ring = new THREE.Line(ringGeometry, ringMaterial);
-      markerGroup.add(ring);
-    }
+    });
+    
+    delete markersByLesionRef.current[lesionId];
+  };
+
+  // Update position of existing markers for a lesion
+  const updateMarkerPositions = (lesionId: string, position: { x: number; y: number; z: number }, lesionSize?: number) => {
+    const markers = markersByLesionRef.current[lesionId];
+    if (!markers) return;
+    
+    const size = lesionSize ?? 0.18;
+    const ringRadius = size * 1.4;
+    
+    markers.forEach(marker => {
+      if (marker instanceof THREE.Mesh) {
+        marker.position.set(position.x, position.y, position.z);
+      } else if (marker instanceof THREE.Line) {
+        // Rebuild ring geometry at new position using actual size
+        const geometry = marker.geometry as THREE.BufferGeometry;
+        const positions = geometry.getAttribute('position');
+        if (positions) {
+          const ringSegments = 32;
+          for (let i = 0; i <= ringSegments; i++) {
+            const angle = (i / ringSegments) * Math.PI * 2;
+            positions.setXYZ(i, 
+              position.x + Math.cos(angle) * ringRadius,
+              position.y + Math.sin(angle) * ringRadius,
+              position.z
+            );
+          }
+          positions.needsUpdate = true;
+        }
+      }
+    });
+  };
+
+  // Check if lesion appearance changed (size, color, type)
+  const lesionAppearanceChanged = (prev: Lesion, curr: Lesion): boolean => {
+    return prev.size !== curr.size || 
+           prev.color !== curr.color || 
+           prev.markerType !== curr.markerType ||
+           prev.severity !== curr.severity;
+  };
+
+  // Smart update: only add/remove/move what changed
+  const updateAllMarkers = () => {
+    if (!sceneRef.current) return;
+    
+    const currentLesions = useLesionStore.getState().lesions;
+    const prevLesions = prevLesionsRef.current;
+    
+    const currentIds = new Set(currentLesions.map(l => l.id));
+    const prevIds = new Set(prevLesions.map(l => l.id));
+    
+    // Find removed lesions
+    prevLesions.forEach(lesion => {
+      if (!currentIds.has(lesion.id)) {
+        removeMarkersForLesion(lesion.id);
+      }
+    });
+    
+    // Find added or updated lesions
+    currentLesions.forEach(lesion => {
+      if (!prevIds.has(lesion.id)) {
+        // New lesion - add markers
+        addMarkersForLesion(lesion);
+      } else {
+        // Existing lesion - check what changed
+        const prev = prevLesions.find(p => p.id === lesion.id);
+        if (prev) {
+          // Check if appearance changed (size, color, type, severity)
+          if (lesionAppearanceChanged(prev, lesion)) {
+            // Appearance changed - rebuild markers completely
+            removeMarkersForLesion(lesion.id);
+            addMarkersForLesion(lesion);
+          } else if (
+            prev.position.x !== lesion.position.x ||
+            prev.position.y !== lesion.position.y ||
+            prev.position.z !== lesion.position.z
+          ) {
+            // Only position changed - update positions efficiently
+            updateMarkerPositions(lesion.id, lesion.position, lesion.size);
+          }
+        }
+      }
+    });
+    
+    // Update prev reference with deep copy
+    prevLesionsRef.current = currentLesions.map(l => ({ 
+      ...l, 
+      position: { ...l.position } 
+    }));
+  };
+
+  // Legacy function for compatibility - creates all markers from scratch
+  const createMarkerForView = (lesion: Lesion, viewIdx: number, view: any) => {
+    addMarkersForLesion(lesion);
   };
 
   useEffect(() => {
@@ -518,9 +647,18 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, mark
       }
     };
 
-    // Pointer move: Update dragged lesion position in real-time
+    // Throttle for drag updates (16ms = ~60fps)
+    let lastMoveTime = 0;
+    const MOVE_THROTTLE_MS = 16;
+
+    // Pointer move: Update dragged lesion position with throttle
     const handleViewMove = (viewIdx: number) => (event: PointerEvent) => {
       if (!dragStateRef.current.isDragging || dragStateRef.current.viewIdx !== viewIdx) return;
+
+      // Throttle updates to 60fps max
+      const now = performance.now();
+      if (now - lastMoveTime < MOVE_THROTTLE_MS) return;
+      lastMoveTime = now;
 
       const worldPos = convertScreenToWorldCoords(event, viewIdx);
       if (worldPos && dragStateRef.current.lesionId) {

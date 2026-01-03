@@ -5,9 +5,9 @@ const COLORS: Record<string, number> = {
   deep: 0x3b82f6
 };
 
-const THREE_JS_CDN = 'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js';
-const ORBIT_CONTROLS_CDN = 'https://cdn.jsdelivr.net/npm/three@0.162.0/examples/js/controls/OrbitControls.js';
-const GLTF_LOADER_CDN = 'https://cdn.jsdelivr.net/npm/three@0.162.0/examples/js/loaders/GLTFLoader.js';
+const THREE_JS_URL = '/vendor/three.min.js';
+const ORBIT_CONTROLS_URL = '/vendor/OrbitControls.js';
+const GLTF_LOADER_URL = '/vendor/GLTFLoader.js';
 
 async function fetchScript(url: string): Promise<string> {
   const response = await fetch(url);
@@ -20,9 +20,9 @@ async function fetchScript(url: string): Promise<string> {
 export async function export3DModelAsHtml(lesions: Lesion[], modelUrl: string = '/model.glb'): Promise<void> {
   const [modelResponse, threeJs, orbitControls, gltfLoader] = await Promise.all([
     fetch(modelUrl),
-    fetchScript(THREE_JS_CDN),
-    fetchScript(ORBIT_CONTROLS_CDN),
-    fetchScript(GLTF_LOADER_CDN)
+    fetchScript(THREE_JS_URL),
+    fetchScript(ORBIT_CONTROLS_URL),
+    fetchScript(GLTF_LOADER_URL)
   ]);
   
   if (!modelResponse.ok) {

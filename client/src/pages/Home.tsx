@@ -5,8 +5,9 @@ import { useLesionStore, Severity, Lesion } from '@/lib/lesionStore';
 import { useReportStore } from '@/lib/reportStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2, FileText, Download, Camera } from 'lucide-react';
+import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2, FileText, Download, Camera, Share2 } from 'lucide-react';
 import { export3DModelAsHtml } from '@/lib/export3DHtml';
+import { saveCaseToDb, isSupabaseConfigured } from '@/lib/caseDb';
 import AppLayout from '@/components/AppLayout';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -35,6 +36,34 @@ export default function Home() {
   };
 
   const [isExporting, setIsExporting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveAndShare = async () => {
+    if (lesions.length === 0) {
+      alert('Adicione pelo menos uma lesão antes de salvar.');
+      return;
+    }
+    if (!isSupabaseConfigured()) {
+      alert('Supabase não está configurado. Configure as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const caseId = await saveCaseToDb({
+        patient_name: examInfo.patient,
+        exam_date: examInfo.date,
+        lesions: lesions,
+      });
+      const shareUrl = `${window.location.origin}/view/${caseId}`;
+      await navigator.clipboard.writeText(shareUrl);
+      alert(`Caso salvo! Link copiado:\n${shareUrl}`);
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      alert('Erro ao salvar o caso. Verifique a configuração do Supabase.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleExportHtml = async () => {
     if (lesions.length === 0) {
@@ -284,6 +313,17 @@ export default function Home() {
               >
                 <Download className="w-3.5 h-3.5 mr-1.5" />
                 {isExporting ? 'Exportando...' : 'Exportar 3D'}
+              </Button>
+
+              <Button 
+                size="sm" 
+                onClick={handleSaveAndShare}
+                disabled={isSaving}
+                className="text-xs h-9 bg-cyan-600 text-white hover:bg-cyan-700 border border-cyan-500"
+                data-testid="button-save-share"
+              >
+                <Share2 className="w-3.5 h-3.5 mr-1.5" />
+                {isSaving ? 'Salvando...' : 'Salvar & Compartilhar'}
               </Button>
 
               <Button 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { loadCaseFromDb, CaseData, isSupabaseConfigured } from '@/lib/caseDb';
 import { useLesionStore } from '@/lib/lesionStore';
-import Uterus3D from '@/components/Uterus3D';
+import { Uterus3D } from '@/components/Uterus3D';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar, User, AlertCircle, Loader2 } from 'lucide-react';
@@ -16,6 +16,8 @@ export default function CaseViewer() {
   const { setLesions, clearLesions } = useLesionStore();
 
   useEffect(() => {
+    clearLesions();
+    
     if (!caseId) {
       setError('ID do caso não fornecido');
       setLoading(false);

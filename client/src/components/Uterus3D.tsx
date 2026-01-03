@@ -5,12 +5,13 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useLesionStore, Lesion, Severity, MarkerType } from '@/lib/lesionStore';
 
 interface Uterus3DProps {
-  severity: Severity;
+  severity?: Severity;
   markerSize?: number;
   markerColor?: string;
   markerType?: MarkerType;
-  onLesionCountChange: (count: number) => void;
-  onLesionsUpdate: (lesions: Lesion[]) => void;
+  onLesionCountChange?: (count: number) => void;
+  onLesionsUpdate?: (lesions: Lesion[]) => void;
+  readOnly?: boolean;
 }
 
 export interface Uterus3DRef {
@@ -25,7 +26,13 @@ const COLORS = {
   deep: 0x3b82f6
 };
 
-export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, markerSize = 0.18, markerColor, markerType = 'circle', onLesionCountChange, onLesionsUpdate }, ref) => {
+export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity = 'superficial', markerSize = 0.18, markerColor, markerType = 'circle', onLesionCountChange, onLesionsUpdate, readOnly = false }, ref) => {
+  const readOnlyRef = useRef(readOnly);
+  
+  useEffect(() => {
+    readOnlyRef.current = readOnly;
+  }, [readOnly]);
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewMainRef = useRef<HTMLDivElement>(null);
   const viewSagittalRef = useRef<HTMLDivElement>(null);
@@ -78,8 +85,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, mark
   }, [markerType]);
 
   useEffect(() => {
-    onLesionCountChange(lesions.length);
-    onLesionsUpdate([...lesions]);
+    onLesionCountChange?.(lesions.length);
+    onLesionsUpdate?.([...lesions]);
     if (updateMarkersRef.current) {
       updateMarkersRef.current();
     }
@@ -623,6 +630,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, mark
 
     // Pointer down: Check if clicking on existing lesion or creating new one
     const handleViewClick = (viewIdx: number) => (event: PointerEvent) => {
+      // Skip in read-only mode
+      if (readOnlyRef.current) return;
       // Only process left mouse button (button === 0)
       if (event.button !== 0) return;
       
@@ -653,6 +662,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, mark
 
     // Pointer move: Update dragged lesion position with throttle
     const handleViewMove = (viewIdx: number) => (event: PointerEvent) => {
+      if (readOnlyRef.current) return;
       if (!dragStateRef.current.isDragging || dragStateRef.current.viewIdx !== viewIdx) return;
 
       // Throttle updates to 60fps max
@@ -671,6 +681,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, mark
 
     // Pointer up: Stop dragging
     const handleViewUp = (viewIdx: number) => (event: PointerEvent) => {
+      if (readOnlyRef.current) return;
       if (!dragStateRef.current.isDragging) return;
 
       dragStateRef.current = { isDragging: false, lesionId: null, viewIdx: 0 };
@@ -681,6 +692,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, mark
 
     // Double-click: Delete lesion
     const handleViewDoubleClick = (viewIdx: number) => (event: PointerEvent) => {
+      if (readOnlyRef.current) return;
       const lesionId = detectLesionMarker(event, viewIdx);
       
       if (lesionId) {

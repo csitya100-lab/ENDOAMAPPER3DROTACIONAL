@@ -2,7 +2,6 @@ import { Lesion } from './lesionStore';
 
 const COLORS: Record<string, number> = {
   superficial: 0xef4444,
-  moderate: 0xf97316,
   deep: 0x3b82f6
 };
 
@@ -155,7 +154,6 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
       border-radius: 50%;
     }
     .dot-superficial { background: #ef4444; }
-    .dot-moderate { background: #f97316; }
     .dot-deep { background: #3b82f6; }
     #loading {
       position: absolute;
@@ -201,7 +199,6 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
     <div id="legend">
       <h4>Legenda</h4>
       <div class="legend-item"><div class="legend-dot dot-superficial"></div> Superficial</div>
-      <div class="legend-item"><div class="legend-dot dot-moderate"></div> Moderada</div>
       <div class="legend-item"><div class="legend-dot dot-deep"></div> Profunda</div>
     </div>
   </div>

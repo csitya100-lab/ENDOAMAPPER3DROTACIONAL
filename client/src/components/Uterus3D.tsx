@@ -411,7 +411,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity, mark
         controls = new OrbitControls(camera, element);
         controls.enableRotate = false;
         controls.enableZoom = true;
-        controls.enablePan = true;
+        controls.enablePan = false;
       }
 
       camera.up.set(upVec[0], upVec[1], upVec[2]);

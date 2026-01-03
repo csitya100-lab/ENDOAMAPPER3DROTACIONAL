@@ -70,7 +70,7 @@ export default function Home() {
   };
 
   const handleGenerateReport = () => {
-    if (!draftImages2D.sagittal && !draftImages2D.coronal && !draftImages2D.posterior) {
+    if (!draftImages2D['sagittal-avf'] && !draftImages2D['sagittal-rvf'] && !draftImages2D.coronal && !draftImages2D.posterior) {
       const proceed = confirm('Nenhuma imagem 2D foi capturada ainda. Deseja continuar mesmo assim?');
       if (!proceed) return;
     }
@@ -81,10 +81,16 @@ export default function Home() {
       examDate: examInfo.date,
       examType: 'Mapeamento EndoMapper',
       images2D: draftImages2D,
+      imageNotes: {
+        "sagittal-avf": "",
+        "sagittal-rvf": "",
+        coronal: "",
+        posterior: "",
+      },
       lesions: lesions.map((l, idx) => ({
         id: l.id,
         name: `Lesão ${String.fromCharCode(65 + idx)}`,
-        location: l.location || (l.severity === 'superficial' ? 'Região Superficial' : l.severity === 'moderate' ? 'Região Moderada' : 'Região Profunda'),
+        location: l.location || (l.severity === 'superficial' ? 'Região Superficial' : 'Região Profunda'),
         severity: l.severity,
         position: l.position
       })),
@@ -185,18 +191,6 @@ export default function Home() {
                 Superficial
               </button>
               <button
-                onClick={() => setSeverity('moderate')}
-                className={`
-                  px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-all
-                  ${severity === 'moderate' 
-                    ? 'bg-orange-100 text-orange-700 border border-orange-300' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white'}
-                `}
-              >
-                <div className={`w-2 h-2 rounded-full ${severity === 'moderate' ? 'bg-orange-500' : 'bg-slate-400'}`} />
-                Moderate
-              </button>
-              <button
                 onClick={() => setSeverity('deep')}
                 className={`
                   px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-all
@@ -206,7 +200,7 @@ export default function Home() {
                 `}
               >
                 <div className={`w-2 h-2 rounded-full ${severity === 'deep' ? 'bg-blue-500' : 'bg-slate-400'}`} />
-                Deep
+                Profunda
               </button>
             </div>
 
@@ -347,13 +341,6 @@ export default function Home() {
                   </span>
                   <span className="text-sm font-bold text-red-600">{getLesionCount('superficial')}</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-orange-50 border border-orange-200">
-                  <span className="text-xs text-slate-600 flex items-center gap-2 font-medium">
-                    <Circle className="w-2.5 h-2.5 fill-orange-500 text-orange-500" />
-                    Moderada
-                  </span>
-                  <span className="text-sm font-bold text-orange-600">{getLesionCount('moderate')}</span>
-                </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 border border-blue-200">
                   <span className="text-xs text-slate-600 flex items-center gap-2 font-medium">
                     <Circle className="w-2.5 h-2.5 fill-blue-500 text-blue-500" />
@@ -412,9 +399,9 @@ export default function Home() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 mb-1.5">
-                          <Circle className="w-2.5 h-2.5 fill-current flex-shrink-0" style={{ color: lesion.color || (lesion.severity === 'superficial' ? '#ef4444' : lesion.severity === 'moderate' ? '#f97316' : '#3b82f6') }} />
+                          <Circle className="w-2.5 h-2.5 fill-current flex-shrink-0" style={{ color: lesion.color || (lesion.severity === 'superficial' ? '#ef4444' : '#3b82f6') }} />
                           <span className="text-[10px] text-slate-600 font-medium capitalize">
-                            {lesion.severity === 'superficial' ? 'Superficial' : lesion.severity === 'moderate' ? 'Moderada' : 'Profunda'}
+                            {lesion.severity === 'superficial' ? 'Superficial' : 'Profunda'}
                           </span>
                           {lesion.size && lesion.size !== 0.18 && (
                             <span className="text-[9px] text-slate-400">({lesion.size.toFixed(2)})</span>

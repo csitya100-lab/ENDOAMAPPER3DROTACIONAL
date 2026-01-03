@@ -49,7 +49,7 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>EndoMapper - Visualizador 3D</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -58,6 +58,7 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
       background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
       min-height: 100vh;
       overflow: hidden;
+      touch-action: none;
     }
     #container {
       width: 100vw;
@@ -74,7 +75,7 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
       top: 0;
       left: 0;
       right: 0;
-      padding: 16px 24px;
+      padding: 12px 16px;
       background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
       display: flex;
       align-items: center;
@@ -84,11 +85,11 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
     #logo {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
     #logo-icon {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 8px;
       background: linear-gradient(135deg, #ec4899, #e11d48);
       display: flex;
@@ -96,61 +97,62 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
       justify-content: center;
       color: white;
       font-weight: bold;
-      font-size: 14px;
+      font-size: 12px;
     }
     #logo-text {
       color: white;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 700;
     }
     #logo-text span { color: #f43f5e; }
     #info {
       color: rgba(255,255,255,0.8);
-      font-size: 14px;
+      font-size: 12px;
       text-align: right;
     }
     #info strong { color: white; }
     #controls-hint {
       position: absolute;
-      bottom: 24px;
+      bottom: 80px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0,0,0,0.6);
       color: rgba(255,255,255,0.8);
-      padding: 12px 24px;
+      padding: 10px 20px;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 11px;
       z-index: 10;
       backdrop-filter: blur(8px);
+      white-space: nowrap;
     }
     #legend {
       position: absolute;
-      bottom: 24px;
-      right: 24px;
+      bottom: 16px;
+      right: 16px;
       background: rgba(0,0,0,0.6);
-      padding: 16px;
-      border-radius: 12px;
+      padding: 12px;
+      border-radius: 10px;
       z-index: 10;
       backdrop-filter: blur(8px);
     }
     #legend h4 {
       color: white;
-      font-size: 12px;
-      margin-bottom: 12px;
+      font-size: 10px;
+      margin-bottom: 8px;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
     .legend-item {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       color: rgba(255,255,255,0.8);
-      font-size: 13px;
-      margin-bottom: 6px;
+      font-size: 11px;
+      margin-bottom: 4px;
     }
     .legend-dot {
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
     }
     .dot-superficial { background: #ef4444; }
@@ -161,8 +163,9 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
       left: 50%;
       transform: translate(-50%, -50%);
       color: white;
-      font-size: 18px;
+      font-size: 16px;
       z-index: 20;
+      text-align: center;
     }
     .spinner {
       width: 40px;
@@ -174,6 +177,13 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
       margin: 0 auto 16px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 600px) {
+      #controls-hint { display: none; }
+      #header { padding: 8px 12px; }
+      #logo-icon { width: 30px; height: 30px; font-size: 10px; }
+      #logo-text { font-size: 14px; }
+      #info { font-size: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -194,7 +204,7 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
       </div>
     </div>
     <div id="controls-hint">
-      🖱️ Arraste para rotacionar • Scroll para zoom • Shift+Arraste para mover
+      Arraste para rotacionar • Pinça para zoom
     </div>
     <div id="legend">
       <h4>Legenda</h4>
@@ -203,169 +213,166 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
     </div>
   </div>
 
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
-    }
-  }
-  </script>
-  <script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+  <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js"><\/script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/examples/js/controls/OrbitControls.js"><\/script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/examples/js/loaders/GLTFLoader.js"><\/script>
+  <script>
+    (function() {
+      var LESIONS = ${lesionsJson};
+      var MODEL_DATA = "${modelBase64}";
 
-    const LESIONS = ${lesionsJson};
-    const MODEL_DATA = "${modelBase64}";
+      document.getElementById('lesion-count').textContent = LESIONS.length;
 
-    document.getElementById('lesion-count').textContent = LESIONS.length;
+      var canvas = document.getElementById('canvas');
+      var loading = document.getElementById('loading');
 
-    const canvas = document.getElementById('canvas');
-    const container = document.getElementById('container');
-    const loading = document.getElementById('loading');
+      var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      var pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 2 : 3);
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a0a);
-
-    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(4, 2, 4);
-
-    const controls = new OrbitControls(camera, canvas);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.autoRotate = false;
-    controls.minDistance = 2;
-    controls.maxDistance = 15;
-
-    const ambientLight = new THREE.AmbientLight(0xFFF5E1, 0.7);
-    scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.3);
-    dirLight.position.set(8, 8, 5);
-    dirLight.castShadow = true;
-    scene.add(dirLight);
-
-    const backLight = new THREE.DirectionalLight(0xB0E0E6, 0.4);
-    backLight.position.set(-5, 3, -5);
-    scene.add(backLight);
-
-    const fillLight = new THREE.PointLight(0xFFE4E1, 0.5, 12);
-    fillLight.position.set(3, 0, 3);
-    scene.add(fillLight);
-
-    const loader = new GLTFLoader();
-    
-    const byteString = atob(MODEL_DATA.split(',')[1]);
-    const mimeString = MODEL_DATA.split(',')[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    const modelBlob = new Blob([ab], { type: mimeString });
-    const modelUrl = URL.createObjectURL(modelBlob);
-
-    loader.load(modelUrl, (gltf) => {
-      const model = gltf.scene;
-      
-      const box = new THREE.Box3().setFromObject(model);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-      
-      model.position.x += (model.position.x - center.x);
-      model.position.y += (model.position.y - center.y);
-      model.position.z += (model.position.z - center.z);
-      
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const scale = 4 / maxDim;
-      model.scale.set(scale, scale, scale);
-
-      model.traverse((child) => {
-        if (child.isMesh) {
-          const mesh = child;
-          let originalColor = new THREE.Color(0xffffff);
-          let originalMat = mesh.material;
-          if (Array.isArray(originalMat)) originalMat = originalMat[0];
-          if (originalMat.color) originalColor = originalMat.color.clone();
-          
-          const r = originalColor.r, g = originalColor.g, b = originalColor.b;
-          let newColor = new THREE.Color(0xDD8A96);
-          
-          if (r > 0.8 && g > 0.8 && b < 0.4) newColor = new THREE.Color(0xFFD700);
-          else if (r < 0.4 && g > 0.7 && b > 0.8) newColor = new THREE.Color(0x87CEEB);
-          else if (r > 0.7 && g > 0.4 && b > 0.3 && r - g > 0.2) newColor = new THREE.Color(0xD4956F);
-          
-          mesh.material = new THREE.MeshPhysicalMaterial({
-            color: newColor,
-            roughness: 0.45,
-            metalness: 0.05,
-            clearcoat: 0.1,
-            envMapIntensity: 0.5,
-            transparent: true,
-            opacity: 0.85,
-            side: THREE.DoubleSide
-          });
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-        }
+      var renderer = new THREE.WebGLRenderer({ 
+        canvas: canvas, 
+        antialias: !isMobile,
+        alpha: true,
+        powerPreference: 'high-performance'
       });
-
-      scene.add(model);
-
-      LESIONS.forEach(lesion => {
-        let geometry;
-        switch (lesion.markerType) {
-          case 'square':
-            geometry = new THREE.BoxGeometry(lesion.size * 1.5, lesion.size * 1.5, lesion.size * 1.5);
-            break;
-          case 'triangle':
-            geometry = new THREE.ConeGeometry(lesion.size, lesion.size * 2, 3);
-            break;
-          case 'circle':
-          default:
-            geometry = new THREE.SphereGeometry(lesion.size, 12, 12);
-            break;
-        }
-        const material = new THREE.MeshStandardMaterial({
-          color: lesion.color,
-          roughness: 0.2,
-          metalness: 0.6,
-          emissive: lesion.color,
-          emissiveIntensity: 0.4
-        });
-        const marker = new THREE.Mesh(geometry, material);
-        marker.position.set(lesion.position.x, lesion.position.y, lesion.position.z);
-        scene.add(marker);
-      });
-
-      loading.style.display = 'none';
-      URL.revokeObjectURL(modelUrl);
-    }, undefined, (error) => {
-      console.error('Erro ao carregar modelo:', error);
-      loading.innerHTML = '<div style="color:#f43f5e">Erro ao carregar o modelo 3D</div>';
-    });
-
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(pixelRatio);
       renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-  </script>
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      var scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0a0a);
+
+      var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(4, 2, 4);
+
+      var controls = new THREE.OrbitControls(camera, canvas);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.autoRotate = false;
+      controls.minDistance = 2;
+      controls.maxDistance = 15;
+      controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+
+      var ambientLight = new THREE.AmbientLight(0xFFF5E1, 0.8);
+      scene.add(ambientLight);
+
+      var dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.2);
+      dirLight.position.set(8, 8, 5);
+      scene.add(dirLight);
+
+      var backLight = new THREE.DirectionalLight(0xB0E0E6, 0.3);
+      backLight.position.set(-5, 3, -5);
+      scene.add(backLight);
+
+      var loader = new THREE.GLTFLoader();
+      
+      try {
+        var base64Parts = MODEL_DATA.split(',');
+        var byteString = atob(base64Parts[1]);
+        var mimeString = base64Parts[0].split(':')[1].split(';')[0];
+        var ab = new ArrayBuffer(byteString.length);
+        var ia = new Uint8Array(ab);
+        for (var i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        var modelBlob = new Blob([ab], { type: mimeString });
+        var modelUrl = URL.createObjectURL(modelBlob);
+
+        loader.load(modelUrl, function(gltf) {
+          var model = gltf.scene;
+          
+          var box = new THREE.Box3().setFromObject(model);
+          var center = box.getCenter(new THREE.Vector3());
+          var size = box.getSize(new THREE.Vector3());
+          
+          model.position.x += (model.position.x - center.x);
+          model.position.y += (model.position.y - center.y);
+          model.position.z += (model.position.z - center.z);
+          
+          var maxDim = Math.max(size.x, size.y, size.z);
+          var scale = 4 / maxDim;
+          model.scale.set(scale, scale, scale);
+
+          model.traverse(function(child) {
+            if (child.isMesh) {
+              var mesh = child;
+              var originalColor = new THREE.Color(0xffffff);
+              var originalMat = mesh.material;
+              if (Array.isArray(originalMat)) originalMat = originalMat[0];
+              if (originalMat && originalMat.color) originalColor = originalMat.color.clone();
+              
+              var r = originalColor.r, g = originalColor.g, b = originalColor.b;
+              var newColor = new THREE.Color(0xDD8A96);
+              
+              if (r > 0.8 && g > 0.8 && b < 0.4) newColor = new THREE.Color(0xFFD700);
+              else if (r < 0.4 && g > 0.7 && b > 0.8) newColor = new THREE.Color(0x87CEEB);
+              else if (r > 0.7 && g > 0.4 && b > 0.3 && r - g > 0.2) newColor = new THREE.Color(0xD4956F);
+              
+              mesh.material = new THREE.MeshStandardMaterial({
+                color: newColor,
+                roughness: 0.5,
+                metalness: 0.1,
+                transparent: true,
+                opacity: 0.85,
+                side: THREE.DoubleSide
+              });
+            }
+          });
+
+          scene.add(model);
+
+          LESIONS.forEach(function(lesion) {
+            var geometry;
+            switch (lesion.markerType) {
+              case 'square':
+                geometry = new THREE.BoxGeometry(lesion.size * 1.5, lesion.size * 1.5, lesion.size * 1.5);
+                break;
+              case 'triangle':
+                geometry = new THREE.ConeGeometry(lesion.size, lesion.size * 2, 3);
+                break;
+              case 'circle':
+              default:
+                geometry = new THREE.SphereGeometry(lesion.size, 16, 16);
+                break;
+            }
+            var material = new THREE.MeshStandardMaterial({
+              color: lesion.color,
+              roughness: 0.3,
+              metalness: 0.5,
+              emissive: lesion.color,
+              emissiveIntensity: 0.3
+            });
+            var marker = new THREE.Mesh(geometry, material);
+            marker.position.set(lesion.position.x, lesion.position.y, lesion.position.z);
+            scene.add(marker);
+          });
+
+          loading.style.display = 'none';
+          URL.revokeObjectURL(modelUrl);
+        }, undefined, function(error) {
+          console.error('Erro ao carregar modelo:', error);
+          loading.innerHTML = '<div style="color:#f43f5e">Erro ao carregar o modelo 3D</div>';
+        });
+      } catch (e) {
+        console.error('Erro ao processar modelo:', e);
+        loading.innerHTML = '<div style="color:#f43f5e">Erro ao processar o modelo 3D</div>';
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      window.addEventListener('resize', function() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    })();
+  <\/script>
 </body>
 </html>`;
 }

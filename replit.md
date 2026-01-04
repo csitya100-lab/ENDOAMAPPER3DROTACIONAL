@@ -42,13 +42,26 @@ Minimalist UI: Removed thickness slider, export buttons, and unnecessary feature
 2. **Home/3D** (`/3d`): Main 3D visualization interface with lesion controls - synchronized across all 4 view perspectives
    - **Capturar 3D**: Captures current 3D view as PNG and adds directly to report images
    - **Exportar 3D**: Generates standalone HTML file with embedded 3D model and lesions for sharing
-3. **Vistas 2D** (`/vistas-2d`): Independent 2D views editor with drawing tools for precise lesion annotation
-4. **Preview Report** (`/preview-report`): Prévia do relatório com imagens capturadas, observações e exportação PDF
-5. **Relatório Público** (`/relatorio/:id`): Public report page for doctors to view via unique link
+   - **Save & Share**: Saves case to Supabase and copies share link
+3. **Model3DViewer** (`/3d/:caseId`): Simple 3D viewer for doctors (sharing)
+   - Touch-optimized controls for iOS Safari compatibility
+   - Drag to rotate, scroll/pinch to zoom
+   - Loads lesion data from Supabase by caseId
+   - Download GLB button for use in other software
+   - Read-only (no editing capabilities)
+4. **CaseViewer** (`/view/:caseId`): Full read-only case viewer with 4-panel 3D view
+5. **Vistas 2D** (`/vistas-2d`): Independent 2D views editor with drawing tools for precise lesion annotation
+6. **Preview Report** (`/preview-report`): Prévia do relatório com imagens capturadas, observações e exportação PDF
+7. **Relatório Público** (`/relatorio/:id`): Public report page for doctors to view via unique link
    - Header: patient name, exam date, patient ID
    - Left column (60%): Interactive 3D model with lesions
    - Right column (40%): 2D views (sagittal, coronal, posterior) + exam photo gallery
    - Footer: Lesion summary with severity colors (Superficial=Rosa, Moderada=Laranja, Profunda=Amarelo)
+
+### Supabase Integration
+- **Table**: `cases` with columns: id (UUID), patient_name, exam_date, lesions (JSONB), notes, created_at
+- **Client**: `client/src/lib/caseDb.ts` - saveCaseToDb() and loadCaseFromDb() functions
+- **Environment Variables**: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
 
 ### Critical Architecture Rules
 - **NEVER modify**: Home.tsx, Uterus3D.tsx, or lesionStore.ts - 3D model sync must remain intact

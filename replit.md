@@ -50,6 +50,24 @@ Minimalist UI: Removed thickness slider, export buttons, and unnecessary feature
    - Right column (40%): 2D views (sagittal, coronal, posterior) + exam photo gallery
    - Footer: Lesion summary with severity colors (Superficial=Rosa, Moderada=Laranja, Profunda=Amarelo)
 
+### 3D Model Loading Optimizations (Jan 2026)
+- **Device Detection**: Automatic detection of iOS and mobile devices
+- **WebGL Optimizations for Mobile**:
+  - Reduced pixel ratio (max 2x on iOS)
+  - Shadows disabled on mobile devices
+  - MeshStandardMaterial instead of MeshPhysicalMaterial on mobile
+  - Clearcoat effects disabled on iOS
+  - Low-power WebGL preference on iOS
+- **Loading UX**:
+  - Progress indicator with percentage during model load
+  - 15-second timeout with fallback sphere model
+  - Error overlay with retry button
+  - Fallback notice when simplified mode active
+- **IndexedDB Caching**:
+  - Model cached in IndexedDB after first load
+  - Faster subsequent loads from cache
+  - Graceful degradation if cache unavailable
+
 ### Critical Architecture Rules
 - **NEVER modify**: Home.tsx, Uterus3D.tsx, or lesionStore.ts - 3D model sync must remain intact
 - **Vistas2D is INDEPENDENT**: No lesion sync between 2D views (only within 3D model)

@@ -825,17 +825,10 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       const intersects = markerRaycaster.intersectObjects(markerGroup.children, true);
       
       if (intersects.length > 0) {
-        const currentLesions = useLesionStore.getState().lesions;
-        for (const lesion of currentLesions) {
-          const markerWorldPos = new THREE.Vector3();
-          for (const child of markerGroup.children) {
-            if (child.position.distanceTo(new THREE.Vector3(lesion.position.x, lesion.position.y, lesion.position.z)) < 0.3) {
-              return lesion.id;
-            }
-          }
-        }
-        if (currentLesions.length > 0) {
-          return currentLesions[0].id;
+        // Find the first hit that has a lesionId
+        const hit = intersects.find(i => i.object.userData.lesionId);
+        if (hit) {
+          return hit.object.userData.lesionId;
         }
       }
       return null;
@@ -852,19 +845,31 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       const lesionId = detectLesionMarker(event, viewIdx);
       
       if (lesionId) {
-        // Start dragging existing lesion
-        dragStateRef.current = { isDragging: true, lesionId, viewIdx };
-        views[viewIdx].controls.enableRotate = false;
-        (event.target as HTMLElement).setPointerCapture(event.pointerId);
-        event.preventDefault();
+        if (interactionMode === 'edit') {
+          // Start dragging existing lesion
+          onSelectLesion?.(lesionId);
+          dragStateRef.current = { isDragging: true, lesionId, viewIdx };
+          views[viewIdx].controls.enableRotate = false;
+          (event.target as HTMLElement).setPointerCapture(event.pointerId);
+          event.preventDefault();
+        } else if (interactionMode === 'add') {
+          // In add mode, clicking a marker just selects it (no drag)
+          onSelectLesion?.(lesionId);
+        }
       } else {
-        // Create new lesion at click position
-        const worldPos = convertScreenToWorldCoords(event, viewIdx);
-        if (worldPos) {
-          createLesionInStorage(
-            { x: worldPos.x, y: worldPos.y, z: worldPos.z },
-            currentSeverityRef.current
-          );
+        // Create new lesion at click position only if in "add" mode
+        if (interactionMode === 'add') {
+          const worldPos = convertScreenToWorldCoords(event, viewIdx);
+          if (worldPos) {
+            createLesionInStorage(
+              { x: worldPos.x, y: worldPos.y, z: worldPos.z },
+              currentSeverityRef.current
+            );
+            onSelectLesion?.(null);
+          }
+        } else if (interactionMode === 'edit') {
+          // Clear selection if clicked empty space in edit mode
+          onSelectLesion?.(null);
         }
       }
     };

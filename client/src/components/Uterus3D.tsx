@@ -73,6 +73,9 @@ interface Uterus3DProps {
   onLesionCountChange?: (count: number) => void;
   onLesionsUpdate?: (lesions: Lesion[]) => void;
   readOnly?: boolean;
+  interactionMode?: 'add' | 'edit';
+  selectedLesionId?: string | null;
+  onSelectLesion?: (id: string | null) => void;
 }
 
 export interface Uterus3DRef {
@@ -87,7 +90,18 @@ const COLORS = {
   deep: 0x3b82f6
 };
 
-export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity = 'superficial', markerSize = 0.18, markerColor, markerType = 'circle', onLesionCountChange, onLesionsUpdate, readOnly = false }, ref) => {
+export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ 
+  severity = 'superficial', 
+  markerSize = 0.18, 
+  markerColor, 
+  markerType = 'circle', 
+  onLesionCountChange, 
+  onLesionsUpdate, 
+  readOnly = false,
+  interactionMode = 'add',
+  selectedLesionId = null,
+  onSelectLesion
+}, ref) => {
   const [loadingState, setLoadingState] = useState<'loading' | 'loaded' | 'error' | 'fallback'>('loading');
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string>('');

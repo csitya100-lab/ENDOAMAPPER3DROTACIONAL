@@ -7,12 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar, User, AlertCircle, Loader2 } from 'lucide-react';
 
+import { MousePointer2, Plus } from 'lucide-react';
+
 export default function CaseViewer() {
   const { caseId } = useParams<{ caseId: string }>();
   const [, setLocation] = useLocation();
   const [caseData, setCaseData] = useState<CaseData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [interactionMode, setInteractionMode] = useState<'add' | 'edit'>('add');
+  const [selectedLesionId, setSelectedLesionId] = useState<string | null>(null);
   const { setLesions, clearLesions } = useLesionStore();
 
   useEffect(() => {
@@ -99,17 +103,40 @@ export default function CaseViewer() {
           </Button>
           
           {caseData && (
-            <div className="flex items-center gap-6 text-white/80 text-sm">
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                <span data-testid="text-patient-name">{caseData.patient_name}</span>
+            <div className="flex items-center gap-4">
+              <div className="flex bg-gray-800/80 rounded-lg p-1 border border-gray-700">
+                <Button
+                  size="sm"
+                  variant={interactionMode === 'add' ? 'default' : 'ghost'}
+                  className={`h-8 px-3 text-xs gap-1.5 ${interactionMode === 'add' ? 'bg-pink-600 hover:bg-pink-700' : 'text-gray-400'}`}
+                  onClick={() => setInteractionMode('add')}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Adicionar
+                </Button>
+                <Button
+                  size="sm"
+                  variant={interactionMode === 'edit' ? 'default' : 'ghost'}
+                  className={`h-8 px-3 text-xs gap-1.5 ${interactionMode === 'edit' ? 'bg-cyan-600 hover:bg-cyan-700' : 'text-gray-400'}`}
+                  onClick={() => setInteractionMode('edit')}
+                >
+                  <MousePointer2 className="w-3.5 h-3.5" />
+                  Editar
+                </Button>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span data-testid="text-exam-date">{caseData.exam_date}</span>
-              </div>
-              <div className="px-3 py-1 bg-pink-500/20 rounded-full text-pink-300">
-                {caseData.lesions?.length || 0} lesões
+
+              <div className="flex items-center gap-6 text-white/80 text-sm">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  <span data-testid="text-patient-name">{caseData.patient_name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span data-testid="text-exam-date">{caseData.exam_date}</span>
+                </div>
+                <div className="px-3 py-1 bg-pink-500/20 rounded-full text-pink-300">
+                  {caseData.lesions?.length || 0} lesões
+                </div>
               </div>
             </div>
           )}
@@ -117,7 +144,12 @@ export default function CaseViewer() {
       </div>
 
       <div className="h-screen pt-16">
-        <Uterus3D readOnly />
+        <Uterus3D 
+          readOnly={false} 
+          interactionMode={interactionMode}
+          selectedLesionId={selectedLesionId}
+          onSelectLesion={setSelectedLesionId}
+        />
       </div>
     </div>
   );

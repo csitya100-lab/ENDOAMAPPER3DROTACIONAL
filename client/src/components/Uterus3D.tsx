@@ -840,7 +840,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       if (readOnlyRef.current) return;
       
       // RULES:
-      // Left click (0) -> Lesion interaction
+      // Left click (0) -> Lesion interaction (select/add/move)
       // Right click (2) -> Camera orbit (handled by OrbitControls)
       
       if (event.button !== 0) {
@@ -851,36 +851,26 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       
       const lesionId = detectLesionMarker(event, viewIdx);
       
-      if (interactionMode === 'add') {
-        if (lesionId) {
-          // If marker found in add mode: just select it, no dragging
-          onSelectLesion?.(lesionId);
-        } else {
-          // If no marker: create new one at model surface
-          const worldPos = convertScreenToWorldCoords(event, viewIdx);
-          if (worldPos) {
-            createLesionInStorage(
-              { x: worldPos.x, y: worldPos.y, z: worldPos.z },
-              currentSeverityRef.current
-            );
-            onSelectLesion?.(null);
-          }
-        }
-      } else if (interactionMode === 'edit') {
-        if (lesionId) {
-          // If marker found in edit mode: select and start dragging
-          onSelectLesion?.(lesionId);
-          dragStateRef.current = { 
-            isDragging: true, // This is our "isDraggingLesion" flag
-            lesionId, 
-            viewIdx 
-          };
-          // Disable camera movement during lesion drag
-          views[viewIdx].controls.enabled = false;
-          (event.target as HTMLElement).setPointerCapture(event.pointerId);
-          event.preventDefault();
-        } else {
-          // Clicked empty space in edit mode: clear selection
+      if (lesionId) {
+        // Clicked on a marker with LEFT BUTTON: Select and start dragging
+        onSelectLesion?.(lesionId);
+        dragStateRef.current = { 
+          isDragging: true, // isDraggingLesion
+          lesionId, 
+          viewIdx 
+        };
+        // Disable camera movement during lesion drag
+        views[viewIdx].controls.enabled = false;
+        (event.target as HTMLElement).setPointerCapture(event.pointerId);
+        event.preventDefault();
+      } else {
+        // Clicked empty space with LEFT BUTTON: Create new lesion
+        const worldPos = convertScreenToWorldCoords(event, viewIdx);
+        if (worldPos) {
+          createLesionInStorage(
+            { x: worldPos.x, y: worldPos.y, z: worldPos.z },
+            currentSeverityRef.current
+          );
           onSelectLesion?.(null);
         }
       }

@@ -839,35 +839,24 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       // Skip in read-only mode
       if (readOnlyRef.current) return;
       
-      // Explicitly handle mouse buttons:
-      // Left click (0) -> Lesion interaction (select/add/move)
-      // Right click (2) -> Camera interaction (handled by OrbitControls)
+      // RULES:
+      // Left click (0) -> Lesion interaction
+      // Right click (2) -> Camera orbit (handled by OrbitControls)
       
       if (event.button !== 0) {
-        // Not left click, so we ensure OrbitControls are enabled and return
+        // Not left click: ensure camera controls are enabled for orbit
         views[viewIdx].controls.enabled = true;
         return;
       }
       
-      // First check if clicking on existing lesion
       const lesionId = detectLesionMarker(event, viewIdx);
       
-      if (lesionId) {
-        if (interactionMode === 'edit') {
-          // Start dragging existing lesion
+      if (interactionMode === 'add') {
+        if (lesionId) {
+          // If marker found in add mode: just select it, no dragging
           onSelectLesion?.(lesionId);
-          dragStateRef.current = { isDragging: true, lesionId, viewIdx };
-          // Disable camera movement during drag
-          views[viewIdx].controls.enabled = false;
-          (event.target as HTMLElement).setPointerCapture(event.pointerId);
-          event.preventDefault();
-        } else if (interactionMode === 'add') {
-          // In add mode, clicking a marker just selects it (no drag)
-          onSelectLesion?.(lesionId);
-        }
-      } else {
-        // Create new lesion at click position only if in "add" mode
-        if (interactionMode === 'add') {
+        } else {
+          // If no marker: create new one at model surface
           const worldPos = convertScreenToWorldCoords(event, viewIdx);
           if (worldPos) {
             createLesionInStorage(
@@ -876,8 +865,22 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
             );
             onSelectLesion?.(null);
           }
-        } else if (interactionMode === 'edit') {
-          // Clear selection if clicked empty space in edit mode
+        }
+      } else if (interactionMode === 'edit') {
+        if (lesionId) {
+          // If marker found in edit mode: select and start dragging
+          onSelectLesion?.(lesionId);
+          dragStateRef.current = { 
+            isDragging: true, // This is our "isDraggingLesion" flag
+            lesionId, 
+            viewIdx 
+          };
+          // Disable camera movement during lesion drag
+          views[viewIdx].controls.enabled = false;
+          (event.target as HTMLElement).setPointerCapture(event.pointerId);
+          event.preventDefault();
+        } else {
+          // Clicked empty space in edit mode: clear selection
           onSelectLesion?.(null);
         }
       }
@@ -890,6 +893,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     // Pointer move: Update dragged lesion position with throttle
     const handleViewMove = (viewIdx: number) => (event: PointerEvent) => {
       if (readOnlyRef.current) return;
+      
+      // ONLY move if we are explicitly dragging a lesion in the current view
       if (!dragStateRef.current.isDragging || dragStateRef.current.viewIdx !== viewIdx) return;
 
       // Throttle updates to 60fps max
@@ -910,7 +915,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     const handleViewUp = (viewIdx: number) => (event: PointerEvent) => {
       if (readOnlyRef.current) return;
       
-      // Re-enable camera controls
+      // Re-enable camera controls always on pointer up
       views[viewIdx].controls.enabled = true;
       
       if (!dragStateRef.current.isDragging) return;

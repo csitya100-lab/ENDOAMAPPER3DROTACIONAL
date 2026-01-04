@@ -839,15 +839,33 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       // Skip in read-only mode
       if (readOnlyRef.current) return;
       
+      const isOrthographic = viewIdx > 0;
+
       // RULES:
       // Left click (0) -> Lesion interaction (select/add/move)
-      // Right click (2) -> Camera orbit (handled by OrbitControls)
+      // Right click (2) -> Camera orbit (Perspective) OR Insertion (Orthographic)
       
-      if (event.button !== 0) {
-        // Not left click: ensure camera controls are enabled for orbit
-        views[viewIdx].controls.enabled = true;
-        return;
+      if (event.button === 2) {
+        if (isOrthographic) {
+          // Right click in 2D views: Insertion
+          const worldPos = convertScreenToWorldCoords(event, viewIdx);
+          if (worldPos) {
+            createLesionInStorage(
+              { x: worldPos.x, y: worldPos.y, z: worldPos.z },
+              currentSeverityRef.current
+            );
+            onSelectLesion?.(null);
+          }
+          event.preventDefault();
+          return;
+        } else {
+          // Right click in 3D Perspective: Orbit (handled by OrbitControls)
+          views[viewIdx].controls.enabled = true;
+          return;
+        }
       }
+      
+      if (event.button !== 0) return;
       
       const lesionId = detectLesionMarker(event, viewIdx);
       
@@ -864,13 +882,19 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         (event.target as HTMLElement).setPointerCapture(event.pointerId);
         event.preventDefault();
       } else {
-        // Clicked empty space with LEFT BUTTON: Create new lesion
-        const worldPos = convertScreenToWorldCoords(event, viewIdx);
-        if (worldPos) {
-          createLesionInStorage(
-            { x: worldPos.x, y: worldPos.y, z: worldPos.z },
-            currentSeverityRef.current
-          );
+        // Clicked empty space with LEFT BUTTON
+        if (!isOrthographic) {
+          // In 3D Perspective: Create new lesion
+          const worldPos = convertScreenToWorldCoords(event, viewIdx);
+          if (worldPos) {
+            createLesionInStorage(
+              { x: worldPos.x, y: worldPos.y, z: worldPos.z },
+              currentSeverityRef.current
+            );
+            onSelectLesion?.(null);
+          }
+        } else {
+          // In 2D views: Clear selection if clicking empty space with LEFT BUTTON
           onSelectLesion?.(null);
         }
       }

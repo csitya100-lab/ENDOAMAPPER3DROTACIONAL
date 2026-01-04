@@ -13,14 +13,12 @@ import PublicReport from "@/pages/PublicReport";
 import PrintReport from "@/pages/PrintReport";
 import PreviewReport from "@/pages/PreviewReport";
 import CaseViewer from "@/pages/CaseViewer";
-import Model3DViewer from "@/pages/Model3DViewer";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/3d" component={Home} />
-      <Route path="/3d/:caseId" component={Model3DViewer} />
       <Route path="/vistas-2d" component={Vistas2D} />
       <Route path="/view/:caseId" component={CaseViewer} />
       <Route path="/relatorio/:id" component={PublicReport} />

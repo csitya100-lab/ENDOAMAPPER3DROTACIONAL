@@ -1,8 +1,69 @@
-import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, forwardRef, useImperativeHandle, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { useLesionStore, Lesion, Severity, MarkerType } from '@/lib/lesionStore';
+
+const isIOS = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+};
+
+const isMobile = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+const MODEL_CACHE_KEY = 'endomapper_model_v1';
+const MODEL_LOAD_TIMEOUT = 15000;
+const MODEL_DB_NAME = 'EndoMapperDB';
+const MODEL_STORE_NAME = 'models';
+
+const openModelDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(MODEL_DB_NAME, 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(MODEL_STORE_NAME)) {
+        db.createObjectStore(MODEL_STORE_NAME);
+      }
+    };
+  });
+};
+
+const getCachedModel = async (): Promise<ArrayBuffer | null> => {
+  try {
+    const db = await openModelDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(MODEL_STORE_NAME, 'readonly');
+      const store = tx.objectStore(MODEL_STORE_NAME);
+      const request = store.get(MODEL_CACHE_KEY);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => resolve(null);
+    });
+  } catch {
+    return null;
+  }
+};
+
+const cacheModel = async (data: ArrayBuffer): Promise<void> => {
+  try {
+    const db = await openModelDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(MODEL_STORE_NAME, 'readwrite');
+      const store = tx.objectStore(MODEL_STORE_NAME);
+      const request = store.put(data, MODEL_CACHE_KEY);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch {
+    console.warn('Failed to cache model');
+  }
+};
 
 interface Uterus3DProps {
   severity?: Severity;
@@ -27,6 +88,10 @@ const COLORS = {
 };
 
 export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity = 'superficial', markerSize = 0.18, markerColor, markerType = 'circle', onLesionCountChange, onLesionsUpdate, readOnly = false }, ref) => {
+  const [loadingState, setLoadingState] = useState<'loading' | 'loaded' | 'error' | 'fallback'>('loading');
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  
   const readOnlyRef = useRef(readOnly);
   
   useEffect(() => {
@@ -362,19 +427,42 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity = 'su
     let animationFrameId: number;
     let isMounted = true;
     let renderer: THREE.WebGLRenderer;
+    let loadTimeout: NodeJS.Timeout | null = null;
 
     const canvas = canvasRef.current;
+    const isIOSDevice = isIOS();
+    const isMobileDevice = isMobile();
     
     try {
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+      const contextAttributes: WebGLContextAttributes = {
+        antialias: !isIOSDevice,
+        alpha: true,
+        powerPreference: isIOSDevice ? 'low-power' : 'high-performance',
+        preserveDrawingBuffer: true,
+        failIfMajorPerformanceCaveat: false
+      };
+      
+      renderer = new THREE.WebGLRenderer({ 
+        canvas: canvas, 
+        ...contextAttributes
+      });
     } catch (e) {
       console.warn('WebGL not available:', e);
+      setLoadingState('error');
+      setErrorMessage('WebGL não disponível neste dispositivo');
       return;
     }
     
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
+    const pixelRatio = isIOSDevice ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio;
+    renderer.setPixelRatio(pixelRatio);
+    
+    if (!isIOSDevice && !isMobileDevice) {
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
+    } else {
+      renderer.shadowMap.enabled = false;
+    }
+    
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setScissorTest(true);
@@ -384,26 +472,26 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity = 'su
     scene.background = new THREE.Color(0x0a0a0a);
     sceneRef.current = scene;
     
-    // Ambient Light: Warm white (~3500K), intensity 0.7
-    const ambientLight = new THREE.AmbientLight(0xFFF5E1, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xFFF5E1, isIOSDevice ? 0.9 : 0.7);
     scene.add(ambientLight);
 
-    // Main Directional Light: Lateral position for clinical realism
     const dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.3);
     dirLight.position.set(8, 8, 5);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
-    dirLight.shadow.camera.left = -15;
-    dirLight.shadow.camera.right = 15;
-    dirLight.shadow.camera.top = 15;
-    dirLight.shadow.camera.bottom = -15;
-    dirLight.shadow.camera.far = 100;
-    dirLight.shadow.bias = 0.0001;
-    dirLight.shadow.radius = 4;
+    
+    if (!isIOSDevice && !isMobileDevice) {
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
+      dirLight.shadow.camera.left = -15;
+      dirLight.shadow.camera.right = 15;
+      dirLight.shadow.camera.top = 15;
+      dirLight.shadow.camera.bottom = -15;
+      dirLight.shadow.camera.far = 100;
+      dirLight.shadow.bias = 0.0001;
+      dirLight.shadow.radius = 4;
+    }
     scene.add(dirLight);
 
-    // Fill Light: Soft light from opposite side
     const fillLight = new THREE.DirectionalLight(0xD3D3D3, 0.4);
     fillLight.position.set(-8, 3, 5);
     scene.add(fillLight);
@@ -412,32 +500,48 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity = 'su
     anatomyGroupRef.current = anatomyGroup;
     scene.add(anatomyGroup);
 
-    // Load GLB Model
-    const loader = new GLTFLoader();
-    loader.load('/model.glb', (gltf) => {
+    const createFallbackModel = () => {
+      const geometry = new THREE.SphereGeometry(1.8, 32, 24);
+      const material = new THREE.MeshStandardMaterial({
+        color: 0xDD8A96,
+        roughness: 0.5,
+        metalness: 0.1,
+        side: THREE.DoubleSide
+      });
+      const sphere = new THREE.Mesh(geometry, material);
+      anatomyGroup.add(sphere);
+      setLoadingState('fallback');
+    };
+
+    loadTimeout = setTimeout(() => {
+      if (isMounted && loadingState === 'loading') {
+        console.warn('Model load timeout - using fallback');
+        createFallbackModel();
+      }
+    }, MODEL_LOAD_TIMEOUT);
+
+    const processModel = (gltf: any) => {
+        if (!isMounted) return;
+        if (loadTimeout) clearTimeout(loadTimeout);
+        
         const model = gltf.scene;
         
-        // Auto-center and scale
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
-        // Center the model
         model.position.x += (model.position.x - center.x);
         model.position.y += (model.position.y - center.y);
         model.position.z += (model.position.z - center.z);
         
-        // Scale to fit approx size 4 units
         const maxDim = Math.max(size.x, size.y, size.z);
         const scale = 4 / maxDim;
         model.scale.set(scale, scale, scale);
 
-        // Identify organ by original color and apply appropriate material
         model.traverse((child: any) => {
             if ((child as THREE.Mesh).isMesh && child !== model) {
                 const mesh = child as THREE.Mesh;
                 
-                // Get original color to identify organ
                 let originalColor = new THREE.Color(0xffffff);
                 let originalMat = mesh.material;
                 if (Array.isArray(originalMat)) {
@@ -451,60 +555,149 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity = 'su
                 const g = originalColor.g;
                 const b = originalColor.b;
                 
-                // Identify organ type and set color + material properties
-                let newColor = new THREE.Color(0xDD8A96); // Default: Uterus
+                let newColor = new THREE.Color(0xDD8A96);
                 let roughness = 0.45;
                 let metalness = 0.05;
-                let clearcoat = 0.1;
+                let clearcoat = isIOSDevice ? 0 : 0.1;
                 let envMapIntensity = 0.5;
                 
-                // Yellow = Ovaries (most vibrant)
                 if (r > 0.8 && g > 0.8 && b < 0.4) {
                     newColor = new THREE.Color(0xFFD700);
                 }
-                // Blue = Bladder
                 else if (r < 0.4 && g > 0.7 && b > 0.8) {
                     newColor = new THREE.Color(0x87CEEB);
                 }
-                // Brown/Red = Rectum (darker, more saturated)
                 else if (r > 0.7 && g > 0.4 && b > 0.3 && r - g > 0.2) {
                     newColor = new THREE.Color(0xD4956F);
                 }
-                // Tan/Beige = Cervix (intermediate)
                 else if (r > 0.6 && g > 0.4 && b > 0.3 && r - g < 0.3) {
                     newColor = new THREE.Color(0xC49080);
                     roughness = 0.50;
-                    clearcoat = 0.08;
+                    clearcoat = isIOSDevice ? 0 : 0.08;
                 }
-                // Light pink/white = Ligaments, Vagina (less saturated)
                 else if (r > 0.8 && g < 0.7 && b < 0.7 && r - g < 0.3) {
-                    newColor = new THREE.Color(0xE8B4B8); // Lighter pink
+                    newColor = new THREE.Color(0xE8B4B8);
                     roughness = 0.55;
                     metalness = 0.02;
-                    clearcoat = 0.05;
+                    clearcoat = isIOSDevice ? 0 : 0.05;
                     envMapIntensity = 0.3;
                 }
                 
-                // Apply MeshPhysicalMaterial with optimized properties
-                const newMaterial = new THREE.MeshPhysicalMaterial({
-                    color: newColor,
-                    roughness: roughness,
-                    metalness: metalness,
-                    clearcoat: clearcoat,
-                    envMapIntensity: envMapIntensity,
-                    side: THREE.DoubleSide
-                });
+                let newMaterial: THREE.Material;
+                if (isIOSDevice || isMobileDevice) {
+                    newMaterial = new THREE.MeshStandardMaterial({
+                        color: newColor,
+                        roughness: roughness,
+                        metalness: metalness,
+                        side: THREE.DoubleSide
+                    });
+                } else {
+                    newMaterial = new THREE.MeshPhysicalMaterial({
+                        color: newColor,
+                        roughness: roughness,
+                        metalness: metalness,
+                        clearcoat: clearcoat,
+                        envMapIntensity: envMapIntensity,
+                        side: THREE.DoubleSide
+                    });
+                }
                 
                 mesh.material = newMaterial;
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
+                if (!isIOSDevice && !isMobileDevice) {
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                }
             }
         });
         
         anatomyGroup.add(model);
-    }, undefined, (error) => {
-        console.error('An error happened loading the model:', error);
-    });
+        setLoadingState('loaded');
+        setLoadingProgress(100);
+    };
+
+    const loader = new GLTFLoader();
+    
+    const loadModelWithCache = async () => {
+      try {
+        const cachedData = await getCachedModel();
+        
+        if (cachedData) {
+          setLoadingProgress(50);
+          loader.parse(cachedData, '', processModel, (error) => {
+            console.warn('Cached model parse failed, fetching fresh:', error);
+            loadFreshModel();
+          });
+        } else {
+          loadFreshModel();
+        }
+      } catch {
+        loadFreshModel();
+      }
+    };
+
+    const loadFreshModel = () => {
+      fetch('/model.glb')
+        .then(response => {
+          if (!response.ok) throw new Error('Network response was not ok');
+          const contentLength = response.headers.get('content-length');
+          const total = contentLength ? parseInt(contentLength, 10) : 0;
+          
+          if (!response.body) {
+            return response.arrayBuffer();
+          }
+          
+          const reader = response.body.getReader();
+          const chunks: Uint8Array[] = [];
+          let loaded = 0;
+          
+          const read = (): Promise<ArrayBuffer> => {
+            return reader.read().then(({ done, value }) => {
+              if (done) {
+                const allChunks = new Uint8Array(loaded);
+                let position = 0;
+                for (const chunk of chunks) {
+                  allChunks.set(chunk, position);
+                  position += chunk.length;
+                }
+                return allChunks.buffer;
+              }
+              
+              chunks.push(value);
+              loaded += value.length;
+              
+              if (total > 0) {
+                setLoadingProgress(Math.round((loaded / total) * 90));
+              }
+              
+              return read();
+            });
+          };
+          
+          return read();
+        })
+        .then(async (buffer) => {
+          if (!isMounted) return;
+          
+          cacheModel(buffer).catch(() => {});
+          
+          loader.parse(buffer, '', processModel, (error) => {
+            if (!isMounted) return;
+            if (loadTimeout) clearTimeout(loadTimeout);
+            console.error('Error parsing model:', error);
+            createFallbackModel();
+            setErrorMessage('Não foi possível processar o modelo 3D');
+          });
+        })
+        .catch((error) => {
+          if (!isMounted) return;
+          if (loadTimeout) clearTimeout(loadTimeout);
+          console.error('Error fetching model:', error);
+          createFallbackModel();
+          setErrorMessage('Não foi possível carregar o modelo 3D');
+        });
+    };
+
+    loadModelWithCache();
 
     // Initialize marker groups
     for (let i = 0; i < 4; i++) {
@@ -778,10 +971,10 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity = 'su
 
     return () => {
       isMounted = false;
+      if (loadTimeout) clearTimeout(loadTimeout);
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
       
-      // Remove event listeners from all views
       handlers.forEach(({ idx, down, move, up, leave, dblclick }) => {
         const view = views[idx];
         if (view && view.element) {
@@ -801,6 +994,50 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity = 'su
   return (
     <div className="relative w-full h-full bg-slate-950">
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block z-0" />
+      
+      {loadingState === 'loading' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 z-50" data-testid="loading-overlay">
+          <div className="relative w-16 h-16 mb-4">
+            <svg className="animate-spin w-full h-full" viewBox="0 0 50 50">
+              <circle 
+                cx="25" cy="25" r="20" 
+                fill="none" 
+                stroke="#ef4444" 
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray={`${loadingProgress * 1.26}, 126`}
+                className="transition-all duration-300"
+              />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-xs text-white/80 font-mono">
+              {loadingProgress}%
+            </span>
+          </div>
+          <p className="text-white/70 text-sm" data-testid="loading-text">Carregando modelo 3D...</p>
+        </div>
+      )}
+      
+      {loadingState === 'error' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 z-50" data-testid="error-overlay">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <p className="text-white/70 text-sm text-center px-4" data-testid="error-text">
+            {errorMessage || 'Erro ao carregar o modelo 3D'}
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded text-sm transition-colors"
+            data-testid="retry-button"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+      
+      {loadingState === 'fallback' && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded text-xs font-mono z-50" data-testid="fallback-notice">
+          Modo simplificado (modelo não carregou)
+        </div>
+      )}
       
       <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-[2px] p-[2px] pointer-events-none">
         <div ref={viewMainRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden group">

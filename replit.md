@@ -101,6 +101,50 @@ Minimalist UI: Removed thickness slider, export buttons, and unnecessary feature
   - Text tool: Add text annotations with customizable size and color
 - **Focus System**: Checkbox selection amplifies 2D view to 70% screen (col-span-9), thumbnails in sidebar (col-span-3, h-24)
 
+## Supabase Configuration
+
+### Required Environment Variables
+- `VITE_SUPABASE_URL`: Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key
+
+### Database Schema
+Create the `cases` table in Supabase SQL Editor:
+```sql
+CREATE TABLE cases (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  patient_name TEXT NOT NULL,
+  exam_date TEXT NOT NULL,
+  lesions JSONB NOT NULL DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Row Level Security (RLS) Policies
+After creating the table, enable RLS and add these policies for secure public sharing:
+
+```sql
+-- Enable RLS
+ALTER TABLE cases ENABLE ROW LEVEL SECURITY;
+
+-- Allow anonymous insert (create new cases)
+CREATE POLICY "Allow anonymous insert" ON cases
+FOR INSERT TO anon
+WITH CHECK (true);
+
+-- Allow anonymous select (view shared reports)
+CREATE POLICY "Allow anonymous select" ON cases
+FOR SELECT TO anon
+USING (true);
+
+-- UPDATE and DELETE are blocked by default (no policy = denied)
+```
+
+This configuration allows:
+- ✅ Anyone can create cases and share links
+- ✅ Anyone can view shared reports via link
+- ❌ No one can modify existing cases
+- ❌ No one can delete cases
+
 ## External Dependencies
 
 ### Key NPM Packages

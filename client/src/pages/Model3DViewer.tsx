@@ -32,14 +32,14 @@ export default function Model3DViewer() {
 
   // Carregar dados do caso do Supabase
   useEffect(() => {
-    if (!caseId) {
-      // Modo demo se não houver caseId
+    if (!caseId || caseId === 'demo') {
+      // Modo demo se não houver caseId ou se for 'demo'
       setLoading(false);
       return;
     }
 
     if (!isSupabaseConfigured()) {
-      setError('Configuração do servidor indisponível');
+      console.warn('Supabase não configurado. Entrando em modo demonstração.');
       setLoading(false);
       return;
     }
@@ -50,11 +50,11 @@ export default function Model3DViewer() {
           setCaseData(data);
           setLesions(data.lesions || []);
         } else {
-          setError('Caso não encontrado');
+          console.warn('Caso não encontrado no banco. Entrando em modo demonstração.');
         }
       })
       .catch((err) => {
-        setError(err.message || 'Erro ao carregar caso');
+        console.error('Erro ao carregar caso do banco:', err);
       })
       .finally(() => {
         setLoading(false);
@@ -80,11 +80,27 @@ export default function Model3DViewer() {
     cameraRef.current = camera;
 
     // Renderer com antialiasing para melhor qualidade
-    const renderer = new THREE.WebGLRenderer({ 
-      antialias: true,
-      alpha: true,
-      powerPreference: 'high-performance'
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ 
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
+    } catch (e) {
+      console.warn('Erro ao criar WebGLRenderer com antialias, tentando fallback...', e);
+      try {
+        renderer = new THREE.WebGLRenderer({ 
+          antialias: false,
+          alpha: true
+        });
+      } catch (e2) {
+        console.error('Falha total ao criar WebGLRenderer:', e2);
+        setError('Seu navegador ou dispositivo não suporta WebGL, que é necessário para visualizar o modelo 3D.');
+        setLoading(false);
+        return;
+      }
+    }
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;

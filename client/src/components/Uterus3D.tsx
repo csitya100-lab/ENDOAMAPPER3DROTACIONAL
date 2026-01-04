@@ -511,6 +511,9 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity = 'su
       const sphere = new THREE.Mesh(geometry, material);
       anatomyGroup.add(sphere);
       setLoadingState('fallback');
+      
+      // Render existing lesions after fallback model loads
+      updateAllMarkers();
     };
 
     loadTimeout = setTimeout(() => {
@@ -613,6 +616,9 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({ severity = 'su
         anatomyGroup.add(model);
         setLoadingState('loaded');
         setLoadingProgress(100);
+        
+        // Render existing lesions after model loads
+        updateAllMarkers();
     };
 
     const loader = new GLTFLoader();

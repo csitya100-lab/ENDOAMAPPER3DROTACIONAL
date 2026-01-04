@@ -67,6 +67,14 @@ Minimalist UI: Removed thickness slider, export buttons, and unnecessary feature
   - Model cached in IndexedDB after first load
   - Faster subsequent loads from cache
   - Graceful degradation if cache unavailable
+- **Lesion Rendering Fix**:
+  - `updateAllMarkers()` called after model loads to render pre-existing lesions
+  - Fixes issue where lesions loaded from database wouldn't appear in CaseViewer
+
+### HTML Export System
+- **ES Modules via CDN**: Uses unpkg CDN for Three.js (v0.160.0)
+- **Import Map**: Configured in exported HTML for browser module resolution
+- **Self-contained**: Embedded base64 model data + lesion data in standalone HTML file
 
 ### Critical Architecture Rules
 - **NEVER modify**: Home.tsx, Uterus3D.tsx, or lesionStore.ts - 3D model sync must remain intact

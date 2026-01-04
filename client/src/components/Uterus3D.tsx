@@ -838,8 +838,16 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     const handleViewClick = (viewIdx: number) => (event: PointerEvent) => {
       // Skip in read-only mode
       if (readOnlyRef.current) return;
-      // Only process left mouse button (button === 0)
-      if (event.button !== 0) return;
+      
+      // Explicitly handle mouse buttons:
+      // Left click (0) -> Lesion interaction (select/add/move)
+      // Right click (2) -> Camera interaction (handled by OrbitControls)
+      
+      if (event.button !== 0) {
+        // Not left click, so we ensure OrbitControls are enabled and return
+        views[viewIdx].controls.enabled = true;
+        return;
+      }
       
       // First check if clicking on existing lesion
       const lesionId = detectLesionMarker(event, viewIdx);
@@ -849,7 +857,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           // Start dragging existing lesion
           onSelectLesion?.(lesionId);
           dragStateRef.current = { isDragging: true, lesionId, viewIdx };
-          views[viewIdx].controls.enableRotate = false;
+          // Disable camera movement during drag
+          views[viewIdx].controls.enabled = false;
           (event.target as HTMLElement).setPointerCapture(event.pointerId);
           event.preventDefault();
         } else if (interactionMode === 'add') {
@@ -900,10 +909,13 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     // Pointer up: Stop dragging
     const handleViewUp = (viewIdx: number) => (event: PointerEvent) => {
       if (readOnlyRef.current) return;
+      
+      // Re-enable camera controls
+      views[viewIdx].controls.enabled = true;
+      
       if (!dragStateRef.current.isDragging) return;
 
       dragStateRef.current = { isDragging: false, lesionId: null, viewIdx: 0 };
-      views[viewIdx].controls.enableRotate = true;
       (event.target as HTMLElement).releasePointerCapture(event.pointerId);
       event.preventDefault();
     };

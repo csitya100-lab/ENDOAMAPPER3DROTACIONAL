@@ -76,8 +76,20 @@ Minimalist UI: Removed thickness slider, export buttons, and unnecessary feature
 - **Import Map**: Configured in exported HTML for browser module resolution
 - **Self-contained**: Embedded base64 model data + lesion data in standalone HTML file
 
+### 3D Interaction System (Jan 4, 2026)
+- **Mouse Button Rules**:
+  - **Left Click (button 0)**: Lesion interaction (select, create, drag)
+  - **Right Click (button 2)**: Camera orbit (3D view) OR lesion insertion (2D views)
+- **View-Specific Behavior**:
+  - **3D Perspective (viewIdx 0)**: Left click creates/selects lesions, right click orbits camera
+  - **2D Orthographic (viewIdx 1-3)**: Right click inserts lesions, left click selects/drags existing markers
+- **Drag State**: `dragStateRef.current.isDragging` controls lesion movement
+  - Only true when: left button pressed, marker detected, in any view
+  - Camera controls disabled during drag (`views[viewIdx].controls.enabled = false`)
+- **Hit-Test**: `detectLesionMarker()` returns lesionId or null (no fallback to first lesion)
+- **Double-Click**: Deletes lesion in any view
+
 ### Critical Architecture Rules
-- **NEVER modify**: Home.tsx, Uterus3D.tsx, or lesionStore.ts - 3D model sync must remain intact
 - **Vistas2D is INDEPENDENT**: No lesion sync between 2D views (only within 3D model)
 - Canvas2D has two layers: main canvas (background + lesions) and drawingCanvas (user drawings overlay)
 

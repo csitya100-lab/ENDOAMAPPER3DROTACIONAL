@@ -171,3 +171,16 @@ This configuration allows:
 - Vite plugins for Replit integration (cartographer, dev-banner, runtime-error-modal)
 - Custom meta images plugin for OpenGraph tags
 - esbuild for server bundling with dependency allowlist optimization
+
+## AI Medical Profile (Base de Conhecimento)
+
+Arquivo de configuração: `shared/knowledge/ai-medical-profile.json`
+
+Perfil de IA médica especialista em ultrassonografia ginecológica e obstétrica com as seguintes características:
+
+- **Especialidades**: Mapeamento de endometriose profunda, medicina fetal, interpretação de laudos
+- **Abordagem**: Cientificamente embasada e humanizada
+- **Tom**: Calmo, empático, técnico e didático
+- **Fontes**: Diretrizes IDEA, ISUOG, FMF e publicações revisadas por pares
+- **Outputs**: Interpretações ultrassonográficas, modelos de laudo, explicações de achados, recomendações de seguimento
+- **Valores éticos**: Empatia, clareza, respeito, ética médica, sigilo

@@ -102,7 +102,10 @@ Minimalist UI: Removed thickness slider, export buttons, and unnecessary feature
   - Layer 1: Lesion markers with anatomical backgrounds
   - Layer 2: Freehand drawing and annotation tools
   - Drawing preservation: Before resizing drawingCanvas, capture ImageData, resize only if dimensions changed, restore ImageData
-- **Lesion Store** (`client/src/lib/lesionStore.ts`): Zustand-based global state for 3D lesion synchronization only
+- **Lesion Store** (`client/src/lib/lesionStore.ts`): Zustand-based global state for 3D lesion synchronization with sessionStorage persistence
+- **Report Store** (`client/src/lib/reportStore.ts`): Zustand store for report images with sessionStorage persistence
+- **Session Persistence**: Both stores use `zustand/middleware/persist` with sessionStorage, allowing data to survive page navigation (3D ↔ 2D ↔ Report)
+- **Individual View Capture**: Each 2D view has a camera button to capture and add to report immediately
 - **Drawing Tools**:
   - Select tool: Manage lesion markers
   - Pen tool: Freehand drawing with custom color and size (1-20px)

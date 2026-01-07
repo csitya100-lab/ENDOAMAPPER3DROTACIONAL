@@ -16,7 +16,9 @@ import {
   Ruler,
   Send,
   Check,
+  Camera,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useState, useRef, useCallback } from "react";
 import { DrawingTool } from "@/components/Canvas2D";
 
@@ -92,34 +94,52 @@ export default function Vistas2D() {
 
   const selectedCount = Object.values(selectedViews).filter(Boolean).length;
 
-  const handleSendToReport = () => {
-    clearPdfImages();
+  const captureViewImage = (viewType: ViewType): string | null => {
+    const refs = canvasRefs.current[viewType];
+    if (!refs.main) return null;
 
     const scale = 2;
+    const mainCanvas = refs.main;
+    const drawingCanvas = refs.drawing;
 
+    const mergedCanvas = document.createElement("canvas");
+    mergedCanvas.width = mainCanvas.width * scale;
+    mergedCanvas.height = mainCanvas.height * scale;
+
+    const ctx = mergedCanvas.getContext("2d");
+    if (!ctx) return null;
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.scale(scale, scale);
+    
+    ctx.drawImage(mainCanvas, 0, 0);
+    
+    if (drawingCanvas) {
+      ctx.drawImage(drawingCanvas, 0, 0);
+    }
+
+    return mergedCanvas.toDataURL("image/png");
+  };
+
+  const handleCaptureSingleView = (viewType: ViewType) => {
+    const imgData = captureViewImage(viewType);
+    if (imgData) {
+      addPdfImage({
+        data: imgData,
+        label: VIEW_LABELS[viewType],
+        viewType: viewType,
+        observation: "",
+      });
+      toast.success(`${VIEW_LABELS[viewType]} capturada e adicionada ao relatório`);
+    }
+  };
+
+  const handleSendToReport = () => {
     VIEW_TYPES.forEach((viewType) => {
-      const refs = canvasRefs.current[viewType];
-      if (selectedViews[viewType] && refs.main) {
-        const mainCanvas = refs.main;
-        const drawingCanvas = refs.drawing;
-
-        const mergedCanvas = document.createElement("canvas");
-        mergedCanvas.width = mainCanvas.width * scale;
-        mergedCanvas.height = mainCanvas.height * scale;
-
-        const ctx = mergedCanvas.getContext("2d");
-        if (ctx) {
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = "high";
-          ctx.scale(scale, scale);
-          
-          ctx.drawImage(mainCanvas, 0, 0);
-          
-          if (drawingCanvas) {
-            ctx.drawImage(drawingCanvas, 0, 0);
-          }
-
-          const imgData = mergedCanvas.toDataURL("image/png");
+      if (selectedViews[viewType]) {
+        const imgData = captureViewImage(viewType);
+        if (imgData) {
           addPdfImage({
             data: imgData,
             label: VIEW_LABELS[viewType],
@@ -362,20 +382,34 @@ export default function Vistas2D() {
                 onClick={() => setActiveView(viewType)}
                 data-testid={`card-${viewType}`}
               >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleViewSelection(viewType);
-                  }}
-                  className={`absolute top-3 left-3 z-20 w-8 h-8 rounded-md flex items-center justify-center transition-all ${
-                    isSelected
-                      ? "bg-emerald-500 text-white shadow-lg"
-                      : "bg-white/90 dark:bg-slate-800/80 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-300 dark:border-slate-600"
-                  }`}
-                  data-testid={`checkbox-${viewType}`}
-                >
-                  {isSelected && <Check className="w-5 h-5" />}
-                </button>
+                <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleViewSelection(viewType);
+                    }}
+                    className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${
+                      isSelected
+                        ? "bg-emerald-500 text-white shadow-lg"
+                        : "bg-white/90 dark:bg-slate-800/80 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-300 dark:border-slate-600"
+                    }`}
+                    data-testid={`checkbox-${viewType}`}
+                  >
+                    {isSelected && <Check className="w-5 h-5" />}
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCaptureSingleView(viewType);
+                    }}
+                    className="w-8 h-8 rounded-md flex items-center justify-center transition-all bg-pink-500 hover:bg-pink-600 text-white shadow-lg"
+                    title="Capturar e adicionar ao relatório"
+                    data-testid={`button-capture-${viewType}`}
+                  >
+                    <Camera className="w-4 h-4" />
+                  </button>
+                </div>
 
                 <div className="absolute top-3 right-3 z-20 bg-gray-900/80 dark:bg-black/70 px-2 py-1 rounded text-xs font-medium text-white">
                   {VIEW_LABELS[viewType]}

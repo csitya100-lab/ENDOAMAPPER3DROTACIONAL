@@ -325,34 +325,42 @@ export default function PublicReport() {
                 </h2>
               </div>
               <div className="p-4">
-                <div className="grid grid-cols-3 gap-3">
-                  {(["sagittal", "coronal", "posterior"] as const).map(
-                    (view) => (
-                      <div
-                        key={view}
-                        className="aspect-square bg-slate-100 rounded-lg overflow-hidden relative group"
-                      >
-                        {report.images2D[view] ? (
-                          <img
-                            src={report.images2D[view]}
-                            alt={view}
-                            className="w-full h-full object-cover"
-                            data-testid={`img-2d-${view}`}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <span className="text-xs text-slate-700 capitalize">
-                              {view}
+                <div className="grid grid-cols-2 gap-3">
+                  {(["sagittal-avf", "sagittal-rvf", "coronal", "posterior"] as const).map(
+                    (view) => {
+                      const viewLabels: Record<string, string> = {
+                        "sagittal-avf": "Sagital AVF",
+                        "sagittal-rvf": "Sagital RVF",
+                        coronal: "Coronal",
+                        posterior: "Posterior",
+                      };
+                      return (
+                        <div
+                          key={view}
+                          className="aspect-square bg-slate-100 rounded-lg overflow-hidden relative group"
+                        >
+                          {report.images2D[view] ? (
+                            <img
+                              src={report.images2D[view]}
+                              alt={viewLabels[view]}
+                              className="w-full h-full object-cover"
+                              data-testid={`img-2d-${view}`}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <span className="text-xs text-slate-400">
+                                {viewLabels[view]}
+                              </span>
+                            </div>
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 py-1 px-2">
+                            <span className="text-[10px] text-white">
+                              {viewLabels[view]}
                             </span>
                           </div>
-                        )}
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 py-1 px-2">
-                          <span className="text-[10px] text-white capitalize">
-                            {view}
-                          </span>
                         </div>
-                      </div>
-                    ),
+                      );
+                    },
                   )}
                 </div>
               </div>

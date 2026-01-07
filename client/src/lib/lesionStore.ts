@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { Position3D } from '@shared/3d/projections';
 
 export type Severity = 'superficial' | 'deep';
@@ -27,46 +28,80 @@ interface LesionStore {
   setLesions: (lesions: Lesion[]) => void;
 }
 
-export const useLesionStore = create<LesionStore>((set, get) => ({
-  lesions: [],
-  selectedLesionId: null,
+export const useLesionStore = create<LesionStore>()(
+  persist(
+    (set, get) => ({
+      lesions: [],
+      selectedLesionId: null,
 
-  addLesion: (lesionData) => {
-    const id = `lesion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const newLesion: Lesion = { ...lesionData, id };
-    
-    set((state) => ({
-      lesions: [...state.lesions, newLesion],
-      selectedLesionId: id
-    }));
-    
-    return id;
-  },
+      addLesion: (lesionData) => {
+        const id = `lesion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const newLesion: Lesion = { ...lesionData, id };
+        
+        set((state) => ({
+          lesions: [...state.lesions, newLesion],
+          selectedLesionId: id
+        }));
+        
+        return id;
+      },
 
-  updateLesion: (id, updates) => {
-    set((state) => ({
-      lesions: state.lesions.map((lesion) =>
-        lesion.id === id ? { ...lesion, ...updates } : lesion
-      )
-    }));
-  },
+      updateLesion: (id, updates) => {
+        set((state) => ({
+          lesions: state.lesions.map((lesion) =>
+            lesion.id === id ? { ...lesion, ...updates } : lesion
+          )
+        }));
+      },
 
-  removeLesion: (id) => {
-    set((state) => ({
-      lesions: state.lesions.filter((lesion) => lesion.id !== id),
-      selectedLesionId: state.selectedLesionId === id ? null : state.selectedLesionId
-    }));
-  },
+      removeLesion: (id) => {
+        set((state) => ({
+          lesions: state.lesions.filter((lesion) => lesion.id !== id),
+          selectedLesionId: state.selectedLesionId === id ? null : state.selectedLesionId
+        }));
+      },
 
-  clearLesions: () => {
-    set({ lesions: [], selectedLesionId: null });
-  },
+      clearLesions: () => {
+        set({ lesions: [], selectedLesionId: null });
+      },
 
-  selectLesion: (id) => {
-    set({ selectedLesionId: id });
-  },
+      selectLesion: (id) => {
+        set({ selectedLesionId: id });
+      },
 
-  setLesions: (lesions) => {
-    set({ lesions });
-  }
-}));
+      setLesions: (lesions) => {
+        set({ lesions });
+      }
+    }),
+    {
+      name: 'endomapper-lesions',
+      storage: {
+        getItem: (name) => {
+          if (typeof window === 'undefined') return null;
+          try {
+            const str = sessionStorage.getItem(name);
+            return str ? JSON.parse(str) : null;
+          } catch {
+            return null;
+          }
+        },
+        setItem: (name, value) => {
+          if (typeof window === 'undefined') return;
+          try {
+            sessionStorage.setItem(name, JSON.stringify(value));
+          } catch {
+            // ignore storage errors
+          }
+        },
+        removeItem: (name) => {
+          if (typeof window === 'undefined') return;
+          try {
+            sessionStorage.removeItem(name);
+          } catch {
+            // ignore storage errors
+          }
+        },
+      },
+    }
+  )
+);

@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { Lesion, Severity } from "./lesionStore";
+import { persist } from "zustand/middleware";
+import { Severity } from "./lesionStore";
 
 export interface ReportLesion {
   id: string;
@@ -115,38 +116,9 @@ const saveReportsToStorage = (reports: Record<string, Report>) => {
 
 const initialReports = loadReportsFromStorage();
 
-export const useReportStore = create<ReportState>((set, get) => ({
-  draftImages2D: {
-    "sagittal-avf": "",
-    "sagittal-rvf": "",
-    coronal: "",
-    posterior: "",
-  },
-  draftImageNotes: {
-    "sagittal-avf": "",
-    "sagittal-rvf": "",
-    coronal: "",
-    posterior: "",
-  },
-  reports: initialReports,
-  hydrated: isHydrated,
-  pdfImages: [],
-  selectedViews: {
-    "sagittal-avf": false,
-    "sagittal-rvf": false,
-    coronal: false,
-    posterior: false,
-  },
-
-  setDraftImages2D: (images) => set({ draftImages2D: images }),
-
-  setDraftImageNote: (view, note) =>
-    set((state) => ({
-      draftImageNotes: { ...state.draftImageNotes, [view]: note },
-    })),
-
-  clearDraftImages2D: () =>
-    set({
+export const useReportStore = create<ReportState>()(
+  persist(
+    (set, get) => ({
       draftImages2D: {
         "sagittal-avf": "",
         "sagittal-rvf": "",
@@ -159,66 +131,129 @@ export const useReportStore = create<ReportState>((set, get) => ({
         coronal: "",
         posterior: "",
       },
-    }),
-
-  createReport: (reportData) => {
-    const id = `RPT-${Date.now().toString(36).toUpperCase()}`;
-    const newReport: Report = {
-      ...reportData,
-      id,
-      createdAt: new Date().toISOString(),
-    };
-
-    set((state) => {
-      const updatedReports = { ...state.reports, [id]: newReport };
-      saveReportsToStorage(updatedReports);
-      return { reports: updatedReports };
-    });
-
-    return id;
-  },
-
-  getReport: (id) => {
-    return get().reports[id];
-  },
-
-  deleteReport: (id) => {
-    set((state) => {
-      const { [id]: removed, ...rest } = state.reports;
-      saveReportsToStorage(rest);
-      return { reports: rest };
-    });
-  },
-
-  addPdfImage: (image) =>
-    set((state) => ({
-      pdfImages: [...state.pdfImages, image],
-    })),
-
-  removePdfImage: (index) =>
-    set((state) => ({
-      pdfImages: state.pdfImages.filter((_, i) => i !== index),
-    })),
-
-  clearPdfImages: () => set({ pdfImages: [] }),
-
-  updatePdfImageObservation: (index, observation) =>
-    set((state) => ({
-      pdfImages: state.pdfImages.map((img, i) =>
-        i === index ? { ...img, observation } : img,
-      ),
-    })),
-
-  toggleViewSelection: (view) =>
-    set((state) => ({
+      reports: initialReports,
+      hydrated: isHydrated,
+      pdfImages: [],
       selectedViews: {
-        ...state.selectedViews,
-        [view]: !state.selectedViews[view],
+        "sagittal-avf": false,
+        "sagittal-rvf": false,
+        coronal: false,
+        posterior: false,
       },
-    })),
 
-  setSelectedViews: (views) => set({ selectedViews: views }),
-}));
+      setDraftImages2D: (images) => set({ draftImages2D: images }),
+
+      setDraftImageNote: (view, note) =>
+        set((state) => ({
+          draftImageNotes: { ...state.draftImageNotes, [view]: note },
+        })),
+
+      clearDraftImages2D: () =>
+        set({
+          draftImages2D: {
+            "sagittal-avf": "",
+            "sagittal-rvf": "",
+            coronal: "",
+            posterior: "",
+          },
+          draftImageNotes: {
+            "sagittal-avf": "",
+            "sagittal-rvf": "",
+            coronal: "",
+            posterior: "",
+          },
+        }),
+
+      createReport: (reportData) => {
+        const id = `RPT-${Date.now().toString(36).toUpperCase()}`;
+        const newReport: Report = {
+          ...reportData,
+          id,
+          createdAt: new Date().toISOString(),
+        };
+
+        set((state) => {
+          const updatedReports = { ...state.reports, [id]: newReport };
+          saveReportsToStorage(updatedReports);
+          return { reports: updatedReports };
+        });
+
+        return id;
+      },
+
+      getReport: (id) => {
+        return get().reports[id];
+      },
+
+      deleteReport: (id) => {
+        set((state) => {
+          const { [id]: removed, ...rest } = state.reports;
+          saveReportsToStorage(rest);
+          return { reports: rest };
+        });
+      },
+
+      addPdfImage: (image) =>
+        set((state) => ({
+          pdfImages: [...state.pdfImages, image],
+        })),
+
+      removePdfImage: (index) =>
+        set((state) => ({
+          pdfImages: state.pdfImages.filter((_, i) => i !== index),
+        })),
+
+      clearPdfImages: () => set({ pdfImages: [] }),
+
+      updatePdfImageObservation: (index, observation) =>
+        set((state) => ({
+          pdfImages: state.pdfImages.map((img, i) =>
+            i === index ? { ...img, observation } : img,
+          ),
+        })),
+
+      toggleViewSelection: (view) =>
+        set((state) => ({
+          selectedViews: {
+            ...state.selectedViews,
+            [view]: !state.selectedViews[view],
+          },
+        })),
+
+      setSelectedViews: (views) => set({ selectedViews: views }),
+    }),
+    {
+      name: 'endomapper-report',
+      storage: {
+        getItem: (name) => {
+          if (typeof window === 'undefined') return null;
+          try {
+            const str = sessionStorage.getItem(name);
+            return str ? JSON.parse(str) : null;
+          } catch {
+            return null;
+          }
+        },
+        setItem: (name, value) => {
+          if (typeof window === 'undefined') return;
+          try {
+            sessionStorage.setItem(name, JSON.stringify(value));
+          } catch {
+            // ignore storage errors
+          }
+        },
+        removeItem: (name) => {
+          if (typeof window === 'undefined') return;
+          try {
+            sessionStorage.removeItem(name);
+          } catch {
+            // ignore storage errors
+          }
+        },
+      },
+    }
+  )
+);
 
 export const images2D = {
   get "sagittal-avf"() {

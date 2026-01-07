@@ -77,6 +77,7 @@ interface ReportState {
     coronal: string;
     posterior: string;
   }) => void;
+  setDraftImage: (view: keyof Report["images2D"], imageData: string) => void;
   setDraftImageNote: (view: keyof Report["images2D"], note: string) => void;
   clearDraftImages2D: () => void;
   createReport: (report: Omit<Report, "id" | "createdAt">) => string;
@@ -157,6 +158,11 @@ export const useReportStore = create<ReportState>()(
       },
 
       setDraftImages2D: (images) => set({ draftImages2D: images }),
+
+      setDraftImage: (view, imageData) =>
+        set((state) => ({
+          draftImages2D: { ...state.draftImages2D, [view]: imageData },
+        })),
 
       setDraftImageNote: (view, note) =>
         set((state) => ({

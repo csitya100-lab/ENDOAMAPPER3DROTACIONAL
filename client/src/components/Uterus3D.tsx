@@ -1,9 +1,11 @@
-import { useEffect, useRef, forwardRef, useImperativeHandle, useState } from 'react';
+import { useEffect, useRef, forwardRef, useImperativeHandle, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { useLesionStore, Lesion, Severity, MarkerType } from '@/lib/lesionStore';
+import { useReportStore, Report } from '@/lib/reportStore';
+import { Camera } from 'lucide-react';
 
 const isIOS = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -119,6 +121,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
   const viewPosteriorRef = useRef<HTMLDivElement>(null);
   
   const { lesions, addLesion, updateLesion, removeLesion, clearLesions } = useLesionStore();
+  const { setDraftImage } = useReportStore();
   
   const currentSeverityRef = useRef(severity);
   const currentMarkerSizeRef = useRef(markerSize);
@@ -233,6 +236,87 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       markerType: currentMarkerTypeRef.current
     });
   };
+
+  const captureViewScreenshot = useCallback((viewIndex: number, targetView: keyof Report["images2D"]) => {
+    const renderer = rendererRef.current;
+    const scene = sceneRef.current;
+    const view = viewsRef.current[viewIndex];
+    
+    if (!renderer || !scene || !view || !view.camera) {
+      console.warn('Captura: renderer, scene ou camera não inicializado');
+      return;
+    }
+    
+    try {
+      const targetSize = 512;
+      const renderTarget = new THREE.WebGLRenderTarget(targetSize, targetSize, {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        format: THREE.RGBAFormat,
+      });
+      
+      const originalScissorTest = renderer.getScissorTest();
+      const originalViewport = new THREE.Vector4();
+      const originalScissor = new THREE.Vector4();
+      renderer.getViewport(originalViewport);
+      renderer.getScissor(originalScissor);
+      
+      const captureCamera = view.camera.clone() as THREE.Camera;
+      
+      if ((captureCamera as THREE.OrthographicCamera).isOrthographicCamera) {
+        const ortho = captureCamera as THREE.OrthographicCamera;
+        const height = ortho.top - ortho.bottom;
+        const width = ortho.right - ortho.left;
+        const size = Math.max(height, width);
+        ortho.left = -size / 2;
+        ortho.right = size / 2;
+        ortho.top = size / 2;
+        ortho.bottom = -size / 2;
+        ortho.updateProjectionMatrix();
+      } else if ((captureCamera as THREE.PerspectiveCamera).isPerspectiveCamera) {
+        const persp = captureCamera as THREE.PerspectiveCamera;
+        persp.aspect = 1;
+        persp.updateProjectionMatrix();
+      }
+      
+      renderer.setScissorTest(false);
+      renderer.setRenderTarget(renderTarget);
+      renderer.setViewport(0, 0, targetSize, targetSize);
+      renderer.render(scene, captureCamera);
+      
+      const pixels = new Uint8Array(targetSize * targetSize * 4);
+      renderer.readRenderTargetPixels(renderTarget, 0, 0, targetSize, targetSize, pixels);
+      
+      renderer.setRenderTarget(null);
+      renderer.setScissorTest(originalScissorTest);
+      renderer.setViewport(originalViewport);
+      renderer.setScissor(originalScissor);
+      renderTarget.dispose();
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = targetSize;
+      canvas.height = targetSize;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const imageData = ctx.createImageData(targetSize, targetSize);
+        for (let y = 0; y < targetSize; y++) {
+          for (let x = 0; x < targetSize; x++) {
+            const srcIdx = ((targetSize - 1 - y) * targetSize + x) * 4;
+            const dstIdx = (y * targetSize + x) * 4;
+            imageData.data[dstIdx] = pixels[srcIdx];
+            imageData.data[dstIdx + 1] = pixels[srcIdx + 1];
+            imageData.data[dstIdx + 2] = pixels[srcIdx + 2];
+            imageData.data[dstIdx + 3] = pixels[srcIdx + 3];
+          }
+        }
+        ctx.putImageData(imageData, 0, 0);
+        const imageDataUrl = canvas.toDataURL('image/png');
+        setDraftImage(targetView, imageDataUrl);
+      }
+    } catch (e) {
+      console.error('Erro ao capturar vista:', e);
+    }
+  }, [setDraftImage]);
 
   // Get or create cached geometry
   const getCachedGeometry = (type: string, size: number): THREE.BufferGeometry => {
@@ -1109,6 +1193,24 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-blue-400 select-none z-10 backdrop-blur-sm">
              SAGITTAL (SIDE)
            </div>
+           <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+             <button
+               onClick={(e) => { e.stopPropagation(); captureViewScreenshot(1, 'sagittal-avf'); }}
+               className="w-7 h-7 bg-blue-500/80 hover:bg-blue-500 rounded flex items-center justify-center transition-colors"
+               title="Capturar Sagittal AVF"
+               data-testid="button-capture-sagittal-avf"
+             >
+               <span className="text-[8px] text-white font-bold">AVF</span>
+             </button>
+             <button
+               onClick={(e) => { e.stopPropagation(); captureViewScreenshot(1, 'sagittal-rvf'); }}
+               className="w-7 h-7 bg-purple-500/80 hover:bg-purple-500 rounded flex items-center justify-center transition-colors"
+               title="Capturar Sagittal RVF"
+               data-testid="button-capture-sagittal-rvf"
+             >
+               <span className="text-[8px] text-white font-bold">RVF</span>
+             </button>
+           </div>
            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
               <span className="text-[10px] text-white/30 font-mono tracking-widest bg-black/40 px-2 py-1 rounded">CLICK TO ADD LESION</span>
            </div>
@@ -1118,6 +1220,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-green-400 select-none z-10 backdrop-blur-sm">
              CORONAL (FRONT)
            </div>
+           <button
+             onClick={(e) => { e.stopPropagation(); captureViewScreenshot(2, 'coronal'); }}
+             className="absolute top-2 right-2 w-7 h-7 bg-green-500/80 hover:bg-green-500 rounded flex items-center justify-center z-10 transition-colors opacity-0 group-hover:opacity-100"
+             title="Capturar Coronal"
+             data-testid="button-capture-coronal"
+           >
+             <Camera className="w-4 h-4 text-white" />
+           </button>
            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
               <span className="text-[10px] text-white/30 font-mono tracking-widest bg-black/40 px-2 py-1 rounded">CLICK TO ADD LESION</span>
            </div>
@@ -1127,6 +1237,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-yellow-400 select-none z-10 backdrop-blur-sm">
              POSTERIOR (BACK)
            </div>
+           <button
+             onClick={(e) => { e.stopPropagation(); captureViewScreenshot(3, 'posterior'); }}
+             className="absolute top-2 right-2 w-7 h-7 bg-yellow-500/80 hover:bg-yellow-500 rounded flex items-center justify-center z-10 transition-colors opacity-0 group-hover:opacity-100"
+             title="Capturar Posterior"
+             data-testid="button-capture-posterior"
+           >
+             <Camera className="w-4 h-4 text-white" />
+           </button>
            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
               <span className="text-[10px] text-white/30 font-mono tracking-widest bg-black/40 px-2 py-1 rounded">CLICK TO ADD LESION</span>
            </div>

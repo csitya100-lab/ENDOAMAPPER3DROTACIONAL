@@ -56,6 +56,13 @@ interface ReportState {
   hydrated: boolean;
 
   pdfImages: PdfImage[];
+  patientName: string;
+  examDate: string;
+  patientId: string;
+
+  setPatientName: (name: string) => void;
+  setExamDate: (date: string) => void;
+  setPatientId: (id: string) => void;
 
   selectedViews: {
     "sagittal-avf": boolean;
@@ -134,6 +141,14 @@ export const useReportStore = create<ReportState>()(
       reports: initialReports,
       hydrated: isHydrated,
       pdfImages: [],
+      patientName: "",
+      examDate: "",
+      patientId: "",
+
+      setPatientName: (name: string) => set({ patientName: name }),
+      setExamDate: (date: string) => set({ examDate: date }),
+      setPatientId: (id: string) => set({ patientId: id }),
+
       selectedViews: {
         "sagittal-avf": false,
         "sagittal-rvf": false,
@@ -251,6 +266,15 @@ export const useReportStore = create<ReportState>()(
           }
         },
       },
+      partialize: (state) => ({
+        pdfImages: state.pdfImages,
+        draftImages2D: state.draftImages2D,
+        draftImageNotes: state.draftImageNotes,
+        selectedViews: state.selectedViews,
+        patientName: state.patientName,
+        examDate: state.examDate,
+        patientId: state.patientId,
+      }) as ReportState,
     }
   )
 );

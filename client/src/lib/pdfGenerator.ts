@@ -50,20 +50,31 @@ function addImageInSlot(
   }
 }
 
-function addHeader(pdf: jsPDF, pageNum: number, totalPages: number) {
+function addHeader(pdf: jsPDF, pageNum: number, totalPages: number, metadata?: { patientName?: string, examDate?: string, patientId?: string }) {
   pdf.setFontSize(16);
   pdf.setTextColor(219, 39, 119);
   pdf.text('EndoMapper - Mapeamento de Lesões', A4_WIDTH / 2, 15, { align: 'center' });
   
   pdf.setFontSize(9);
   pdf.setTextColor(100, 100, 100);
-  const dateStr = new Date().toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-  pdf.text(`Data: ${dateStr}`, MARGIN, 25);
-  pdf.text(`Página ${pageNum}/${totalPages}`, A4_WIDTH - MARGIN, 25, { align: 'right' });
+  
+  if (metadata?.patientName) {
+    pdf.text(`Paciente: ${metadata.patientName}`, MARGIN, 22);
+  }
+  if (metadata?.patientId) {
+    pdf.text(`ID: ${metadata.patientId}`, MARGIN, 26);
+  }
+
+  const dateStr = metadata?.examDate 
+    ? new Date(metadata.examDate).toLocaleDateString('pt-BR')
+    : new Date().toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+
+  pdf.text(`Data: ${dateStr}`, A4_WIDTH - MARGIN, 22, { align: 'right' });
+  pdf.text(`Página ${pageNum}/${totalPages}`, A4_WIDTH - MARGIN, 26, { align: 'right' });
   
   pdf.setDrawColor(219, 39, 119);
   pdf.setLineWidth(0.5);
@@ -81,7 +92,10 @@ function addFooter(pdf: jsPDF) {
   );
 }
 
-export function generatePdfReport(images: PdfImage[]): void {
+export function generatePdfReport(
+  images: PdfImage[], 
+  metadata?: { patientName?: string, examDate?: string, patientId?: string }
+): void {
   if (images.length === 0) {
     alert('Nenhuma imagem adicionada ao relatório.');
     return;
@@ -105,7 +119,7 @@ export function generatePdfReport(images: PdfImage[]): void {
     }
 
     if (slotIndex === 0) {
-      addHeader(pdf, pageIndex + 1, totalPages);
+      addHeader(pdf, pageIndex + 1, totalPages, metadata);
       addFooter(pdf);
     }
 

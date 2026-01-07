@@ -1,16 +1,29 @@
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useReportStore } from '@/lib/reportStore';
 import { generatePdfReport } from '@/lib/pdfGenerator';
 import { ArrowLeft, FileDown, Printer, Trash2 } from 'lucide-react';
 
 export default function PreviewReport() {
   const [, setLocation] = useLocation();
-  const { pdfImages, updatePdfImageObservation, removePdfImage, clearPdfImages } = useReportStore();
+  const { 
+    pdfImages, 
+    updatePdfImageObservation, 
+    removePdfImage, 
+    clearPdfImages,
+    patientName,
+    setPatientName,
+    examDate,
+    setExamDate,
+    patientId,
+    setPatientId
+  } = useReportStore();
 
   const handleExportPdf = () => {
-    generatePdfReport(pdfImages);
+    generatePdfReport(pdfImages, { patientName, examDate, patientId });
   };
 
   const handlePrint = () => {
@@ -88,7 +101,43 @@ export default function PreviewReport() {
         ) : (
           <>
             <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 print:border-0 print:p-0 print:mb-4">
-              <div className="text-center mb-6 print:mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 print:mb-6">
+                <div className="space-y-2">
+                  <Label htmlFor="patientName" className="text-gray-700 font-medium">Nome da Paciente</Label>
+                  <Input
+                    id="patientName"
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                    placeholder="Digite o nome completo"
+                    className="border-gray-200 focus:ring-pink-500 focus:border-pink-500 print:border-transparent print:p-0 print:text-lg print:font-bold"
+                    data-testid="input-patient-name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="patientId" className="text-gray-700 font-medium">ID / Registro</Label>
+                  <Input
+                    id="patientId"
+                    value={patientId}
+                    onChange={(e) => setPatientId(e.target.value)}
+                    placeholder="Ex: 12345"
+                    className="border-gray-200 focus:ring-pink-500 focus:border-pink-500 print:border-transparent print:p-0"
+                    data-testid="input-patient-id"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="examDate" className="text-gray-700 font-medium">Data do Exame</Label>
+                  <Input
+                    id="examDate"
+                    type="date"
+                    value={examDate}
+                    onChange={(e) => setExamDate(e.target.value)}
+                    className="border-gray-200 focus:ring-pink-500 focus:border-pink-500 print:border-transparent print:p-0"
+                    data-testid="input-exam-date"
+                  />
+                </div>
+              </div>
+
+              <div className="text-center mb-6 print:mb-4 border-t border-gray-100 pt-6">
                 <h2 className="text-2xl font-bold text-gray-900 print:text-xl">EndoMapper</h2>
                 <p className="text-gray-500 text-sm">Mapeamento de Lesões de Endometriose</p>
                 <p className="text-gray-400 text-xs mt-1">

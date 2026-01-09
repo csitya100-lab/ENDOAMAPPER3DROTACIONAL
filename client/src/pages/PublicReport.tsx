@@ -218,18 +218,18 @@ export default function PublicReport() {
     );
   }
 
-  const examPhotos: string[] = [];
+  const images3D = report.images3D || [];
 
   const nextPhoto = () => {
-    if (examPhotos.length > 0) {
-      setPhotoIndex((prev) => (prev + 1) % examPhotos.length);
+    if (images3D.length > 0) {
+      setPhotoIndex((prev) => (prev + 1) % images3D.length);
     }
   };
 
   const prevPhoto = () => {
-    if (examPhotos.length > 0) {
+    if (images3D.length > 0) {
       setPhotoIndex(
-        (prev) => (prev - 1 + examPhotos.length) % examPhotos.length,
+        (prev) => (prev - 1 + images3D.length) % images3D.length,
       );
     }
   };
@@ -361,54 +361,59 @@ export default function PublicReport() {
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100">
                 <h2 className="text-sm font-semibold text-slate-700">
-                  Fotos do Exame
+                  Capturas 3D
                 </h2>
               </div>
               <div className="p-4">
-                {examPhotos.length > 0 ? (
+                {images3D.length > 0 ? (
                   <div className="relative">
-                    <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden">
+                    <div className="aspect-square bg-slate-100 rounded-lg overflow-hidden">
                       <img
-                        src={examPhotos[photoIndex]}
-                        alt={`Foto ${photoIndex + 1}`}
+                        src={images3D[photoIndex]?.data}
+                        alt={images3D[photoIndex]?.label || `Captura ${photoIndex + 1}`}
                         className="w-full h-full object-cover cursor-pointer"
-                        onClick={() => setExpandedPhoto(examPhotos[photoIndex])}
-                        data-testid={`img-exam-photo-${photoIndex}`}
+                        onClick={() => setExpandedPhoto(images3D[photoIndex]?.data)}
+                        data-testid={`img-3d-capture-${photoIndex}`}
                       />
                     </div>
-                    {examPhotos.length > 1 && (
+                    <div className="mt-2 text-center">
+                      <span className="text-xs text-slate-600">
+                        {images3D[photoIndex]?.label}
+                      </span>
+                    </div>
+                    {images3D.length > 1 && (
                       <>
                         <button
                           onClick={prevPhoto}
                           className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
-                          data-testid="button-prev-photo"
+                          data-testid="button-prev-3d"
                         >
                           <ChevronLeft className="w-5 h-5 text-slate-700" />
                         </button>
                         <button
                           onClick={nextPhoto}
                           className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
-                          data-testid="button-next-photo"
+                          data-testid="button-next-3d"
                         >
                           <ChevronRight className="w-5 h-5 text-slate-700" />
                         </button>
                       </>
                     )}
                     <div className="flex justify-center gap-1.5 mt-3">
-                      {examPhotos.map((_, idx) => (
+                      {images3D.map((_, idx) => (
                         <button
                           key={idx}
                           onClick={() => setPhotoIndex(idx)}
                           className={`w-2 h-2 rounded-full transition-colors ${idx === photoIndex ? "bg-pink-500" : "bg-slate-300"}`}
-                          data-testid={`button-photo-dot-${idx}`}
+                          data-testid={`button-3d-dot-${idx}`}
                         />
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="aspect-video bg-slate-100 rounded-lg flex items-center justify-center">
+                  <div className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center">
                     <span className="text-sm text-slate-700">
-                      Nenhuma foto disponível
+                      Nenhuma captura 3D
                     </span>
                   </div>
                 )}

@@ -222,6 +222,7 @@ export const useReportStore = create<ReportState>()(
         const id = `RPT-${Date.now().toString(36).toUpperCase()}`;
         const newReport: Report = {
           ...reportData,
+          images3D: reportData.images3D || [],
           id,
           createdAt: new Date().toISOString(),
         };

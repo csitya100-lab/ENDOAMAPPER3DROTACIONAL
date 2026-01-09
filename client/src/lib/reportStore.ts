@@ -10,6 +10,14 @@ export interface ReportLesion {
   position: { x: number; y: number; z: number };
 }
 
+export interface Image3D {
+  id: string;
+  data: string;
+  label: string;
+  observation: string;
+  capturedAt: string;
+}
+
 export interface Report {
   id: string;
   patientName: string;
@@ -26,6 +34,7 @@ export interface Report {
     coronal: string;
     posterior: string;
   };
+  images3D: Image3D[];
   lesions: ReportLesion[];
   createdAt: string;
 }
@@ -48,6 +57,7 @@ interface ReportState {
     coronal: string;
     posterior: string;
   };
+  draftImages3D: Image3D[];
   reports: Record<string, Report>;
   hydrated: boolean;
 
@@ -74,6 +84,12 @@ interface ReportState {
   setDraftImage: (view: keyof Report["images2D"], imageData: string) => void;
   setDraftImageNote: (view: keyof Report["images2D"], note: string) => void;
   clearDraftImages2D: () => void;
+  
+  addDraftImage3D: (imageData: string) => void;
+  removeDraftImage3D: (id: string) => void;
+  updateDraftImage3DObservation: (id: string, observation: string) => void;
+  clearDraftImages3D: () => void;
+  
   createReport: (report: Omit<Report, "id" | "createdAt">) => string;
   getReport: (id: string) => Report | undefined;
   deleteReport: (id: string) => void;
@@ -130,6 +146,7 @@ export const useReportStore = create<ReportState>()(
         coronal: "",
         posterior: "",
       },
+      draftImages3D: [],
       reports: initialReports,
       hydrated: isHydrated,
       pdfImages: [],
@@ -172,6 +189,34 @@ export const useReportStore = create<ReportState>()(
             posterior: "",
           },
         }),
+
+      addDraftImage3D: (imageData: string) =>
+        set((state) => ({
+          draftImages3D: [
+            ...state.draftImages3D,
+            {
+              id: `img3d-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              data: imageData,
+              label: `Captura 3D ${state.draftImages3D.length + 1}`,
+              observation: "",
+              capturedAt: new Date().toISOString(),
+            },
+          ],
+        })),
+
+      removeDraftImage3D: (id: string) =>
+        set((state) => ({
+          draftImages3D: state.draftImages3D.filter((img) => img.id !== id),
+        })),
+
+      updateDraftImage3DObservation: (id: string, observation: string) =>
+        set((state) => ({
+          draftImages3D: state.draftImages3D.map((img) =>
+            img.id === id ? { ...img, observation } : img,
+          ),
+        })),
+
+      clearDraftImages3D: () => set({ draftImages3D: [] }),
 
       createReport: (reportData) => {
         const id = `RPT-${Date.now().toString(36).toUpperCase()}`;
@@ -264,6 +309,7 @@ export const useReportStore = create<ReportState>()(
         pdfImages: state.pdfImages,
         draftImages2D: state.draftImages2D,
         draftImageNotes: state.draftImageNotes,
+        draftImages3D: state.draftImages3D,
         selectedViews: state.selectedViews,
         patientName: state.patientName,
         examDate: state.examDate,

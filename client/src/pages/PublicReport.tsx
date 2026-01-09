@@ -18,13 +18,6 @@ const SEVERITY_COLORS: Record<
     text: "text-pink-700",
     border: "border-pink-300",
   },
-  moderate: {
-    hex: "#f97316",
-    label: "Moderada",
-    bg: "bg-orange-100",
-    text: "text-orange-700",
-    border: "border-orange-300",
-  },
   deep: {
     hex: "#eab308",
     label: "Profunda",
@@ -325,12 +318,11 @@ export default function PublicReport() {
                 </h2>
               </div>
               <div className="p-4">
-                <div className="grid grid-cols-2 gap-3">
-                  {(["sagittal-avf", "sagittal-rvf", "coronal", "posterior"] as const).map(
+                <div className="grid grid-cols-3 gap-3">
+                  {(["sagittal", "coronal", "posterior"] as const).map(
                     (view) => {
                       const viewLabels: Record<string, string> = {
-                        "sagittal-avf": "Sagital AVF",
-                        "sagittal-rvf": "Sagital RVF",
+                        sagittal: "Sagittal",
                         coronal: "Coronal",
                         posterior: "Posterior",
                       };
@@ -479,13 +471,6 @@ export default function PublicReport() {
                 style={{ backgroundColor: SEVERITY_COLORS.superficial.hex }}
               />
               <span>Superficial</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: SEVERITY_COLORS.moderate.hex }}
-              />
-              <span>Moderada</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div

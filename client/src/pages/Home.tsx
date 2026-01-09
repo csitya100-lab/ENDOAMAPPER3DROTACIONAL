@@ -99,8 +99,8 @@ export default function Home() {
   };
 
   const handleGenerateReport = () => {
-    if (!draftImages2D['sagittal-avf'] && !draftImages2D['sagittal-rvf'] && !draftImages2D.coronal && !draftImages2D.posterior) {
-      const proceed = confirm('Nenhuma imagem 2D foi capturada ainda. Deseja continuar mesmo assim?');
+    if (!draftImages2D.sagittal && !draftImages2D.coronal && !draftImages2D.posterior) {
+      const proceed = confirm('Nenhuma imagem foi capturada ainda. Use os botões de câmera nas vistas Sagittal, Coronal e Posterior. Deseja continuar mesmo assim?');
       if (!proceed) return;
     }
 
@@ -111,8 +111,7 @@ export default function Home() {
       examType: 'Mapeamento EndoMapper',
       images2D: draftImages2D,
       imageNotes: {
-        "sagittal-avf": "",
-        "sagittal-rvf": "",
+        sagittal: "",
         coronal: "",
         posterior: "",
       },

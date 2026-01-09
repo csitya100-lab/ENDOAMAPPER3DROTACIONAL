@@ -1193,26 +1193,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-blue-400 select-none z-10 backdrop-blur-sm">
              SAGITTAL (SIDE)
            </div>
-           <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-             <button
-               onClick={(e) => { e.stopPropagation(); captureViewScreenshot(1, 'sagittal-avf'); }}
-               className="h-7 px-2 bg-blue-500/80 hover:bg-blue-500 rounded flex items-center gap-1 transition-colors"
-               title="Capturar Sagittal AVF"
-               data-testid="button-capture-sagittal-avf"
-             >
-               <Camera className="w-3 h-3 text-white" />
-               <span className="text-[8px] text-white font-bold">AVF</span>
-             </button>
-             <button
-               onClick={(e) => { e.stopPropagation(); captureViewScreenshot(1, 'sagittal-rvf'); }}
-               className="h-7 px-2 bg-purple-500/80 hover:bg-purple-500 rounded flex items-center gap-1 transition-colors"
-               title="Capturar Sagittal RVF"
-               data-testid="button-capture-sagittal-rvf"
-             >
-               <Camera className="w-3 h-3 text-white" />
-               <span className="text-[8px] text-white font-bold">RVF</span>
-             </button>
-           </div>
+           <button
+             onClick={(e) => { e.stopPropagation(); captureViewScreenshot(1, 'sagittal'); }}
+             className="absolute top-2 right-2 w-7 h-7 bg-blue-500/80 hover:bg-blue-500 rounded flex items-center justify-center z-10 transition-colors opacity-0 group-hover:opacity-100"
+             title="Capturar Sagittal"
+             data-testid="button-capture-sagittal"
+           >
+             <Camera className="w-4 h-4 text-white" />
+           </button>
            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
               <span className="text-[10px] text-white/30 font-mono tracking-widest bg-black/40 px-2 py-1 rounded">CLICK TO ADD LESION</span>
            </div>

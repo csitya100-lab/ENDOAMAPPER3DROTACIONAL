@@ -81,26 +81,29 @@ export default function Home() {
     }
   };
 
-  const { draftImages2D, createReport, clearDraftImages2D, addPdfImage, pdfImages } = useReportStore();
+  const { 
+    draftImages2D, 
+    draftImages3D,
+    createReport, 
+    clearDraftImages2D, 
+    clearDraftImages3D,
+    addDraftImage3D 
+  } = useReportStore();
 
   const handleCapture3D = () => {
     const imageData = uterusRef.current?.captureScreenshot();
     if (imageData) {
-      addPdfImage({
-        data: imageData,
-        label: `Modelo 3D - Vista ${pdfImages.filter(img => img.viewType === '3d').length + 1}`,
-        viewType: '3d',
-        observation: ''
-      });
-      alert('Imagem 3D adicionada ao relatório!');
+      addDraftImage3D(imageData);
+      alert(`Captura 3D adicionada! (${draftImages3D.length + 1} capturas)`);
     } else {
       alert('Erro ao capturar a imagem. Tente novamente.');
     }
   };
 
   const handleGenerateReport = () => {
-    if (!draftImages2D.sagittal && !draftImages2D.coronal && !draftImages2D.posterior) {
-      const proceed = confirm('Nenhuma imagem foi capturada ainda. Use os botões de câmera nas vistas Sagittal, Coronal e Posterior. Deseja continuar mesmo assim?');
+    const hasAnyCapture = draftImages2D.sagittal || draftImages2D.coronal || draftImages2D.posterior || draftImages3D.length > 0;
+    if (!hasAnyCapture) {
+      const proceed = confirm('Nenhuma imagem foi capturada ainda. Use os botões de câmera nas vistas para capturar. Deseja continuar mesmo assim?');
       if (!proceed) return;
     }
 
@@ -115,6 +118,7 @@ export default function Home() {
         coronal: "",
         posterior: "",
       },
+      images3D: draftImages3D,
       lesions: lesions.map((l, idx) => ({
         id: l.id,
         name: `Lesão ${String.fromCharCode(65 + idx)}`,
@@ -126,6 +130,7 @@ export default function Home() {
 
     console.log('Relatório criado com ID:', reportId);
     clearDraftImages2D();
+    clearDraftImages3D();
     setLocation(`/relatorio/${reportId}`);
   };
 

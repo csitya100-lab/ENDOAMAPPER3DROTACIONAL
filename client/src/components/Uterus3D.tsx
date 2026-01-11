@@ -712,6 +712,77 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         });
         
         anatomyGroup.add(model);
+        
+        // Add uterosacral ligaments - positioned at uterus body/cervix junction
+        const ligamentMaterial = new THREE.MeshStandardMaterial({
+          color: 0xC49080,
+          roughness: 0.55,
+          metalness: 0.02,
+          side: THREE.DoubleSide
+        });
+        
+        // Right uterosacral ligament - from body/cervix junction going posteriorly and laterally
+        const rightLigamentCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0.3, -0.5, 0.2),
+          new THREE.Vector3(0.6, -0.8, 0.8),
+          new THREE.Vector3(0.9, -1.2, 1.4),
+          new THREE.Vector3(1.0, -1.5, 1.8),
+        ]);
+        const rightLigamentGeo = new THREE.TubeGeometry(rightLigamentCurve, 20, 0.08, 8, false);
+        const rightLigament = new THREE.Mesh(rightLigamentGeo, ligamentMaterial);
+        rightLigament.castShadow = true;
+        rightLigament.receiveShadow = true;
+        anatomyGroup.add(rightLigament);
+        
+        // Left uterosacral ligament - mirror of right
+        const leftLigamentCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-0.3, -0.5, 0.2),
+          new THREE.Vector3(-0.6, -0.8, 0.8),
+          new THREE.Vector3(-0.9, -1.2, 1.4),
+          new THREE.Vector3(-1.0, -1.5, 1.8),
+        ]);
+        const leftLigamentGeo = new THREE.TubeGeometry(leftLigamentCurve, 20, 0.08, 8, false);
+        const leftLigament = new THREE.Mesh(leftLigamentGeo, ligamentMaterial);
+        leftLigament.castShadow = true;
+        leftLigament.receiveShadow = true;
+        anatomyGroup.add(leftLigament);
+        
+        // Add ureters - thin tubes running laterally near the uterus
+        const ureterMaterial = new THREE.MeshStandardMaterial({
+          color: 0xFFE4B5,
+          roughness: 0.6,
+          metalness: 0.0,
+          side: THREE.DoubleSide
+        });
+        
+        // Right ureter - runs from upper lateral position down past cervix
+        const rightUreterCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(1.8, 1.5, 0.3),
+          new THREE.Vector3(1.5, 0.5, 0.2),
+          new THREE.Vector3(1.2, -0.5, 0.15),
+          new THREE.Vector3(0.9, -1.5, 0.1),
+          new THREE.Vector3(0.6, -2.5, 0.0),
+        ]);
+        const rightUreterGeo = new THREE.TubeGeometry(rightUreterCurve, 24, 0.04, 8, false);
+        const rightUreter = new THREE.Mesh(rightUreterGeo, ureterMaterial);
+        rightUreter.castShadow = true;
+        rightUreter.receiveShadow = true;
+        anatomyGroup.add(rightUreter);
+        
+        // Left ureter - mirror of right
+        const leftUreterCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-1.8, 1.5, 0.3),
+          new THREE.Vector3(-1.5, 0.5, 0.2),
+          new THREE.Vector3(-1.2, -0.5, 0.15),
+          new THREE.Vector3(-0.9, -1.5, 0.1),
+          new THREE.Vector3(-0.6, -2.5, 0.0),
+        ]);
+        const leftUreterGeo = new THREE.TubeGeometry(leftUreterCurve, 24, 0.04, 8, false);
+        const leftUreter = new THREE.Mesh(leftUreterGeo, ureterMaterial);
+        leftUreter.castShadow = true;
+        leftUreter.receiveShadow = true;
+        anatomyGroup.add(leftUreter);
+        
         setLoadingState('loaded');
         setLoadingProgress(100);
         

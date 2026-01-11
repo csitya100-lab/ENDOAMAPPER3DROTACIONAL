@@ -643,6 +643,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
             if ((child as THREE.Mesh).isMesh && child !== model) {
                 const mesh = child as THREE.Mesh;
                 
+                // Hide existing uterosacral ligaments from original GLB
+                if (mesh.name.toLowerCase().includes('sacro') || 
+                    mesh.name.toLowerCase().includes('ligament') || 
+                    mesh.name.toLowerCase().includes('uterosacral')) {
+                  mesh.visible = false;
+                  return;
+                }
+
                 let originalColor = new THREE.Color(0xffffff);
                 let originalMat = mesh.material;
                 if (Array.isArray(originalMat)) {

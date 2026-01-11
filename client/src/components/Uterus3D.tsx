@@ -272,6 +272,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
   };
 
   const captureViewScreenshot = useCallback((viewIndex: number, targetView: keyof Report["images2D"]) => {
+    console.log(`captureViewScreenshot chamado: viewIndex=${viewIndex}, targetView=${targetView}`);
     const renderer = rendererRef.current;
     const scene = sceneRef.current;
     const view = viewsRef.current[viewIndex];
@@ -345,6 +346,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         }
         ctx.putImageData(imageData, 0, 0);
         const imageDataUrl = canvas.toDataURL('image/png');
+        console.log(`Imagem capturada para ${targetView}, tamanho: ${imageDataUrl.length} bytes`);
         setDraftImage(targetView, imageDataUrl);
       }
     } catch (e) {
@@ -1292,7 +1294,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         </div>
       )}
       
-      <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-[2px] p-[2px] pointer-events-none">
+      <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-[2px] p-[2px] pointer-events-none z-20">
         <div ref={viewMainRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden group">
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-pink-400 select-none z-10 backdrop-blur-sm">
              3D PERSPECTIVE

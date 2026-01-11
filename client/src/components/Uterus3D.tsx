@@ -721,12 +721,12 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           side: THREE.DoubleSide
         });
         
-        // Right uterosacral ligament - from body/cervix junction going posteriorly and laterally
+        // Right uterosacral ligament - from body/cervix junction going posteriorly (negative Z) and laterally
         const rightLigamentCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0.3, -0.5, 0.2),
-          new THREE.Vector3(0.6, -0.8, 0.8),
-          new THREE.Vector3(0.9, -1.2, 1.4),
-          new THREE.Vector3(1.0, -1.5, 1.8),
+          new THREE.Vector3(0.3, -0.5, -0.1),
+          new THREE.Vector3(0.6, -0.8, -0.7),
+          new THREE.Vector3(0.9, -1.2, -1.3),
+          new THREE.Vector3(1.0, -1.5, -1.8),
         ]);
         const rightLigamentGeo = new THREE.TubeGeometry(rightLigamentCurve, 20, 0.08, 8, false);
         const rightLigament = new THREE.Mesh(rightLigamentGeo, ligamentMaterial);
@@ -734,12 +734,12 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         rightLigament.receiveShadow = true;
         anatomyGroup.add(rightLigament);
         
-        // Left uterosacral ligament - mirror of right
+        // Left uterosacral ligament - mirror of right (posterior direction)
         const leftLigamentCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-0.3, -0.5, 0.2),
-          new THREE.Vector3(-0.6, -0.8, 0.8),
-          new THREE.Vector3(-0.9, -1.2, 1.4),
-          new THREE.Vector3(-1.0, -1.5, 1.8),
+          new THREE.Vector3(-0.3, -0.5, -0.1),
+          new THREE.Vector3(-0.6, -0.8, -0.7),
+          new THREE.Vector3(-0.9, -1.2, -1.3),
+          new THREE.Vector3(-1.0, -1.5, -1.8),
         ]);
         const leftLigamentGeo = new THREE.TubeGeometry(leftLigamentCurve, 20, 0.08, 8, false);
         const leftLigament = new THREE.Mesh(leftLigamentGeo, ligamentMaterial);

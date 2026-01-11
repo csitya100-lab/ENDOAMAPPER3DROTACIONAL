@@ -240,13 +240,15 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           const imageData = ctx.createImageData(targetSize, targetSize);
+          // Apply gamma correction (sRGB) to match live renderer output
+          const gammaCorrect = (value: number) => Math.round(Math.pow(value / 255, 1 / 2.2) * 255);
           for (let y = 0; y < targetSize; y++) {
             for (let x = 0; x < targetSize; x++) {
               const srcIdx = ((targetSize - 1 - y) * targetSize + x) * 4;
               const dstIdx = (y * targetSize + x) * 4;
-              imageData.data[dstIdx] = pixels[srcIdx];
-              imageData.data[dstIdx + 1] = pixels[srcIdx + 1];
-              imageData.data[dstIdx + 2] = pixels[srcIdx + 2];
+              imageData.data[dstIdx] = gammaCorrect(pixels[srcIdx]);
+              imageData.data[dstIdx + 1] = gammaCorrect(pixels[srcIdx + 1]);
+              imageData.data[dstIdx + 2] = gammaCorrect(pixels[srcIdx + 2]);
               imageData.data[dstIdx + 3] = pixels[srcIdx + 3];
             }
           }
@@ -334,13 +336,15 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       const ctx = canvas.getContext('2d');
       if (ctx) {
         const imageData = ctx.createImageData(targetSize, targetSize);
+        // Apply gamma correction (sRGB) to match live renderer output
+        const gammaCorrect = (value: number) => Math.round(Math.pow(value / 255, 1 / 2.2) * 255);
         for (let y = 0; y < targetSize; y++) {
           for (let x = 0; x < targetSize; x++) {
             const srcIdx = ((targetSize - 1 - y) * targetSize + x) * 4;
             const dstIdx = (y * targetSize + x) * 4;
-            imageData.data[dstIdx] = pixels[srcIdx];
-            imageData.data[dstIdx + 1] = pixels[srcIdx + 1];
-            imageData.data[dstIdx + 2] = pixels[srcIdx + 2];
+            imageData.data[dstIdx] = gammaCorrect(pixels[srcIdx]);
+            imageData.data[dstIdx + 1] = gammaCorrect(pixels[srcIdx + 1]);
+            imageData.data[dstIdx + 2] = gammaCorrect(pixels[srcIdx + 2]);
             imageData.data[dstIdx + 3] = pixels[srcIdx + 3];
           }
         }

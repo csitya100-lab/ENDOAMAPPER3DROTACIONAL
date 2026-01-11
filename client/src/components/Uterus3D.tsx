@@ -203,23 +203,57 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       }
       
       try {
-        const canvas = renderer.domElement;
-        const width = canvas.width;
-        const height = canvas.height;
+        const targetSize = 512;
+        const renderTarget = new THREE.WebGLRenderTarget(targetSize, targetSize, {
+          minFilter: THREE.LinearFilter,
+          magFilter: THREE.LinearFilter,
+          format: THREE.RGBAFormat,
+        });
+        
+        const originalScissorTest = renderer.getScissorTest();
+        const originalViewport = new THREE.Vector4();
+        const originalScissor = new THREE.Vector4();
+        renderer.getViewport(originalViewport);
+        renderer.getScissor(originalScissor);
+        
+        const captureCamera = mainView.camera.clone() as THREE.PerspectiveCamera;
+        captureCamera.aspect = 1;
+        captureCamera.updateProjectionMatrix();
         
         renderer.setScissorTest(false);
-        renderer.setViewport(0, 0, width, height);
+        renderer.setRenderTarget(renderTarget);
+        renderer.setViewport(0, 0, targetSize, targetSize);
+        renderer.render(scene, captureCamera);
         
-        mainView.camera.aspect = width / height;
-        mainView.camera.updateProjectionMatrix();
+        const pixels = new Uint8Array(targetSize * targetSize * 4);
+        renderer.readRenderTargetPixels(renderTarget, 0, 0, targetSize, targetSize, pixels);
         
-        renderer.render(scene, mainView.camera);
+        renderer.setRenderTarget(null);
+        renderer.setScissorTest(originalScissorTest);
+        renderer.setViewport(originalViewport);
+        renderer.setScissor(originalScissor);
+        renderTarget.dispose();
         
-        const imageData = canvas.toDataURL('image/png');
-        
-        renderer.setScissorTest(true);
-        
-        return imageData;
+        const canvas = document.createElement('canvas');
+        canvas.width = targetSize;
+        canvas.height = targetSize;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          const imageData = ctx.createImageData(targetSize, targetSize);
+          for (let y = 0; y < targetSize; y++) {
+            for (let x = 0; x < targetSize; x++) {
+              const srcIdx = ((targetSize - 1 - y) * targetSize + x) * 4;
+              const dstIdx = (y * targetSize + x) * 4;
+              imageData.data[dstIdx] = pixels[srcIdx];
+              imageData.data[dstIdx + 1] = pixels[srcIdx + 1];
+              imageData.data[dstIdx + 2] = pixels[srcIdx + 2];
+              imageData.data[dstIdx + 3] = pixels[srcIdx + 3];
+            }
+          }
+          ctx.putImageData(imageData, 0, 0);
+          return canvas.toDataURL('image/png');
+        }
+        return null;
       } catch (e) {
         console.error('Erro ao capturar screenshot:', e);
         return null;
@@ -1274,7 +1308,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
            </div>
            <button
              onClick={(e) => { e.stopPropagation(); captureViewScreenshot(1, 'sagittal'); }}
-             className="absolute top-2 right-2 w-7 h-7 bg-blue-500/80 hover:bg-blue-500 rounded flex items-center justify-center z-10 transition-colors opacity-0 group-hover:opacity-100"
+             className="absolute top-2 right-2 w-7 h-7 bg-blue-500/80 hover:bg-blue-500 rounded flex items-center justify-center z-10 transition-colors opacity-0 group-hover:opacity-100 pointer-events-auto"
              title="Capturar Sagittal"
              data-testid="button-capture-sagittal"
            >
@@ -1291,7 +1325,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
            </div>
            <button
              onClick={(e) => { e.stopPropagation(); captureViewScreenshot(2, 'coronal'); }}
-             className="absolute top-2 right-2 w-7 h-7 bg-green-500/80 hover:bg-green-500 rounded flex items-center justify-center z-10 transition-colors opacity-0 group-hover:opacity-100"
+             className="absolute top-2 right-2 w-7 h-7 bg-green-500/80 hover:bg-green-500 rounded flex items-center justify-center z-10 transition-colors opacity-0 group-hover:opacity-100 pointer-events-auto"
              title="Capturar Coronal"
              data-testid="button-capture-coronal"
            >
@@ -1308,7 +1342,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
            </div>
            <button
              onClick={(e) => { e.stopPropagation(); captureViewScreenshot(3, 'posterior'); }}
-             className="absolute top-2 right-2 w-7 h-7 bg-yellow-500/80 hover:bg-yellow-500 rounded flex items-center justify-center z-10 transition-colors opacity-0 group-hover:opacity-100"
+             className="absolute top-2 right-2 w-7 h-7 bg-yellow-500/80 hover:bg-yellow-500 rounded flex items-center justify-center z-10 transition-colors opacity-0 group-hover:opacity-100 pointer-events-auto"
              title="Capturar Posterior"
              data-testid="button-capture-posterior"
            >

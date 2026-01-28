@@ -1107,18 +1107,11 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           }
         });
         
-        // Hide utero-ovarian ligaments (small volume meshes) and tag rest as uterus
-        // Bladder identification disabled for now - will be added after ligaments are removed
-        meshAnalysis.forEach(({ mesh, isLigament }) => {
-          if (isLigament) {
-            // Hide utero-ovarian ligaments (volume < 0.5)
-            mesh.visible = false;
-            mesh.userData.anatomyType = 'hidden';
-          } else {
-            // All other meshes are part of the main model (uterus + bladder for now)
-            mesh.userData.anatomyType = 'uterus';
-            anatomyMeshesRef.current.uterus.push(mesh);
-          }
+        // Show all meshes from the model as uterus (no filtering by volume)
+        meshAnalysis.forEach(({ mesh }) => {
+          mesh.visible = true;
+          mesh.userData.anatomyType = 'uterus';
+          anatomyMeshesRef.current.uterus.push(mesh);
         });
         
         console.log('Mesh analysis:', meshAnalysis.map(m => ({

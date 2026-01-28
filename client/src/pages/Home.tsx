@@ -365,9 +365,6 @@ export default function Home() {
               onLesionCountChange={() => {}}
               onLesionsUpdate={() => {}}
             />
-            <div className="absolute top-4 left-4 z-30">
-              <AnatomyPanel />
-            </div>
           </main>
 
           <aside className="w-72 border-l border-slate-200 bg-white shadow-sm overflow-y-auto">
@@ -429,61 +426,12 @@ export default function Home() {
               </div>
             )}
 
-            {lesions.length > 0 && (
-              <div className="p-4">
-                <h3 className="text-xs font-bold text-slate-900 tracking-wide mb-3">
-                  TODAS AS LESÕES ({lesions.length})
-                </h3>
-                <div className="space-y-2">
-                  {lesions.map((lesion, idx) => {
-                    const lesionStatus = getLesionStatus(idx);
-                    return (
-                      <div key={lesion.id} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-mono font-bold text-slate-700">#{idx + 1}</span>
-                          <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-medium ${getLesionStatusColor(lesionStatus)}`}>
-                            {getLesionStatusIcon(lesionStatus)}
-                            {lesionStatus}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Circle className="w-2.5 h-2.5 fill-current flex-shrink-0" style={{ color: lesion.color || (lesion.severity === 'superficial' ? '#ef4444' : '#3b82f6') }} />
-                          <span className="text-[10px] text-slate-600 font-medium capitalize">
-                            {lesion.severity === 'superficial' ? 'Superficial' : 'Profunda'}
-                          </span>
-                          {lesion.size && lesion.size !== 0.18 && (
-                            <span className="text-[9px] text-slate-400">({lesion.size.toFixed(2)})</span>
-                          )}
-                        </div>
-                        <div className="text-[10px] text-slate-600 space-y-0.5 font-mono">
-                          <div className="flex justify-between">
-                            <span>X:</span>
-                            <span className="font-semibold text-slate-900">{lesion.position.x.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Y:</span>
-                            <span className="font-semibold text-slate-900">{lesion.position.y.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Z:</span>
-                            <span className="font-semibold text-slate-900">{lesion.position.z.toFixed(2)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {lesions.length === 0 && (
-              <div className="p-4 text-center">
-                <div className="text-slate-500 text-xs space-y-2">
-                  <p className="font-medium">Nenhuma lesão adicionada</p>
-                  <p className="text-slate-400">Clique em qualquer vista para adicionar uma lesão</p>
-                </div>
-              </div>
-            )}
+            <div className="p-4">
+              <h3 className="text-xs font-bold text-slate-900 tracking-wide mb-3">
+                ESTRUTURAS ANATÔMICAS
+              </h3>
+              <AnatomyPanel />
+            </div>
           </aside>
         </div>
       </div>

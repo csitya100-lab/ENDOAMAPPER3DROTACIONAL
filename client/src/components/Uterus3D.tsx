@@ -5,6 +5,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { useLesionStore, Lesion, Severity, MarkerType } from '@/lib/lesionStore';
 import { useReportStore, Report } from '@/lib/reportStore';
+import { useAnatomyStore, AnatomyElement } from '@/lib/anatomyStore';
 import { Camera } from 'lucide-react';
 
 const isIOS = (): boolean => {
@@ -133,6 +134,16 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
   const sceneRef = useRef<THREE.Scene | null>(null);
   const anatomyGroupRef = useRef<THREE.Group | null>(null);
   const updateMarkersRef = useRef<(() => void) | null>(null);
+  const anatomyMeshesRef = useRef<Record<AnatomyElement, THREE.Object3D[]>>({
+    uterus: [],
+    uterosacrals: [],
+    roundLigaments: [],
+    ureters: [],
+    bladder: [],
+    intestines: [],
+  });
+  
+  const anatomyVisibility = useAnatomyStore((state) => state.visibility);
   
   const dragStateRef = useRef<{
     isDragging: boolean;
@@ -173,6 +184,18 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       updateMarkersRef.current();
     }
   }, [lesions, onLesionCountChange, onLesionsUpdate]);
+
+  // Update visibility of anatomy elements based on store
+  useEffect(() => {
+    Object.entries(anatomyVisibility).forEach(([element, visible]) => {
+      const meshes = anatomyMeshesRef.current[element as AnatomyElement];
+      if (meshes) {
+        meshes.forEach((mesh) => {
+          mesh.visible = visible;
+        });
+      }
+    });
+  }, [anatomyVisibility]);
 
   useImperativeHandle(ref, () => ({
     addTestLesion: () => {
@@ -638,7 +661,33 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     anatomyGroupRef.current = anatomyGroup;
     scene.add(anatomyGroup);
 
+    // Helper to reset anatomy meshes ref
+    const resetAnatomyMeshes = () => {
+      anatomyMeshesRef.current = {
+        uterus: [],
+        uterosacrals: [],
+        roundLigaments: [],
+        ureters: [],
+        bladder: [],
+        intestines: [],
+      };
+    };
+    
+    // Helper to apply visibility from store
+    const applyVisibilityFromStore = () => {
+      const currentVisibility = useAnatomyStore.getState().visibility;
+      Object.entries(currentVisibility).forEach(([element, visible]) => {
+        const meshes = anatomyMeshesRef.current[element as AnatomyElement];
+        if (meshes) {
+          meshes.forEach((mesh) => {
+            mesh.visible = visible;
+          });
+        }
+      });
+    };
+    
     const createFallbackModel = () => {
+      resetAnatomyMeshes();
       const geometry = new THREE.SphereGeometry(1.8, 32, 24);
       const material = new THREE.MeshStandardMaterial({
         color: 0xDD8A96,
@@ -647,8 +696,13 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         side: THREE.DoubleSide
       });
       const sphere = new THREE.Mesh(geometry, material);
+      sphere.userData.anatomyType = 'uterus';
+      anatomyMeshesRef.current.uterus.push(sphere);
       anatomyGroup.add(sphere);
       setLoadingState('fallback');
+      
+      // Apply initial visibility
+      applyVisibilityFromStore();
       
       // Render existing lesions after fallback model loads
       updateAllMarkers();
@@ -664,6 +718,9 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     const processModel = (gltf: any) => {
         if (!isMounted) return;
         if (loadTimeout) clearTimeout(loadTimeout);
+        
+        // Reset anatomy meshes before populating
+        resetAnatomyMeshes();
         
         const model = gltf.scene;
         
@@ -780,7 +837,9 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         const rightLigament = new THREE.Mesh(rightLigamentGeo, ligamentMaterial);
         rightLigament.castShadow = true;
         rightLigament.receiveShadow = true;
+        rightLigament.userData.anatomyType = 'uterosacrals';
         anatomyGroup.add(rightLigament);
+        anatomyMeshesRef.current.uterosacrals.push(rightLigament);
         
         // Left uterosacral ligament - mirror of right (posterior direction)
         const leftLigamentCurve = new THREE.CatmullRomCurve3([
@@ -793,7 +852,9 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         const leftLigament = new THREE.Mesh(leftLigamentGeo, ligamentMaterial);
         leftLigament.castShadow = true;
         leftLigament.receiveShadow = true;
+        leftLigament.userData.anatomyType = 'uterosacrals';
         anatomyGroup.add(leftLigament);
+        anatomyMeshesRef.current.uterosacrals.push(leftLigament);
         
         // Add ureters - thin tubes running laterally near the uterus
         const ureterMaterial = new THREE.MeshStandardMaterial({
@@ -815,7 +876,9 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         const rightUreter = new THREE.Mesh(rightUreterGeo, ureterMaterial);
         rightUreter.castShadow = true;
         rightUreter.receiveShadow = true;
+        rightUreter.userData.anatomyType = 'ureters';
         anatomyGroup.add(rightUreter);
+        anatomyMeshesRef.current.ureters.push(rightUreter);
         
         // Left ureter - mirror of right (posterior to ovaries)
         const leftUreterCurve = new THREE.CatmullRomCurve3([
@@ -829,7 +892,112 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         const leftUreter = new THREE.Mesh(leftUreterGeo, ureterMaterial);
         leftUreter.castShadow = true;
         leftUreter.receiveShadow = true;
+        leftUreter.userData.anatomyType = 'ureters';
         anatomyGroup.add(leftUreter);
+        anatomyMeshesRef.current.ureters.push(leftUreter);
+        
+        // Round ligaments - from upper uterus going anteriorly and laterally
+        const roundLigamentMaterial = new THREE.MeshStandardMaterial({
+          color: 0xD4956F,
+          roughness: 0.55,
+          metalness: 0.02,
+          side: THREE.DoubleSide
+        });
+        
+        // Right round ligament - from fundus going anterior/lateral toward inguinal
+        const rightRoundCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0.4, 1.2, 0.3),
+          new THREE.Vector3(0.8, 0.8, 0.8),
+          new THREE.Vector3(1.2, 0.3, 1.2),
+          new THREE.Vector3(1.8, -0.3, 1.5),
+        ]);
+        const rightRoundGeo = new THREE.TubeGeometry(rightRoundCurve, 20, 0.06, 8, false);
+        const rightRound = new THREE.Mesh(rightRoundGeo, roundLigamentMaterial);
+        rightRound.castShadow = true;
+        rightRound.receiveShadow = true;
+        rightRound.userData.anatomyType = 'roundLigaments';
+        anatomyGroup.add(rightRound);
+        anatomyMeshesRef.current.roundLigaments.push(rightRound);
+        
+        // Left round ligament - mirror of right
+        const leftRoundCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-0.4, 1.2, 0.3),
+          new THREE.Vector3(-0.8, 0.8, 0.8),
+          new THREE.Vector3(-1.2, 0.3, 1.2),
+          new THREE.Vector3(-1.8, -0.3, 1.5),
+        ]);
+        const leftRoundGeo = new THREE.TubeGeometry(leftRoundCurve, 20, 0.06, 8, false);
+        const leftRound = new THREE.Mesh(leftRoundGeo, roundLigamentMaterial);
+        leftRound.castShadow = true;
+        leftRound.receiveShadow = true;
+        leftRound.userData.anatomyType = 'roundLigaments';
+        anatomyGroup.add(leftRound);
+        anatomyMeshesRef.current.roundLigaments.push(leftRound);
+        
+        // Bladder - ellipsoid positioned anterior to uterus
+        const bladderMaterial = new THREE.MeshStandardMaterial({
+          color: 0xAED6F1,
+          roughness: 0.4,
+          metalness: 0.0,
+          transparent: true,
+          opacity: 0.85,
+          side: THREE.DoubleSide
+        });
+        const bladderGeo = new THREE.SphereGeometry(1.0, 24, 16);
+        bladderGeo.scale(1.0, 0.7, 0.8);
+        const bladder = new THREE.Mesh(bladderGeo, bladderMaterial);
+        bladder.position.set(0, -1.2, 1.8);
+        bladder.castShadow = true;
+        bladder.receiveShadow = true;
+        bladder.userData.anatomyType = 'bladder';
+        anatomyGroup.add(bladder);
+        anatomyMeshesRef.current.bladder.push(bladder);
+        
+        // Intestines - simplified representation posterior to uterus
+        const intestineMaterial = new THREE.MeshStandardMaterial({
+          color: 0xF9E79F,
+          roughness: 0.5,
+          metalness: 0.0,
+          transparent: true,
+          opacity: 0.8,
+          side: THREE.DoubleSide
+        });
+        
+        // Sigmoid/rectum - curved tube posterior
+        const sigmoidCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0.8, 0.5, -2.0),
+          new THREE.Vector3(0.3, -0.5, -1.8),
+          new THREE.Vector3(0.0, -1.5, -1.5),
+          new THREE.Vector3(0.0, -2.5, -1.3),
+        ]);
+        const sigmoidGeo = new THREE.TubeGeometry(sigmoidCurve, 20, 0.4, 12, false);
+        const sigmoid = new THREE.Mesh(sigmoidGeo, intestineMaterial);
+        sigmoid.castShadow = true;
+        sigmoid.receiveShadow = true;
+        sigmoid.userData.anatomyType = 'intestines';
+        anatomyGroup.add(sigmoid);
+        anatomyMeshesRef.current.intestines.push(sigmoid);
+        
+        // Tag all meshes from the GLB model as uterus (model has no named parts)
+        model.traverse((child: any) => {
+          if ((child as THREE.Mesh).isMesh) {
+            child.userData.anatomyType = 'uterus';
+            anatomyMeshesRef.current.uterus.push(child);
+          }
+        });
+        
+        // Log anatomy mesh counts for debugging
+        console.log('Anatomy meshes found:', {
+          uterus: anatomyMeshesRef.current.uterus.length,
+          uterosacrals: anatomyMeshesRef.current.uterosacrals.length,
+          roundLigaments: anatomyMeshesRef.current.roundLigaments.length,
+          ureters: anatomyMeshesRef.current.ureters.length,
+          bladder: anatomyMeshesRef.current.bladder.length,
+          intestines: anatomyMeshesRef.current.intestines.length,
+        });
+        
+        // Apply initial visibility state from store
+        applyVisibilityFromStore();
         
         setLoadingState('loaded');
         setLoadingProgress(100);

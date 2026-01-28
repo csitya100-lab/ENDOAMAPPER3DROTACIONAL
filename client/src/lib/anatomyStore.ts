@@ -5,7 +5,8 @@ export type AnatomyElement =
   | 'uterosacrals'
   | 'roundLigaments'
   | 'ureters'
-  | 'bladder';
+  | 'bladder'
+  | 'fallopianTubes';
 
 export interface AnatomyElementInfo {
   id: AnatomyElement;
@@ -24,6 +25,7 @@ interface AnatomyStore {
 
 export const ANATOMY_ELEMENTS: AnatomyElementInfo[] = [
   { id: 'uterus', label: 'Útero', color: '#DD8A96', visible: true },
+  { id: 'fallopianTubes', label: 'Tubas Uterinas', color: '#E8A090', visible: true },
   { id: 'uterosacrals', label: 'Ligamentos Útero-sacros', color: '#C49080', visible: true },
   { id: 'roundLigaments', label: 'Ligamentos Redondos', color: '#D4956F', visible: true },
   { id: 'ureters', label: 'Ureteres', color: '#FFE4B5', visible: true },
@@ -32,6 +34,7 @@ export const ANATOMY_ELEMENTS: AnatomyElementInfo[] = [
 
 const initialVisibility: Record<AnatomyElement, boolean> = {
   uterus: true,
+  fallopianTubes: true,
   uterosacrals: true,
   roundLigaments: true,
   ureters: true,
@@ -61,6 +64,7 @@ export const useAnatomyStore = create<AnatomyStore>((set) => ({
     set({
       visibility: {
         uterus: true,
+        fallopianTubes: true,
         uterosacrals: true,
         roundLigaments: true,
         ureters: true,
@@ -72,6 +76,7 @@ export const useAnatomyStore = create<AnatomyStore>((set) => ({
     set({
       visibility: {
         uterus: false,
+        fallopianTubes: false,
         uterosacrals: false,
         roundLigaments: false,
         ureters: false,

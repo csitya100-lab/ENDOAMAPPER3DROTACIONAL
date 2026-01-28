@@ -136,6 +136,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
   const updateMarkersRef = useRef<(() => void) | null>(null);
   const anatomyMeshesRef = useRef<Record<AnatomyElement, THREE.Object3D[]>>({
     uterus: [],
+    fallopianTubes: [],
     uterosacrals: [],
     roundLigaments: [],
     ureters: [],
@@ -664,6 +665,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     const resetAnatomyMeshes = () => {
       anatomyMeshesRef.current = {
         uterus: [],
+        fallopianTubes: [],
         uterosacrals: [],
         roundLigaments: [],
         ureters: [],
@@ -933,6 +935,120 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         anatomyGroup.add(leftRound);
         anatomyMeshesRef.current.roundLigaments.push(leftRound);
         
+        // Fallopian tubes (tubas uterinas) - positioned at cornual region, extending laterally
+        // Anatomically: intramural → isthmus → ampulla → infundibulum with fimbriae
+        const fallopianTubeMaterial = new THREE.MeshStandardMaterial({
+          color: 0xE8A090,
+          roughness: 0.5,
+          metalness: 0.02,
+          side: THREE.DoubleSide
+        });
+        
+        // Fimbriae material - slightly different color for the finger-like ends
+        const fimbriaeMaterial = new THREE.MeshStandardMaterial({
+          color: 0xF0B0A0,
+          roughness: 0.45,
+          metalness: 0.01,
+          side: THREE.DoubleSide
+        });
+        
+        // Right fallopian tube - from cornual region extending laterally with slight posterior curve
+        // Proportional to uterus: tubes are ~10-12cm, uterus body ~7-8cm
+        const rightTubeCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0.85, 1.55, 0.0),    // Cornual region (intramural portion)
+          new THREE.Vector3(1.2, 1.6, -0.05),    // Isthmus start
+          new THREE.Vector3(1.6, 1.55, -0.1),    // Isthmus
+          new THREE.Vector3(2.0, 1.45, -0.2),    // Ampulla start - begins to widen
+          new THREE.Vector3(2.4, 1.35, -0.35),   // Ampulla
+          new THREE.Vector3(2.7, 1.25, -0.5),    // Ampulla end / infundibulum start
+          new THREE.Vector3(2.9, 1.15, -0.65),   // Infundibulum - curves toward ovary
+        ]);
+        
+        // Variable radius for the tube - narrower at isthmus, wider at ampulla
+        const rightTubeGeo = new THREE.TubeGeometry(rightTubeCurve, 32, 0.06, 8, false);
+        const rightTube = new THREE.Mesh(rightTubeGeo, fallopianTubeMaterial);
+        rightTube.castShadow = true;
+        rightTube.receiveShadow = true;
+        rightTube.userData.anatomyType = 'fallopianTubes';
+        anatomyGroup.add(rightTube);
+        anatomyMeshesRef.current.fallopianTubes.push(rightTube);
+        
+        // Right fimbriae - finger-like projections at the end of the tube
+        const rightFimbriaeGroup = new THREE.Group();
+        const fimbriaeBasePos = new THREE.Vector3(2.9, 1.15, -0.65);
+        const fimbriaeCount = 6;
+        for (let i = 0; i < fimbriaeCount; i++) {
+          const angle = (i / fimbriaeCount) * Math.PI * 0.8 - Math.PI * 0.4; // Spread around the opening
+          const fimbriaCurve = new THREE.CatmullRomCurve3([
+            fimbriaeBasePos.clone(),
+            new THREE.Vector3(
+              fimbriaeBasePos.x + 0.15 + Math.random() * 0.1,
+              fimbriaeBasePos.y + Math.sin(angle) * 0.2,
+              fimbriaeBasePos.z - 0.1 + Math.cos(angle) * 0.15
+            ),
+            new THREE.Vector3(
+              fimbriaeBasePos.x + 0.25 + Math.random() * 0.1,
+              fimbriaeBasePos.y + Math.sin(angle) * 0.35,
+              fimbriaeBasePos.z - 0.15 + Math.cos(angle) * 0.25
+            ),
+          ]);
+          const fimbriaGeo = new THREE.TubeGeometry(fimbriaCurve, 8, 0.015, 6, false);
+          const fimbria = new THREE.Mesh(fimbriaGeo, fimbriaeMaterial);
+          fimbria.castShadow = true;
+          fimbria.receiveShadow = true;
+          rightFimbriaeGroup.add(fimbria);
+        }
+        rightFimbriaeGroup.userData.anatomyType = 'fallopianTubes';
+        anatomyGroup.add(rightFimbriaeGroup);
+        anatomyMeshesRef.current.fallopianTubes.push(rightFimbriaeGroup);
+        
+        // Left fallopian tube - mirror of right
+        const leftTubeCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-0.85, 1.55, 0.0),   // Cornual region (intramural portion)
+          new THREE.Vector3(-1.2, 1.6, -0.05),   // Isthmus start
+          new THREE.Vector3(-1.6, 1.55, -0.1),   // Isthmus
+          new THREE.Vector3(-2.0, 1.45, -0.2),   // Ampulla start - begins to widen
+          new THREE.Vector3(-2.4, 1.35, -0.35),  // Ampulla
+          new THREE.Vector3(-2.7, 1.25, -0.5),   // Ampulla end / infundibulum start
+          new THREE.Vector3(-2.9, 1.15, -0.65),  // Infundibulum - curves toward ovary
+        ]);
+        
+        const leftTubeGeo = new THREE.TubeGeometry(leftTubeCurve, 32, 0.06, 8, false);
+        const leftTube = new THREE.Mesh(leftTubeGeo, fallopianTubeMaterial);
+        leftTube.castShadow = true;
+        leftTube.receiveShadow = true;
+        leftTube.userData.anatomyType = 'fallopianTubes';
+        anatomyGroup.add(leftTube);
+        anatomyMeshesRef.current.fallopianTubes.push(leftTube);
+        
+        // Left fimbriae - finger-like projections at the end of the tube
+        const leftFimbriaeGroup = new THREE.Group();
+        const leftFimbriaeBasePos = new THREE.Vector3(-2.9, 1.15, -0.65);
+        for (let i = 0; i < fimbriaeCount; i++) {
+          const angle = (i / fimbriaeCount) * Math.PI * 0.8 - Math.PI * 0.4;
+          const fimbriaCurve = new THREE.CatmullRomCurve3([
+            leftFimbriaeBasePos.clone(),
+            new THREE.Vector3(
+              leftFimbriaeBasePos.x - 0.15 - Math.random() * 0.1,
+              leftFimbriaeBasePos.y + Math.sin(angle) * 0.2,
+              leftFimbriaeBasePos.z - 0.1 + Math.cos(angle) * 0.15
+            ),
+            new THREE.Vector3(
+              leftFimbriaeBasePos.x - 0.25 - Math.random() * 0.1,
+              leftFimbriaeBasePos.y + Math.sin(angle) * 0.35,
+              leftFimbriaeBasePos.z - 0.15 + Math.cos(angle) * 0.25
+            ),
+          ]);
+          const fimbriaGeo = new THREE.TubeGeometry(fimbriaCurve, 8, 0.015, 6, false);
+          const fimbria = new THREE.Mesh(fimbriaGeo, fimbriaeMaterial);
+          fimbria.castShadow = true;
+          fimbria.receiveShadow = true;
+          leftFimbriaeGroup.add(fimbria);
+        }
+        leftFimbriaeGroup.userData.anatomyType = 'fallopianTubes';
+        anatomyGroup.add(leftFimbriaeGroup);
+        anatomyMeshesRef.current.fallopianTubes.push(leftFimbriaeGroup);
+        
         // Identify bladder by position (most anterior mesh - highest Z value)
         // Filter out utero-ovarian and cardinal ligaments (elongated tubular meshes)
         const allMeshes: THREE.Mesh[] = [];
@@ -1017,6 +1133,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         // Log anatomy mesh counts for debugging
         console.log('Anatomy meshes found:', {
           uterus: anatomyMeshesRef.current.uterus.length,
+          fallopianTubes: anatomyMeshesRef.current.fallopianTubes.length,
           uterosacrals: anatomyMeshesRef.current.uterosacrals.length,
           roundLigaments: anatomyMeshesRef.current.roundLigaments.length,
           ureters: anatomyMeshesRef.current.ureters.length,

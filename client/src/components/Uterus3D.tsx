@@ -139,8 +139,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     uterosacrals: [],
     roundLigaments: [],
     ureters: [],
-    bladder: [],
-    intestines: [],
   });
   
   const anatomyVisibility = useAnatomyStore((state) => state.visibility);
@@ -668,8 +666,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         uterosacrals: [],
         roundLigaments: [],
         ureters: [],
-        bladder: [],
-        intestines: [],
       };
     };
     
@@ -934,50 +930,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         anatomyGroup.add(leftRound);
         anatomyMeshesRef.current.roundLigaments.push(leftRound);
         
-        // Bladder - ellipsoid positioned anterior to uterus
-        const bladderMaterial = new THREE.MeshStandardMaterial({
-          color: 0xAED6F1,
-          roughness: 0.4,
-          metalness: 0.0,
-          transparent: true,
-          opacity: 0.85,
-          side: THREE.DoubleSide
-        });
-        const bladderGeo = new THREE.SphereGeometry(1.0, 24, 16);
-        bladderGeo.scale(1.0, 0.7, 0.8);
-        const bladder = new THREE.Mesh(bladderGeo, bladderMaterial);
-        bladder.position.set(0, -1.2, 1.8);
-        bladder.castShadow = true;
-        bladder.receiveShadow = true;
-        bladder.userData.anatomyType = 'bladder';
-        anatomyGroup.add(bladder);
-        anatomyMeshesRef.current.bladder.push(bladder);
-        
-        // Intestines - simplified representation posterior to uterus
-        const intestineMaterial = new THREE.MeshStandardMaterial({
-          color: 0xF9E79F,
-          roughness: 0.5,
-          metalness: 0.0,
-          transparent: true,
-          opacity: 0.8,
-          side: THREE.DoubleSide
-        });
-        
-        // Sigmoid/rectum - curved tube posterior
-        const sigmoidCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0.8, 0.5, -2.0),
-          new THREE.Vector3(0.3, -0.5, -1.8),
-          new THREE.Vector3(0.0, -1.5, -1.5),
-          new THREE.Vector3(0.0, -2.5, -1.3),
-        ]);
-        const sigmoidGeo = new THREE.TubeGeometry(sigmoidCurve, 20, 0.4, 12, false);
-        const sigmoid = new THREE.Mesh(sigmoidGeo, intestineMaterial);
-        sigmoid.castShadow = true;
-        sigmoid.receiveShadow = true;
-        sigmoid.userData.anatomyType = 'intestines';
-        anatomyGroup.add(sigmoid);
-        anatomyMeshesRef.current.intestines.push(sigmoid);
-        
         // Tag all meshes from the GLB model as uterus (model has no named parts)
         model.traverse((child: any) => {
           if ((child as THREE.Mesh).isMesh) {
@@ -992,8 +944,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           uterosacrals: anatomyMeshesRef.current.uterosacrals.length,
           roundLigaments: anatomyMeshesRef.current.roundLigaments.length,
           ureters: anatomyMeshesRef.current.ureters.length,
-          bladder: anatomyMeshesRef.current.bladder.length,
-          intestines: anatomyMeshesRef.current.intestines.length,
         });
         
         // Apply initial visibility state from store

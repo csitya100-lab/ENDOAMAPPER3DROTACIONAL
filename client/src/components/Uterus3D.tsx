@@ -977,10 +977,15 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
             // Utero-ovarian ligament: very lateral + specific volume
             const isUteroOvarianLigament = isVeryLateral && isUteroOvarianVolume;
             
-            // Also hide very small structures (cardinal ligaments etc)
+            // Cardinal ligaments: volume ~2.744, centered (centerX ~0)
+            const isCardinalVolume = volume > 2.5 && volume < 3.0;
+            const isCentered = Math.abs(centerX) < 0.5;
+            const isCardinalLigament = isCardinalVolume && isCentered;
+            
+            // Also hide very small structures
             const isSmallLigament = volume < 0.5;
             
-            const isLigament = isUteroOvarianLigament || isSmallLigament;
+            const isLigament = isUteroOvarianLigament || isCardinalLigament || isSmallLigament;
             
             meshAnalysis.push({ mesh, isLigament, centerZ, centerX, volume, aspectRatio, isBeige, isLateral });
           }

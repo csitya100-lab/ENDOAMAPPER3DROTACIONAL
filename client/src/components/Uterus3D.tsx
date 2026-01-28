@@ -139,8 +139,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     uterosacrals: [],
     roundLigaments: [],
     ureters: [],
-    bladder: [],
-    intestines: [],
   });
   
   const anatomyVisibility = useAnatomyStore((state) => state.visibility);
@@ -668,8 +666,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         uterosacrals: [],
         roundLigaments: [],
         ureters: [],
-        bladder: [],
-        intestines: [],
       };
     };
     
@@ -896,7 +892,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         anatomyGroup.add(leftUreter);
         anatomyMeshesRef.current.ureters.push(leftUreter);
         
-        // Round ligaments - from upper uterus going anteriorly and laterally
+        // Round ligaments - from cornual region (where tubes attach), going anteriorly
+        // Position: just anterior to fallopian tube insertion at upper lateral uterus
         const roundLigamentMaterial = new THREE.MeshStandardMaterial({
           color: 0xD4956F,
           roughness: 0.55,
@@ -904,14 +901,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           side: THREE.DoubleSide
         });
         
-        // Right round ligament - from fundus going anterior/lateral toward inguinal
+        // Right round ligament - from right cornual region, anterior to tube, going down/forward
         const rightRoundCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0.4, 1.2, 0.3),
-          new THREE.Vector3(0.8, 0.8, 0.8),
-          new THREE.Vector3(1.2, 0.3, 1.2),
-          new THREE.Vector3(1.8, -0.3, 1.5),
+          new THREE.Vector3(0.9, 1.4, 0.5),   // Start at cornual region, anterior to tube
+          new THREE.Vector3(1.2, 1.0, 0.9),   // Curve forward and lateral
+          new THREE.Vector3(1.5, 0.4, 1.3),   // Continue toward inguinal
+          new THREE.Vector3(2.0, -0.2, 1.6),  // End toward inguinal canal
         ]);
-        const rightRoundGeo = new THREE.TubeGeometry(rightRoundCurve, 20, 0.06, 8, false);
+        const rightRoundGeo = new THREE.TubeGeometry(rightRoundCurve, 20, 0.05, 8, false);
         const rightRound = new THREE.Mesh(rightRoundGeo, roundLigamentMaterial);
         rightRound.castShadow = true;
         rightRound.receiveShadow = true;
@@ -921,12 +918,12 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         
         // Left round ligament - mirror of right
         const leftRoundCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-0.4, 1.2, 0.3),
-          new THREE.Vector3(-0.8, 0.8, 0.8),
-          new THREE.Vector3(-1.2, 0.3, 1.2),
-          new THREE.Vector3(-1.8, -0.3, 1.5),
+          new THREE.Vector3(-0.9, 1.4, 0.5),   // Start at left cornual region
+          new THREE.Vector3(-1.2, 1.0, 0.9),   // Curve forward and lateral
+          new THREE.Vector3(-1.5, 0.4, 1.3),   // Continue toward inguinal
+          new THREE.Vector3(-2.0, -0.2, 1.6),  // End toward inguinal canal
         ]);
-        const leftRoundGeo = new THREE.TubeGeometry(leftRoundCurve, 20, 0.06, 8, false);
+        const leftRoundGeo = new THREE.TubeGeometry(leftRoundCurve, 20, 0.05, 8, false);
         const leftRound = new THREE.Mesh(leftRoundGeo, roundLigamentMaterial);
         leftRound.castShadow = true;
         leftRound.receiveShadow = true;
@@ -934,37 +931,11 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         anatomyGroup.add(leftRound);
         anatomyMeshesRef.current.roundLigaments.push(leftRound);
         
-        // Tag meshes from the GLB model by color (model has no named parts)
-        // Based on color analysis:
-        // - Uterus (pink): RGB ~(0.72, 0.25, 0.30) - high R, low G, low-medium B
-        // - Bladder (beige/tan): RGB ~(0.66-0.69, 0.35, 0.25-0.28) - G > 0.32
-        // - Intestines (brown): RGB ~(0.55, 0.28, 0.22) and (0.66, 0.30, 0.16) - lower values
+        // Tag all meshes from GLB model as uterus (includes all pelvic structures)
         model.traverse((child: any) => {
           if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            const material = mesh.material as THREE.MeshStandardMaterial;
-            
-            let anatomyType: AnatomyElement = 'uterus';
-            
-            if (material && material.color) {
-              const color = material.color;
-              const r = color.r;
-              const g = color.g;
-              const b = color.b;
-              
-              // Bladder: beige/tan color with G > 0.32 and R between 0.65-0.70
-              if (g > 0.32 && r < 0.70 && r > 0.60) {
-                anatomyType = 'bladder';
-              }
-              // Intestines: darker brown with R < 0.60 OR very low B < 0.20
-              else if (r < 0.60 || (b < 0.20 && g < 0.32)) {
-                anatomyType = 'intestines';
-              }
-              // Everything else is uterus (pink, R > 0.70)
-            }
-            
-            child.userData.anatomyType = anatomyType;
-            anatomyMeshesRef.current[anatomyType].push(child);
+            child.userData.anatomyType = 'uterus';
+            anatomyMeshesRef.current.uterus.push(child);
           }
         });
         
@@ -974,8 +945,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           uterosacrals: anatomyMeshesRef.current.uterosacrals.length,
           roundLigaments: anatomyMeshesRef.current.roundLigaments.length,
           ureters: anatomyMeshesRef.current.ureters.length,
-          bladder: anatomyMeshesRef.current.bladder.length,
-          intestines: anatomyMeshesRef.current.intestines.length,
         });
         
         // Apply initial visibility state from store

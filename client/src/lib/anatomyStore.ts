@@ -4,9 +4,7 @@ export type AnatomyElement =
   | 'uterus'
   | 'uterosacrals'
   | 'roundLigaments'
-  | 'ureters'
-  | 'bladder'
-  | 'intestines';
+  | 'ureters';
 
 export interface AnatomyElementInfo {
   id: AnatomyElement;
@@ -28,8 +26,6 @@ export const ANATOMY_ELEMENTS: AnatomyElementInfo[] = [
   { id: 'uterosacrals', label: 'Ligamentos Útero-sacros', color: '#C49080', visible: true },
   { id: 'roundLigaments', label: 'Ligamentos Redondos', color: '#D4956F', visible: true },
   { id: 'ureters', label: 'Ureteres', color: '#FFE4B5', visible: true },
-  { id: 'bladder', label: 'Bexiga', color: '#D4A574', visible: true },
-  { id: 'intestines', label: 'Intestinos', color: '#C49080', visible: true },
 ];
 
 const initialVisibility: Record<AnatomyElement, boolean> = {
@@ -37,8 +33,6 @@ const initialVisibility: Record<AnatomyElement, boolean> = {
   uterosacrals: true,
   roundLigaments: true,
   ureters: true,
-  bladder: true,
-  intestines: true,
 };
 
 export const useAnatomyStore = create<AnatomyStore>((set) => ({
@@ -67,8 +61,6 @@ export const useAnatomyStore = create<AnatomyStore>((set) => ({
         uterosacrals: true,
         roundLigaments: true,
         ureters: true,
-        bladder: true,
-        intestines: true,
       },
     }),
 
@@ -79,8 +71,6 @@ export const useAnatomyStore = create<AnatomyStore>((set) => ({
         uterosacrals: false,
         roundLigaments: false,
         ureters: false,
-        bladder: false,
-        intestines: false,
       },
     }),
 }));

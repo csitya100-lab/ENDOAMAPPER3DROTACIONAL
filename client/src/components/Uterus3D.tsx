@@ -139,6 +139,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     uterosacrals: [],
     roundLigaments: [],
     ureters: [],
+    bladder: [],
+    intestines: [],
   });
   
   const anatomyVisibility = useAnatomyStore((state) => state.visibility);
@@ -666,6 +668,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         uterosacrals: [],
         roundLigaments: [],
         ureters: [],
+        bladder: [],
+        intestines: [],
       };
     };
     
@@ -930,11 +934,37 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         anatomyGroup.add(leftRound);
         anatomyMeshesRef.current.roundLigaments.push(leftRound);
         
-        // Tag all meshes from the GLB model as uterus (model has no named parts)
+        // Tag meshes from the GLB model by color (model has no named parts)
+        // Based on color analysis:
+        // - Uterus (pink): RGB ~(0.72, 0.25, 0.30) - high R, low G, low-medium B
+        // - Bladder (beige/tan): RGB ~(0.66-0.69, 0.35, 0.25-0.28) - G > 0.32
+        // - Intestines (brown): RGB ~(0.55, 0.28, 0.22) and (0.66, 0.30, 0.16) - lower values
         model.traverse((child: any) => {
           if ((child as THREE.Mesh).isMesh) {
-            child.userData.anatomyType = 'uterus';
-            anatomyMeshesRef.current.uterus.push(child);
+            const mesh = child as THREE.Mesh;
+            const material = mesh.material as THREE.MeshStandardMaterial;
+            
+            let anatomyType: AnatomyElement = 'uterus';
+            
+            if (material && material.color) {
+              const color = material.color;
+              const r = color.r;
+              const g = color.g;
+              const b = color.b;
+              
+              // Bladder: beige/tan color with G > 0.32 and R between 0.65-0.70
+              if (g > 0.32 && r < 0.70 && r > 0.60) {
+                anatomyType = 'bladder';
+              }
+              // Intestines: darker brown with R < 0.60 OR very low B < 0.20
+              else if (r < 0.60 || (b < 0.20 && g < 0.32)) {
+                anatomyType = 'intestines';
+              }
+              // Everything else is uterus (pink, R > 0.70)
+            }
+            
+            child.userData.anatomyType = anatomyType;
+            anatomyMeshesRef.current[anatomyType].push(child);
           }
         });
         
@@ -944,6 +974,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           uterosacrals: anatomyMeshesRef.current.uterosacrals.length,
           roundLigaments: anatomyMeshesRef.current.roundLigaments.length,
           ureters: anatomyMeshesRef.current.ureters.length,
+          bladder: anatomyMeshesRef.current.bladder.length,
+          intestines: anatomyMeshesRef.current.intestines.length,
         });
         
         // Apply initial visibility state from store

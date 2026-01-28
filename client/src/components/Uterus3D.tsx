@@ -944,7 +944,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         
         // Analyze each mesh to identify ligaments vs organs
         // Ligaments are elongated (high aspect ratio), organs are more spherical
-        const meshAnalysis: { mesh: THREE.Mesh; isLigament: boolean; centerZ: number; volume: number; aspectRatio: number }[] = [];
+        const meshAnalysis: { mesh: THREE.Mesh; isLigament: boolean; centerZ: number; centerX: number; volume: number; aspectRatio: number; isBeige: boolean; isLateral: boolean }[] = [];
         
         allMeshes.forEach((mesh) => {
           mesh.geometry.computeBoundingBox();
@@ -953,6 +953,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
             const sizeX = box.max.x - box.min.x;
             const sizeY = box.max.y - box.min.y;
             const sizeZ = box.max.z - box.min.z;
+            const centerX = (box.min.x + box.max.x) / 2;
             const centerZ = (box.min.z + box.max.z) / 2;
             const volume = sizeX * sizeY * sizeZ;
             
@@ -960,11 +961,28 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
             const dims = [sizeX, sizeY, sizeZ].sort((a, b) => b - a);
             const aspectRatio = dims[0] / Math.max(dims[2], 0.01);
             
-            // Ligaments: small volume (utero-ovarian/cardinal are thin structures)
-            // Volume threshold: meshes with volume < 0.5 are ligaments
-            const isLigament = volume < 0.5;
+            // Get mesh color
+            const material = mesh.material as THREE.MeshStandardMaterial;
+            const r = material?.color?.r ?? 0;
+            const g = material?.color?.g ?? 0;
+            const b = material?.color?.b ?? 0;
             
-            meshAnalysis.push({ mesh, isLigament, centerZ, volume, aspectRatio });
+            // Utero-ovarian ligaments: lateral position + specific volume range
+            // Looking at data: volume ~2.664, centerX ~±1.94
+            const isBeige = g > 0.30 && r > g; // relaxed beige detection
+            const isVeryLateral = Math.abs(centerX) > 1.5; // far from center
+            const isLateral = Math.abs(centerX) > 0.5;
+            const isUteroOvarianVolume = volume > 2.0 && volume < 4.0; // volume ~2.664
+            
+            // Utero-ovarian ligament: very lateral + specific volume
+            const isUteroOvarianLigament = isVeryLateral && isUteroOvarianVolume;
+            
+            // Also hide very small structures (cardinal ligaments etc)
+            const isSmallLigament = volume < 0.5;
+            
+            const isLigament = isUteroOvarianLigament || isSmallLigament;
+            
+            meshAnalysis.push({ mesh, isLigament, centerZ, centerX, volume, aspectRatio, isBeige, isLateral });
           }
         });
         
@@ -985,8 +1003,10 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         console.log('Mesh analysis:', meshAnalysis.map(m => ({
           isLigament: m.isLigament,
           volume: m.volume.toFixed(3),
-          aspectRatio: m.aspectRatio.toFixed(1),
-          centerZ: m.centerZ.toFixed(2)
+          centerX: m.centerX.toFixed(2),
+          centerZ: m.centerZ.toFixed(2),
+          isBeige: m.isBeige,
+          isLateral: m.isLateral
         })));
         
         // Log anatomy mesh counts for debugging

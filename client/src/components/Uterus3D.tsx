@@ -968,17 +968,37 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           }
         });
         
-        // Find the bladder (largest mesh with high Z position, not a ligament)
+        // Find the bladder by color (beige/tan) AND position (anterior, positive Z)
+        // Bladder is beige: RGB ~(0.7, 0.4, 0.3) - more green/less blue than pink uterus
         const organMeshes = meshAnalysis.filter(m => !m.isLigament);
         let bladderMesh: THREE.Mesh | null = null;
-        let maxZ = -Infinity;
+        let bestBladderScore = -Infinity;
         
-        organMeshes.forEach(({ mesh, centerZ }) => {
-          if (centerZ > maxZ) {
-            maxZ = centerZ;
-            bladderMesh = mesh;
+        organMeshes.forEach(({ mesh, centerZ, volume }) => {
+          const material = mesh.material as THREE.MeshStandardMaterial;
+          if (material && material.color) {
+            const r = material.color.r;
+            const g = material.color.g;
+            const b = material.color.b;
+            
+            // Beige/tan color detection: G > 0.35 and R > G (distinguishes from pink)
+            // Also needs to be anterior (positive Z) and have reasonable volume
+            const isBeige = g > 0.35 && r > g && b < g;
+            const isAnterior = centerZ > 0.2;
+            const hasGoodVolume = volume > 1.0 && volume < 15.0;
+            
+            if (isBeige && isAnterior && hasGoodVolume) {
+              // Score by volume (larger beige structure in front = bladder)
+              const score = volume + centerZ * 2;
+              if (score > bestBladderScore) {
+                bestBladderScore = score;
+                bladderMesh = mesh;
+              }
+            }
           }
         });
+        
+        console.log('Bladder detection:', bladderMesh ? 'found' : 'not found', bestBladderScore);
         
         // Tag and add meshes (hide ligaments)
         meshAnalysis.forEach(({ mesh, isLigament }) => {

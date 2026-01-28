@@ -139,6 +139,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     uterosacrals: [],
     roundLigaments: [],
     ureters: [],
+    bladder: [],
   });
   
   const anatomyVisibility = useAnatomyStore((state) => state.visibility);
@@ -666,6 +667,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         uterosacrals: [],
         roundLigaments: [],
         ureters: [],
+        bladder: [],
       };
     };
     
@@ -931,11 +933,39 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         anatomyGroup.add(leftRound);
         anatomyMeshesRef.current.roundLigaments.push(leftRound);
         
-        // Tag all meshes from GLB model as uterus (includes all pelvic structures)
+        // Identify bladder by position (most anterior mesh - highest Z value)
+        // Then tag remaining meshes as uterus
+        const allMeshes: THREE.Mesh[] = [];
         model.traverse((child: any) => {
           if ((child as THREE.Mesh).isMesh) {
-            child.userData.anatomyType = 'uterus';
-            anatomyMeshesRef.current.uterus.push(child);
+            allMeshes.push(child as THREE.Mesh);
+          }
+        });
+        
+        // Find the mesh with highest average Z position (most anterior = bladder)
+        let bladderMesh: THREE.Mesh | null = null;
+        let maxZ = -Infinity;
+        
+        allMeshes.forEach((mesh) => {
+          mesh.geometry.computeBoundingBox();
+          const box = mesh.geometry.boundingBox;
+          if (box) {
+            const centerZ = (box.min.z + box.max.z) / 2;
+            if (centerZ > maxZ) {
+              maxZ = centerZ;
+              bladderMesh = mesh;
+            }
+          }
+        });
+        
+        // Tag meshes
+        allMeshes.forEach((mesh) => {
+          if (mesh === bladderMesh) {
+            mesh.userData.anatomyType = 'bladder';
+            anatomyMeshesRef.current.bladder.push(mesh);
+          } else {
+            mesh.userData.anatomyType = 'uterus';
+            anatomyMeshesRef.current.uterus.push(mesh);
           }
         });
         
@@ -945,6 +975,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           uterosacrals: anatomyMeshesRef.current.uterosacrals.length,
           roundLigaments: anatomyMeshesRef.current.roundLigaments.length,
           ureters: anatomyMeshesRef.current.ureters.length,
+          bladder: anatomyMeshesRef.current.bladder.length,
         });
         
         // Apply initial visibility state from store

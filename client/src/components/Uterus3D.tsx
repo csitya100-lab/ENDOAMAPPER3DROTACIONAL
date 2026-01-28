@@ -968,48 +968,15 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           }
         });
         
-        // Find the bladder by color (beige/tan) AND position (anterior, positive Z)
-        // Bladder is beige: RGB ~(0.7, 0.4, 0.3) - more green/less blue than pink uterus
-        const organMeshes = meshAnalysis.filter(m => !m.isLigament);
-        let bladderMesh: THREE.Mesh | null = null;
-        let bestBladderScore = -Infinity;
-        
-        organMeshes.forEach(({ mesh, centerZ, volume }) => {
-          const material = mesh.material as THREE.MeshStandardMaterial;
-          if (material && material.color) {
-            const r = material.color.r;
-            const g = material.color.g;
-            const b = material.color.b;
-            
-            // Beige/tan color detection: G > 0.35 and R > G (distinguishes from pink)
-            // Also needs to be anterior (positive Z) and have reasonable volume
-            const isBeige = g > 0.35 && r > g && b < g;
-            const isAnterior = centerZ > 0.2;
-            const hasGoodVolume = volume > 1.0 && volume < 15.0;
-            
-            if (isBeige && isAnterior && hasGoodVolume) {
-              // Score by volume (larger beige structure in front = bladder)
-              const score = volume + centerZ * 2;
-              if (score > bestBladderScore) {
-                bestBladderScore = score;
-                bladderMesh = mesh;
-              }
-            }
-          }
-        });
-        
-        console.log('Bladder detection:', bladderMesh ? 'found' : 'not found', bestBladderScore);
-        
-        // Tag and add meshes (hide ligaments)
+        // Hide utero-ovarian ligaments (small volume meshes) and tag rest as uterus
+        // Bladder identification disabled for now - will be added after ligaments are removed
         meshAnalysis.forEach(({ mesh, isLigament }) => {
           if (isLigament) {
-            // Hide utero-ovarian and cardinal ligaments
+            // Hide utero-ovarian ligaments (volume < 0.5)
             mesh.visible = false;
             mesh.userData.anatomyType = 'hidden';
-          } else if (mesh === bladderMesh) {
-            mesh.userData.anatomyType = 'bladder';
-            anatomyMeshesRef.current.bladder.push(mesh);
           } else {
+            // All other meshes are part of the main model (uterus + bladder for now)
             mesh.userData.anatomyType = 'uterus';
             anatomyMeshesRef.current.uterus.push(mesh);
           }

@@ -934,7 +934,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         anatomyMeshesRef.current.roundLigaments.push(leftRound);
         
         // Identify bladder by position (most anterior mesh - highest Z value)
-        // Then tag remaining meshes as uterus
+        // Filter out utero-ovarian and cardinal ligaments (elongated tubular meshes)
         const allMeshes: THREE.Mesh[] = [];
         model.traverse((child: any) => {
           if ((child as THREE.Mesh).isMesh) {
@@ -942,25 +942,51 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           }
         });
         
-        // Find the mesh with highest average Z position (most anterior = bladder)
-        let bladderMesh: THREE.Mesh | null = null;
-        let maxZ = -Infinity;
+        // Analyze each mesh to identify ligaments vs organs
+        // Ligaments are elongated (high aspect ratio), organs are more spherical
+        const meshAnalysis: { mesh: THREE.Mesh; isLigament: boolean; centerZ: number; volume: number; aspectRatio: number }[] = [];
         
         allMeshes.forEach((mesh) => {
           mesh.geometry.computeBoundingBox();
           const box = mesh.geometry.boundingBox;
           if (box) {
+            const sizeX = box.max.x - box.min.x;
+            const sizeY = box.max.y - box.min.y;
+            const sizeZ = box.max.z - box.min.z;
             const centerZ = (box.min.z + box.max.z) / 2;
-            if (centerZ > maxZ) {
-              maxZ = centerZ;
-              bladderMesh = mesh;
-            }
+            const volume = sizeX * sizeY * sizeZ;
+            
+            // Calculate aspect ratio - ligaments are elongated (max dimension >> min dimension)
+            const dims = [sizeX, sizeY, sizeZ].sort((a, b) => b - a);
+            const aspectRatio = dims[0] / Math.max(dims[2], 0.01);
+            
+            // Ligaments: small volume (utero-ovarian/cardinal are thin structures)
+            // Volume threshold: meshes with volume < 0.5 are ligaments
+            const isLigament = volume < 0.5;
+            
+            meshAnalysis.push({ mesh, isLigament, centerZ, volume, aspectRatio });
           }
         });
         
-        // Tag meshes
-        allMeshes.forEach((mesh) => {
-          if (mesh === bladderMesh) {
+        // Find the bladder (largest mesh with high Z position, not a ligament)
+        const organMeshes = meshAnalysis.filter(m => !m.isLigament);
+        let bladderMesh: THREE.Mesh | null = null;
+        let maxZ = -Infinity;
+        
+        organMeshes.forEach(({ mesh, centerZ }) => {
+          if (centerZ > maxZ) {
+            maxZ = centerZ;
+            bladderMesh = mesh;
+          }
+        });
+        
+        // Tag and add meshes (hide ligaments)
+        meshAnalysis.forEach(({ mesh, isLigament }) => {
+          if (isLigament) {
+            // Hide utero-ovarian and cardinal ligaments
+            mesh.visible = false;
+            mesh.userData.anatomyType = 'hidden';
+          } else if (mesh === bladderMesh) {
             mesh.userData.anatomyType = 'bladder';
             anatomyMeshesRef.current.bladder.push(mesh);
           } else {
@@ -968,6 +994,13 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
             anatomyMeshesRef.current.uterus.push(mesh);
           }
         });
+        
+        console.log('Mesh analysis:', meshAnalysis.map(m => ({
+          isLigament: m.isLigament,
+          volume: m.volume.toFixed(3),
+          aspectRatio: m.aspectRatio.toFixed(1),
+          centerZ: m.centerZ.toFixed(2)
+        })));
         
         // Log anatomy mesh counts for debugging
         console.log('Anatomy meshes found:', {

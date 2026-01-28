@@ -1114,6 +1114,21 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           anatomyMeshesRef.current.uterus.push(mesh);
         });
         
+        // DEBUG: Log all mesh names, userData, and volumes for identification
+        console.log('=== DEBUG: ALL MESHES IN MODEL ===');
+        allMeshes.forEach((mesh, index) => {
+          mesh.geometry.computeBoundingBox();
+          const box = mesh.geometry.boundingBox;
+          const volume = box ? (box.max.x - box.min.x) * (box.max.y - box.min.y) * (box.max.z - box.min.z) : 0;
+          console.log(`Mesh ${index}:`, {
+            name: mesh.name,
+            userData: mesh.userData,
+            volume: volume.toFixed(3),
+            parent: mesh.parent?.name || 'none'
+          });
+        });
+        console.log('=== END DEBUG ===');
+        
         console.log('Mesh analysis:', meshAnalysis.map(m => ({
           isLigament: m.isLigament,
           volume: m.volume.toFixed(3),
@@ -1374,6 +1389,24 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       }
       
       if (event.button !== 0) return;
+      
+      // DEBUG: Detect which mesh was clicked and show its name
+      const view = views[viewIdx];
+      const rect = view.element.getBoundingClientRect();
+      const debugMouse = new THREE.Vector2();
+      debugMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      debugMouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      const debugRaycaster = new THREE.Raycaster();
+      debugRaycaster.setFromCamera(debugMouse, view.camera);
+      const debugIntersects = debugRaycaster.intersectObjects(anatomyGroup.children, true);
+      if (debugIntersects.length > 0) {
+        const clickedMesh = debugIntersects[0].object;
+        const meshName = clickedMesh.name || '(sem nome)';
+        const meshType = clickedMesh.userData?.anatomyType || '(sem tipo)';
+        console.log('=== MESH CLICKED ===', { name: meshName, userData: clickedMesh.userData, type: clickedMesh.type });
+        window.alert(`Nome da peça clicada: ${meshName}\nTipo: ${meshType}\nUserData: ${JSON.stringify(clickedMesh.userData)}`);
+      }
+      // END DEBUG
       
       const lesionId = detectLesionMarker(event, viewIdx);
       

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Uterus3D, Uterus3DRef } from '@/components/Uterus3D';
+import { AnatomyPanel } from '@/components/AnatomyPanel';
 import { useLesionStore, Severity, Lesion } from '@/lib/lesionStore';
 import { useReportStore } from '@/lib/reportStore';
 import { Button } from '@/components/ui/button';
@@ -399,32 +400,12 @@ export default function Home() {
               </div>
             </div>
 
-            {lastLesion && (
-              <div className="p-4 border-b border-slate-200 bg-purple-50/50">
-                <h3 className="text-xs font-bold text-slate-900 tracking-wide mb-2">
-                  ÚLTIMA LESÃO
-                </h3>
-                <div className="space-y-1.5 text-xs font-mono text-slate-700">
-                  <div className="flex justify-between">
-                    <span>Tipo:</span>
-                    <span className="font-semibold text-slate-900 capitalize">{lastLesion.severity}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>X:</span>
-                    <span className="font-semibold text-slate-900">{lastLesion.position.x.toFixed(3)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Y:</span>
-                    <span className="font-semibold text-slate-900">{lastLesion.position.y.toFixed(3)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Z:</span>
-                    <span className="font-semibold text-slate-900">{lastLesion.position.z.toFixed(3)}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
+            <div className="p-4">
+              <h3 className="text-xs font-bold text-slate-900 tracking-wide mb-3">
+                ESTRUTURAS ANATÔMICAS
+              </h3>
+              <AnatomyPanel />
+            </div>
           </aside>
         </div>
       </div>

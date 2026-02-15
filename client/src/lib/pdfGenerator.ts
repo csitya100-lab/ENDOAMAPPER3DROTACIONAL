@@ -3,13 +3,13 @@ import { PdfImage } from './reportStore';
 
 const A4_WIDTH = 210;
 const A4_HEIGHT = 297;
-const MARGIN = 10;
+const MARGIN = 8;
 const HEADER_HEIGHT = 30;
-const FOOTER_HEIGHT = 12;
+const FOOTER_HEIGHT = 10;
 const CONTENT_TOP = HEADER_HEIGHT + 2;
 const CONTENT_HEIGHT = A4_HEIGHT - CONTENT_TOP - FOOTER_HEIGHT;
 const CONTENT_WIDTH = A4_WIDTH - MARGIN * 2;
-const GAP = 5;
+const GAP = 4;
 
 interface Slot {
   x: number;
@@ -37,6 +37,21 @@ function computeLayout(totalImages: number): { slots: Slot[]; perPage: number } 
     };
   }
 
+  if (totalImages === 3) {
+    const topH = CONTENT_HEIGHT * 0.48;
+    const bottomH = CONTENT_HEIGHT * 0.48;
+    const bottomY = CONTENT_TOP + topH + GAP;
+    const halfW = (CONTENT_WIDTH - GAP) / 2;
+    return {
+      perPage: 3,
+      slots: [
+        { x: MARGIN, y: CONTENT_TOP, w: CONTENT_WIDTH, h: topH },
+        { x: MARGIN, y: bottomY, w: halfW, h: bottomH },
+        { x: MARGIN + halfW + GAP, y: bottomY, w: halfW, h: bottomH },
+      ],
+    };
+  }
+
   if (totalImages <= 4) {
     const cols = 2;
     const rows = 2;
@@ -54,6 +69,25 @@ function computeLayout(totalImages: number): { slots: Slot[]; perPage: number } 
       }
     }
     return { perPage: 4, slots };
+  }
+
+  if (totalImages <= 6) {
+    const cols = 2;
+    const rows = 3;
+    const slotW = (CONTENT_WIDTH - GAP) / cols;
+    const slotH = (CONTENT_HEIGHT - GAP * (rows - 1)) / rows;
+    const slots: Slot[] = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        slots.push({
+          x: MARGIN + c * (slotW + GAP),
+          y: CONTENT_TOP + r * (slotH + GAP),
+          w: slotW,
+          h: slotH,
+        });
+      }
+    }
+    return { perPage: 6, slots };
   }
 
   const cols = 2;
@@ -84,19 +118,18 @@ function addImageInSlot(
   observation: string,
   compact: boolean
 ) {
-  const labelFontSize = compact ? 8 : 12;
-  const labelH = labelFontSize * 0.4 + 2;
+  const labelFontSize = compact ? 8 : 10;
+  const labelH = 4;
 
   pdf.setFontSize(labelFontSize);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(80, 80, 80);
-  pdf.text(label, slot.x, slot.y + labelH - 1);
+  pdf.text(label, slot.x, slot.y + labelH);
 
-  const obsFontSize = compact ? 7 : 10;
   const hasObs = observation && observation.trim().length > 0;
-  const reservedForObs = hasObs ? (compact ? 10 : 18) : 0;
-  const imgTop = slot.y + labelH + 1;
-  const availableH = slot.h - labelH - 1 - reservedForObs;
+  const reservedForObs = hasObs ? (compact ? 8 : 14) : 0;
+  const imgTop = slot.y + labelH + 2;
+  const availableH = slot.h - labelH - 2 - reservedForObs;
 
   if (availableH <= 0) return;
 
@@ -110,9 +143,11 @@ function addImageInSlot(
   }
 
   const x = slot.x + (slot.w - imgW) / 2;
-  pdf.addImage(imgData, 'PNG', x, imgTop, imgW, imgH);
+  const y = imgTop + (availableH - imgH) / 2;
+  pdf.addImage(imgData, 'PNG', x, y, imgW, imgH);
 
   if (hasObs) {
+    const obsFontSize = compact ? 7 : 9;
     pdf.setFontSize(obsFontSize);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(60, 60, 60);
@@ -124,39 +159,40 @@ function addImageInSlot(
 }
 
 function addHeader(pdf: jsPDF, pageNum: number, totalPages: number, metadata?: { patientName?: string; examDate?: string; patientId?: string }) {
-  pdf.setFontSize(16);
+  pdf.setFontSize(14);
   pdf.setTextColor(219, 39, 119);
-  pdf.text('EndoMapper - Mapeamento de Lesões', A4_WIDTH / 2, 15, { align: 'center' });
+  pdf.text('EndoMapper - Mapeamento de Lesões', A4_WIDTH / 2, 14, { align: 'center' });
 
-  pdf.setFontSize(9);
+  pdf.setFontSize(8);
   pdf.setTextColor(100, 100, 100);
 
+  let infoY = 20;
   if (metadata?.patientName) {
-    pdf.text(`Paciente: ${metadata.patientName}`, MARGIN, 22);
+    pdf.text(`Paciente: ${metadata.patientName}`, MARGIN, infoY);
   }
   if (metadata?.patientId) {
-    pdf.text(`ID: ${metadata.patientId}`, MARGIN, 26);
+    pdf.text(`ID: ${metadata.patientId}`, MARGIN, infoY + 4);
   }
 
   const dateStr = metadata?.examDate
     ? new Date(metadata.examDate).toLocaleDateString('pt-BR')
     : new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-  pdf.text(`Data: ${dateStr}`, A4_WIDTH - MARGIN, 22, { align: 'right' });
-  pdf.text(`Página ${pageNum}/${totalPages}`, A4_WIDTH - MARGIN, 26, { align: 'right' });
+  pdf.text(`Data: ${dateStr}`, A4_WIDTH - MARGIN, infoY, { align: 'right' });
+  pdf.text(`Página ${pageNum}/${totalPages}`, A4_WIDTH - MARGIN, infoY + 4, { align: 'right' });
 
   pdf.setDrawColor(219, 39, 119);
   pdf.setLineWidth(0.5);
-  pdf.line(MARGIN, 28, A4_WIDTH - MARGIN, 28);
+  pdf.line(MARGIN, 27, A4_WIDTH - MARGIN, 27);
 }
 
 function addFooter(pdf: jsPDF) {
-  pdf.setFontSize(8);
+  pdf.setFontSize(7);
   pdf.setTextColor(150, 150, 150);
   pdf.text(
     'EndoMapper © ' + new Date().getFullYear() + ' - Sistema de Mapeamento de Endometriose',
     A4_WIDTH / 2,
-    A4_HEIGHT - 8,
+    A4_HEIGHT - 6,
     { align: 'center' }
   );
 }

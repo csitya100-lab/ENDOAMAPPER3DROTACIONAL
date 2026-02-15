@@ -98,6 +98,7 @@ interface ReportState {
   removePdfImage: (index: number) => void;
   clearPdfImages: () => void;
   updatePdfImageObservation: (index: number, observation: string) => void;
+  reorderPdfImages: (fromIndex: number, toIndex: number) => void;
 
   toggleViewSelection: (view: keyof Report["images2D"]) => void;
   setSelectedViews: (views: {
@@ -266,6 +267,14 @@ export const useReportStore = create<ReportState>()(
             i === index ? { ...img, observation } : img,
           ),
         })),
+
+      reorderPdfImages: (fromIndex, toIndex) =>
+        set((state) => {
+          const items = [...state.pdfImages];
+          const [moved] = items.splice(fromIndex, 1);
+          items.splice(toIndex, 0, moved);
+          return { pdfImages: items };
+        }),
 
       toggleViewSelection: (view) =>
         set((state) => ({

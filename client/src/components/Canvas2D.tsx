@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { 
   ViewType, 
   Position3D, 
@@ -11,6 +11,13 @@ import {
 import { Lesion, Severity } from '@/lib/lesionStore';
 
 export type DrawingTool = 'select' | 'pen' | 'eraser' | 'line' | 'text' | 'circle' | 'circle-filled' | 'ruler';
+
+export interface Canvas2DHandle {
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+}
 
 interface Canvas2DProps {
   viewType: ViewType;
@@ -28,6 +35,7 @@ interface Canvas2DProps {
   onLesionCreate?: (position: Position3D) => void;
   onCanvasRef?: (canvas: HTMLCanvasElement | null, drawingCanvas: HTMLCanvasElement | null) => void;
   onDrawingChange?: (dataUrl: string) => void;
+  onHistoryChange?: (canUndo: boolean, canRedo: boolean) => void;
 }
 
 const SEVERITY_COLORS: Record<Severity, string> = {
@@ -43,7 +51,9 @@ const VIEW_IMAGES: Record<ViewType, string> = {
   'posterior': '/assets/posterior-view.jpg'
 };
 
-export default function Canvas2D({
+const MAX_HISTORY = 50;
+
+const Canvas2D = forwardRef<Canvas2DHandle, Canvas2DProps>(({
   viewType,
   lesions = [],
   selectedLesionId = null,
@@ -58,8 +68,9 @@ export default function Canvas2D({
   onLesionMove,
   onLesionCreate,
   onCanvasRef,
-  onDrawingChange
-}: Canvas2DProps) {
+  onDrawingChange,
+  onHistoryChange
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -74,6 +85,77 @@ export default function Canvas2D({
   const drawingRestoredRef = useRef(false);
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const drawingBaseRef = useRef<ImageData | null>(null);
+
+  // History: array of data URL snapshots. Index points to the current state.
+  // Index -1 means blank canvas (no history yet).
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef(-1);
+
+  const notifyHistoryChange = useCallback(() => {
+    const canUndo = historyIndexRef.current >= 0;
+    const canRedo = historyIndexRef.current < historyRef.current.length - 1;
+    onHistoryChange?.(canUndo, canRedo);
+  }, [onHistoryChange]);
+
+  const pushHistory = useCallback(() => {
+    const drawingCanvas = drawingCanvasRef.current;
+    if (!drawingCanvas || drawingCanvas.width === 0 || drawingCanvas.height === 0) return;
+    const dataUrl = drawingCanvas.toDataURL('image/png');
+    historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+    historyRef.current.push(dataUrl);
+    historyIndexRef.current = historyRef.current.length - 1;
+    if (historyRef.current.length > MAX_HISTORY) {
+      historyRef.current.shift();
+      historyIndexRef.current = historyRef.current.length - 1;
+    }
+    notifyHistoryChange();
+  }, [notifyHistoryChange]);
+
+  const restoreSnapshot = useCallback((dataUrl: string) => {
+    const drawingCanvas = drawingCanvasRef.current;
+    if (!drawingCanvas) return;
+    const ctx = drawingCanvas.getContext('2d');
+    if (!ctx) return;
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+      ctx.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
+      onDrawingChange?.(dataUrl);
+    };
+    img.src = dataUrl;
+  }, [onDrawingChange]);
+
+  const undo = useCallback(() => {
+    if (historyIndexRef.current < 0) return;
+    historyIndexRef.current -= 1;
+    if (historyIndexRef.current < 0) {
+      const drawingCanvas = drawingCanvasRef.current;
+      if (drawingCanvas) {
+        const ctx = drawingCanvas.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+          onDrawingChange?.('');
+        }
+      }
+    } else {
+      restoreSnapshot(historyRef.current[historyIndexRef.current]);
+    }
+    notifyHistoryChange();
+  }, [restoreSnapshot, onDrawingChange, notifyHistoryChange]);
+
+  const redo = useCallback(() => {
+    if (historyIndexRef.current >= historyRef.current.length - 1) return;
+    historyIndexRef.current += 1;
+    restoreSnapshot(historyRef.current[historyIndexRef.current]);
+    notifyHistoryChange();
+  }, [restoreSnapshot, notifyHistoryChange]);
+
+  useImperativeHandle(ref, () => ({
+    undo,
+    redo,
+    get canUndo() { return historyIndexRef.current >= 0; },
+    get canRedo() { return historyIndexRef.current < historyRef.current.length - 1; },
+  }), [undo, redo]);
 
   useEffect(() => {
     const imagePath = VIEW_IMAGES[viewType];
@@ -152,7 +234,8 @@ export default function Canvas2D({
       const dataUrl = drawingCanvas.toDataURL('image/png');
       onDrawingChange(dataUrl);
     }
-  }, [onDrawingChange]);
+    pushHistory();
+  }, [onDrawingChange, pushHistory]);
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -655,4 +738,6 @@ export default function Canvas2D({
       )}
     </div>
   );
-}
+});
+
+export default Canvas2D;

@@ -17,10 +17,12 @@ import {
   Send,
   Check,
   Camera,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useState, useRef, useCallback } from "react";
-import { DrawingTool } from "@/components/Canvas2D";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { DrawingTool, Canvas2DHandle } from "@/components/Canvas2D";
 
 const VIEW_TYPES: ViewType[] = [
   "sagittal-avf",
@@ -63,6 +65,18 @@ export default function Vistas2D() {
     posterior: createDefaultViewSettings(),
   }));
   const [activeView, setActiveView] = useState<ViewType | null>(null);
+  const [historyState, setHistoryState] = useState<Record<ViewType, { canUndo: boolean; canRedo: boolean }>>({
+    "sagittal-avf": { canUndo: false, canRedo: false },
+    "sagittal-rvf": { canUndo: false, canRedo: false },
+    coronal: { canUndo: false, canRedo: false },
+    posterior: { canUndo: false, canRedo: false },
+  });
+  const canvasHandleRefs = useRef<Record<ViewType, Canvas2DHandle | null>>({
+    "sagittal-avf": null,
+    "sagittal-rvf": null,
+    coronal: null,
+    posterior: null,
+  });
   const { selectedViews, toggleViewSelection, addPdfImage, clearPdfImages } =
     useReportStore();
   const canvasRefs = useRef<Record<ViewType, { main: HTMLCanvasElement | null; drawing: HTMLCanvasElement | null }>>({
@@ -91,6 +105,22 @@ export default function Vistas2D() {
   };
 
   const currentSettings = activeView ? viewSettings[activeView] : null;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!activeView) return;
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        canvasHandleRefs.current[activeView]?.undo();
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        canvasHandleRefs.current[activeView]?.redo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeView]);
 
   const selectedCount = Object.values(selectedViews).filter(Boolean).length;
 
@@ -296,6 +326,31 @@ export default function Vistas2D() {
               <Ruler className="w-4 h-4" />
             </Button>
 
+            <div className="flex items-center gap-1 ml-2 border-l border-slate-700 pl-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => activeView && canvasHandleRefs.current[activeView]?.undo()}
+                disabled={!activeView || !historyState[activeView!]?.canUndo}
+                className="h-8 w-8"
+                title="Desfazer (Ctrl+Z)"
+                data-testid="button-undo"
+              >
+                <Undo2 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => activeView && canvasHandleRefs.current[activeView]?.redo()}
+                disabled={!activeView || !historyState[activeView!]?.canRedo}
+                className="h-8 w-8"
+                title="Refazer (Ctrl+Y)"
+                data-testid="button-redo"
+              >
+                <Redo2 className="w-4 h-4" />
+              </Button>
+            </div>
+
             {activeView && currentSettings?.drawingTool !== "select" && (
               <div className="flex items-center gap-3 ml-2 border-l border-slate-700 pl-3">
                 <div className="flex flex-col gap-1">
@@ -417,6 +472,7 @@ export default function Vistas2D() {
 
                 <div className="h-full w-full bg-white">
                   <Canvas2D
+                    ref={(handle) => { canvasHandleRefs.current[viewType] = handle; }}
                     viewType={viewType}
                     zoomLevel={1}
                     editMode={isActive}
@@ -431,6 +487,12 @@ export default function Vistas2D() {
                     }
                     fillTexture={isActive ? viewSettings[viewType].fillTexture : "none"}
                     onCanvasRef={setCanvasRef(viewType)}
+                    onHistoryChange={(canUndo, canRedo) => {
+                      setHistoryState(prev => ({
+                        ...prev,
+                        [viewType]: { canUndo, canRedo },
+                      }));
+                    }}
                   />
                 </div>
               </div>

@@ -210,8 +210,32 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
         const scale = 4 / maxDim;
         model.scale.setScalar(scale);
 
+        const knownNames = ['uterus','cervix','leftovary','rightovary','bladder','rectum','intestine'];
         model.traverse((child) => {
           if (child.isMesh) {
+            const n = (child.name || '').toLowerCase();
+            if (n.includes('sacro') || n.includes('ligament') || n.includes('uterosacral') || n.includes('round')) {
+              child.visible = false;
+              return;
+            }
+
+            child.geometry.computeBoundingBox();
+            const box = child.geometry.boundingBox;
+            if (box && !knownNames.includes(n)) {
+              const sx = box.max.x - box.min.x, sy = box.max.y - box.min.y, sz = box.max.z - box.min.z;
+              const cx = (box.min.x + box.max.x) / 2;
+              const vol = sx * sy * sz;
+              const isVeryLateral = Math.abs(cx) > 1.5;
+              const isUteroOvarianVol = vol > 2.0 && vol < 4.0;
+              const isCentered = Math.abs(cx) < 0.5;
+              const isCardinalVol = vol > 2.5 && vol < 3.0;
+              const isSmall = vol < 0.5;
+              if ((isVeryLateral && isUteroOvarianVol) || (isCardinalVol && isCentered) || isSmall) {
+                child.visible = false;
+                return;
+              }
+            }
+
             let originalColor = new THREE.Color(0xffffff);
             let mat = child.material;
             if (Array.isArray(mat)) mat = mat[0];
@@ -232,6 +256,49 @@ function generateStandaloneHtml(modelBase64: string, lesionsJson: string): strin
         });
 
         scene.add(model);
+
+        const anatomyGroup = new THREE.Group();
+        scene.add(anatomyGroup);
+
+        const ligMat = new THREE.MeshStandardMaterial({ color: 0xC49080, roughness: 0.55, metalness: 0.02, side: THREE.DoubleSide });
+        const rUSL = new THREE.CatmullRomCurve3([new THREE.Vector3(0.3,-0.5,-0.1), new THREE.Vector3(0.6,-0.8,-0.7), new THREE.Vector3(0.9,-1.2,-1.3), new THREE.Vector3(1.0,-1.5,-1.8)]);
+        anatomyGroup.add(new THREE.Mesh(new THREE.TubeGeometry(rUSL, 20, 0.08, 8, false), ligMat));
+        const lUSL = new THREE.CatmullRomCurve3([new THREE.Vector3(-0.3,-0.5,-0.1), new THREE.Vector3(-0.6,-0.8,-0.7), new THREE.Vector3(-0.9,-1.2,-1.3), new THREE.Vector3(-1.0,-1.5,-1.8)]);
+        anatomyGroup.add(new THREE.Mesh(new THREE.TubeGeometry(lUSL, 20, 0.08, 8, false), ligMat));
+
+        const ureterMat = new THREE.MeshStandardMaterial({ color: 0xFFE4B5, roughness: 0.6, metalness: 0.0, side: THREE.DoubleSide });
+        const rUr = new THREE.CatmullRomCurve3([new THREE.Vector3(1.8,1.5,-0.6), new THREE.Vector3(1.5,0.5,-0.5), new THREE.Vector3(1.0,-0.3,-0.2), new THREE.Vector3(0.6,-0.8,0.1), new THREE.Vector3(0.4,-1.1,0.3)]);
+        anatomyGroup.add(new THREE.Mesh(new THREE.TubeGeometry(rUr, 24, 0.04, 8, false), ureterMat));
+        const lUr = new THREE.CatmullRomCurve3([new THREE.Vector3(-1.8,1.5,-0.6), new THREE.Vector3(-1.5,0.5,-0.5), new THREE.Vector3(-1.0,-0.3,-0.2), new THREE.Vector3(-0.6,-0.8,0.1), new THREE.Vector3(-0.4,-1.1,0.3)]);
+        anatomyGroup.add(new THREE.Mesh(new THREE.TubeGeometry(lUr, 24, 0.04, 8, false), ureterMat));
+
+        const roundMat = new THREE.MeshStandardMaterial({ color: 0xD4956F, roughness: 0.55, metalness: 0.02, side: THREE.DoubleSide });
+        const rRL = new THREE.CatmullRomCurve3([new THREE.Vector3(0.3,1.45,0.15), new THREE.Vector3(0.7,1.35,0.45), new THREE.Vector3(1.2,1.0,0.8), new THREE.Vector3(1.8,0.5,1.15), new THREE.Vector3(2.4,0.1,1.5)]);
+        anatomyGroup.add(new THREE.Mesh(new THREE.TubeGeometry(rRL, 24, 0.045, 8, false), roundMat));
+        const lRL = new THREE.CatmullRomCurve3([new THREE.Vector3(-0.3,1.45,0.15), new THREE.Vector3(-0.7,1.35,0.45), new THREE.Vector3(-1.2,1.0,0.8), new THREE.Vector3(-1.8,0.5,1.15), new THREE.Vector3(-2.4,0.1,1.5)]);
+        anatomyGroup.add(new THREE.Mesh(new THREE.TubeGeometry(lRL, 24, 0.045, 8, false), roundMat));
+
+        const tubeMat = new THREE.MeshStandardMaterial({ color: 0xE8A090, roughness: 0.5, metalness: 0.02, side: THREE.DoubleSide });
+        const fimMat = new THREE.MeshStandardMaterial({ color: 0xF0B0A0, roughness: 0.45, metalness: 0.01, side: THREE.DoubleSide });
+        const rFT = new THREE.CatmullRomCurve3([new THREE.Vector3(0.3,1.55,0.0), new THREE.Vector3(0.7,1.58,-0.02), new THREE.Vector3(1.2,1.55,-0.06), new THREE.Vector3(1.7,1.48,-0.16), new THREE.Vector3(2.1,1.38,-0.30), new THREE.Vector3(2.45,1.28,-0.46), new THREE.Vector3(2.65,1.18,-0.60)]);
+        anatomyGroup.add(new THREE.Mesh(new THREE.TubeGeometry(rFT, 32, 0.06, 8, false), tubeMat));
+        const lFT = new THREE.CatmullRomCurve3([new THREE.Vector3(-0.3,1.55,0.0), new THREE.Vector3(-0.7,1.58,-0.02), new THREE.Vector3(-1.2,1.55,-0.06), new THREE.Vector3(-1.7,1.48,-0.16), new THREE.Vector3(-2.1,1.38,-0.30), new THREE.Vector3(-2.45,1.28,-0.46), new THREE.Vector3(-2.65,1.18,-0.60)]);
+        anatomyGroup.add(new THREE.Mesh(new THREE.TubeGeometry(lFT, 32, 0.06, 8, false), tubeMat));
+
+        const fimCount = 6;
+        [[2.65,1.18,-0.60,1], [-2.65,1.18,-0.60,-1]].forEach(([bx,by,bz,dir]) => {
+          const g = new THREE.Group();
+          for (let i = 0; i < fimCount; i++) {
+            const a = (i / fimCount) * Math.PI * 0.8 - Math.PI * 0.4;
+            const c = new THREE.CatmullRomCurve3([
+              new THREE.Vector3(bx, by, bz),
+              new THREE.Vector3(bx + dir*(0.15+Math.random()*0.1), by+Math.sin(a)*0.2, bz-0.1+Math.cos(a)*0.15),
+              new THREE.Vector3(bx + dir*(0.25+Math.random()*0.1), by+Math.sin(a)*0.35, bz-0.15+Math.cos(a)*0.25),
+            ]);
+            g.add(new THREE.Mesh(new THREE.TubeGeometry(c, 8, 0.015, 6, false), fimMat));
+          }
+          anatomyGroup.add(g);
+        });
 
         LESIONS.forEach((lesion) => {
           let geometry;

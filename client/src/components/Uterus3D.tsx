@@ -749,10 +749,11 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
             if ((child as THREE.Mesh).isMesh && child !== model) {
                 const mesh = child as THREE.Mesh;
                 
-                // Hide existing uterosacral ligaments from original GLB
-                if (mesh.name.toLowerCase().includes('sacro') || 
-                    mesh.name.toLowerCase().includes('ligament') || 
-                    mesh.name.toLowerCase().includes('uterosacral')) {
+                const meshNameLow = mesh.name.toLowerCase();
+                if (meshNameLow.includes('sacro') || 
+                    meshNameLow.includes('ligament') || 
+                    meshNameLow.includes('uterosacral') ||
+                    meshNameLow.includes('round')) {
                   mesh.visible = false;
                   return;
                 }
@@ -905,8 +906,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         anatomyGroup.add(leftUreter);
         anatomyMeshesRef.current.ureters.push(leftUreter);
         
-        // Round ligaments - from cornual region (where tubes attach), going anteriorly
-        // Position: just anterior to fallopian tube insertion at upper lateral uterus
         const roundLigamentMaterial = new THREE.MeshStandardMaterial({
           color: 0xD4956F,
           roughness: 0.55,
@@ -914,14 +913,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           side: THREE.DoubleSide
         });
         
-        // Right round ligament - from right cornual region, anterior to tube, going down/forward
         const rightRoundCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0.9, 1.4, 0.5),   // Start at cornual region, anterior to tube
-          new THREE.Vector3(1.2, 1.0, 0.9),   // Curve forward and lateral
-          new THREE.Vector3(1.5, 0.4, 1.3),   // Continue toward inguinal
-          new THREE.Vector3(2.0, -0.2, 1.6),  // End toward inguinal canal
+          new THREE.Vector3(0.85, 1.35, 0.35),
+          new THREE.Vector3(1.3, 1.1, 0.7),
+          new THREE.Vector3(1.8, 0.7, 1.1),
+          new THREE.Vector3(2.4, 0.3, 1.5),
+          new THREE.Vector3(3.0, 0.0, 1.8),
         ]);
-        const rightRoundGeo = new THREE.TubeGeometry(rightRoundCurve, 20, 0.05, 8, false);
+        const rightRoundGeo = new THREE.TubeGeometry(rightRoundCurve, 24, 0.045, 8, false);
         const rightRound = new THREE.Mesh(rightRoundGeo, roundLigamentMaterial);
         rightRound.castShadow = true;
         rightRound.receiveShadow = true;
@@ -929,14 +928,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         anatomyGroup.add(rightRound);
         anatomyMeshesRef.current.roundLigaments.push(rightRound);
         
-        // Left round ligament - mirror of right
         const leftRoundCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-0.9, 1.4, 0.5),   // Start at left cornual region
-          new THREE.Vector3(-1.2, 1.0, 0.9),   // Curve forward and lateral
-          new THREE.Vector3(-1.5, 0.4, 1.3),   // Continue toward inguinal
-          new THREE.Vector3(-2.0, -0.2, 1.6),  // End toward inguinal canal
+          new THREE.Vector3(-0.85, 1.35, 0.35),
+          new THREE.Vector3(-1.3, 1.1, 0.7),
+          new THREE.Vector3(-1.8, 0.7, 1.1),
+          new THREE.Vector3(-2.4, 0.3, 1.5),
+          new THREE.Vector3(-3.0, 0.0, 1.8),
         ]);
-        const leftRoundGeo = new THREE.TubeGeometry(leftRoundCurve, 20, 0.05, 8, false);
+        const leftRoundGeo = new THREE.TubeGeometry(leftRoundCurve, 24, 0.045, 8, false);
         const leftRound = new THREE.Mesh(leftRoundGeo, roundLigamentMaterial);
         leftRound.castShadow = true;
         leftRound.receiveShadow = true;
@@ -1072,6 +1071,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         const meshAnalysis: { mesh: THREE.Mesh; isLigament: boolean; centerZ: number; centerX: number; volume: number; aspectRatio: number; isBeige: boolean; isLateral: boolean }[] = [];
         
         allMeshes.forEach((mesh) => {
+          if (!mesh.visible) return;
           mesh.geometry.computeBoundingBox();
           const box = mesh.geometry.boundingBox;
           if (box) {
@@ -1126,8 +1126,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           'intestine': 'intestine',
           'leftUterosacrallLigament': 'uterosacrals',
           'rightUterosacrallLigament': 'uterosacrals',
-          'leftRoundLigament': 'roundLigaments',
-          'rightRoundLigament': 'roundLigaments',
         };
 
         meshAnalysis.forEach(({ mesh, centerX }) => {

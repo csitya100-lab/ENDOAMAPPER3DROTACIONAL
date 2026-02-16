@@ -874,13 +874,12 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           side: THREE.DoubleSide
         });
         
-        // Right ureter - runs from upper lateral position down past cervix (posterior to ovaries)
         const rightUreterCurve = new THREE.CatmullRomCurve3([
           new THREE.Vector3(1.8, 1.5, -0.6),
-          new THREE.Vector3(1.5, 0.5, -0.8),
-          new THREE.Vector3(1.2, -0.5, -1.0),
-          new THREE.Vector3(0.9, -1.5, -1.2),
-          new THREE.Vector3(0.6, -2.5, -1.4),
+          new THREE.Vector3(1.5, 0.5, -0.5),
+          new THREE.Vector3(1.0, -0.3, -0.2),
+          new THREE.Vector3(0.6, -0.8, 0.1),
+          new THREE.Vector3(0.4, -1.1, 0.3),
         ]);
         const rightUreterGeo = new THREE.TubeGeometry(rightUreterCurve, 24, 0.04, 8, false);
         const rightUreter = new THREE.Mesh(rightUreterGeo, ureterMaterial);
@@ -890,13 +889,12 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         anatomyGroup.add(rightUreter);
         anatomyMeshesRef.current.ureters.push(rightUreter);
         
-        // Left ureter - mirror of right (posterior to ovaries)
         const leftUreterCurve = new THREE.CatmullRomCurve3([
           new THREE.Vector3(-1.8, 1.5, -0.6),
-          new THREE.Vector3(-1.5, 0.5, -0.8),
-          new THREE.Vector3(-1.2, -0.5, -1.0),
-          new THREE.Vector3(-0.9, -1.5, -1.2),
-          new THREE.Vector3(-0.6, -2.5, -1.4),
+          new THREE.Vector3(-1.5, 0.5, -0.5),
+          new THREE.Vector3(-1.0, -0.3, -0.2),
+          new THREE.Vector3(-0.6, -0.8, 0.1),
+          new THREE.Vector3(-0.4, -1.1, 0.3),
         ]);
         const leftUreterGeo = new THREE.TubeGeometry(leftUreterCurve, 24, 0.04, 8, false);
         const leftUreter = new THREE.Mesh(leftUreterGeo, ureterMaterial);
@@ -1419,24 +1417,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       }
       
       if (event.button !== 0) return;
-      
-      // DEBUG: Detect which mesh was clicked and show its name
-      const view = views[viewIdx];
-      const rect = view.element.getBoundingClientRect();
-      const debugMouse = new THREE.Vector2();
-      debugMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      debugMouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      const debugRaycaster = new THREE.Raycaster();
-      debugRaycaster.setFromCamera(debugMouse, view.camera);
-      const debugIntersects = debugRaycaster.intersectObjects(anatomyGroup.children, true);
-      if (debugIntersects.length > 0) {
-        const clickedMesh = debugIntersects[0].object;
-        const meshName = clickedMesh.name || '(sem nome)';
-        const meshType = clickedMesh.userData?.anatomyType || '(sem tipo)';
-        console.log('=== MESH CLICKED ===', { name: meshName, userData: clickedMesh.userData, type: clickedMesh.type });
-        window.alert(`Nome da peça clicada: ${meshName}\nTipo: ${meshType}\nUserData: ${JSON.stringify(clickedMesh.userData)}`);
-      }
-      // END DEBUG
       
       const lesionId = detectLesionMarker(event, viewIdx);
       

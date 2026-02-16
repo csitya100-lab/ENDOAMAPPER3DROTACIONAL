@@ -1128,13 +1128,16 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           'rightUterosacrallLigament': 'uterosacrals',
         };
 
-        meshAnalysis.forEach(({ mesh, centerX }) => {
-          mesh.visible = true;
+        meshAnalysis.forEach(({ mesh, isLigament, centerX }) => {
           const mappedType = meshNameToAnatomy[mesh.name];
           if (mappedType) {
+            mesh.visible = true;
             mesh.userData.anatomyType = mappedType;
             anatomyMeshesRef.current[mappedType].push(mesh);
+          } else if (isLigament) {
+            mesh.visible = false;
           } else if (Math.abs(centerX) > 1.2 && mesh.geometry.boundingBox) {
+            mesh.visible = true;
             const box = mesh.geometry.boundingBox;
             const vol = (box.max.x - box.min.x) * (box.max.y - box.min.y) * (box.max.z - box.min.z);
             if (vol < 0.5) {
@@ -1145,6 +1148,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
               anatomyMeshesRef.current.ovaries.push(mesh);
             }
           } else {
+            mesh.visible = true;
             mesh.userData.anatomyType = 'uterus';
             anatomyMeshesRef.current.uterus.push(mesh);
           }

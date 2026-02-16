@@ -96,6 +96,13 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     viewIdx: number;
   }>({ isDragging: false, lesionId: null, viewIdx: 0 });
 
+  // Track pointer state for click vs drag
+  const pointerStateRef = useRef({
+    startX: 0,
+    startY: 0,
+    isClickPending: false
+  });
+
   // Map lesion IDs to their marker objects for efficient add/remove/update
   const markersByLesionRef = useRef<{ [lesionId: string]: THREE.Object3D[] }>({});
   
@@ -874,13 +881,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       }
       return null;
     };
-
-    // Track pointer state for click vs drag
-    const pointerStateRef = useRef({
-      startX: 0,
-      startY: 0,
-      isClickPending: false
-    });
 
     // Pointer down: Check if clicking on existing lesion or creating new one
     const handleViewClick = (viewIdx: number) => (event: PointerEvent) => {

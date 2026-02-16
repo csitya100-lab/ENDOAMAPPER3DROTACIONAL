@@ -1,20 +1,23 @@
 import { Switch, Route } from "wouter";
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useThemeStore } from "@/lib/themeStore";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
-import NotFound from "@/pages/not-found";
-import Landing from "@/pages/Landing";
-import Home from "@/pages/Home";
-import Vistas2D from "@/pages/Vistas2D";
-import PublicReport from "@/pages/PublicReport";
-import PrintReport from "@/pages/PrintReport";
-import PreviewReport from "@/pages/PreviewReport";
-import CaseViewer from "@/pages/CaseViewer";
+import PageTransition from "@/components/PageTransition";
+
+const Landing = lazy(() => import("@/pages/Landing"));
+const Home = lazy(() => import("@/pages/Home"));
+const Vistas2D = lazy(() => import("@/pages/Vistas2D"));
+const PublicReport = lazy(() => import("@/pages/PublicReport"));
+const PrintReport = lazy(() => import("@/pages/PrintReport"));
+const PreviewReport = lazy(() => import("@/pages/PreviewReport"));
+const CaseViewer = lazy(() => import("@/pages/CaseViewer"));
+const NotFound = lazy(() => import("@/pages/not-found"));
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isLoading, isAuthenticated } = useAuth();
@@ -36,26 +39,41 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="flex flex-col items-center gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+        <p className="text-sm text-slate-500 dark:text-slate-400">Carregando...</p>
+      </div>
+    </div>
+  );
+}
+
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Landing} />
-      <Route path="/3d">
-        <AuthGuard><Home /></AuthGuard>
-      </Route>
-      <Route path="/vistas-2d">
-        <AuthGuard><Vistas2D /></AuthGuard>
-      </Route>
-      <Route path="/view/:caseId" component={CaseViewer} />
-      <Route path="/relatorio/:id" component={PublicReport} />
-      <Route path="/imprimir">
-        <AuthGuard><PrintReport /></AuthGuard>
-      </Route>
-      <Route path="/preview-report">
-        <AuthGuard><PreviewReport /></AuthGuard>
-      </Route>
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<PageLoader />}>
+      <PageTransition>
+        <Switch>
+          <Route path="/" component={Landing} />
+          <Route path="/3d">
+            <AuthGuard><Home /></AuthGuard>
+          </Route>
+          <Route path="/vistas-2d">
+            <AuthGuard><Vistas2D /></AuthGuard>
+          </Route>
+          <Route path="/view/:caseId" component={CaseViewer} />
+          <Route path="/relatorio/:id" component={PublicReport} />
+          <Route path="/imprimir">
+            <AuthGuard><PrintReport /></AuthGuard>
+          </Route>
+          <Route path="/preview-report">
+            <AuthGuard><PreviewReport /></AuthGuard>
+          </Route>
+          <Route component={NotFound} />
+        </Switch>
+      </PageTransition>
+    </Suspense>
   );
 }
 
@@ -76,6 +94,7 @@ function App() {
       <ThemeProvider>
         <TooltipProvider>
           <Toaster />
+          <SonnerToaster />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

@@ -221,7 +221,7 @@ export default function Vistas2D() {
                 updateViewSetting(activeView, "drawingTool", "select")
               }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === "select" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "select" ? "bg-pink-500/20 text-pink-500 ring-1 ring-pink-500/50" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Selecionar"
               data-testid="button-tool-select"
             >
@@ -235,7 +235,7 @@ export default function Vistas2D() {
                 updateViewSetting(activeView, "drawingTool", "pen")
               }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === "pen" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "pen" ? "bg-pink-500/20 text-pink-500 ring-1 ring-pink-500/50" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Desenhar"
               data-testid="button-tool-pen"
             >
@@ -249,7 +249,7 @@ export default function Vistas2D() {
                 updateViewSetting(activeView, "drawingTool", "eraser")
               }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === "eraser" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "eraser" ? "bg-pink-500/20 text-pink-500 ring-1 ring-pink-500/50" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Borracha"
               data-testid="button-tool-eraser"
             >
@@ -263,7 +263,7 @@ export default function Vistas2D() {
                 updateViewSetting(activeView, "drawingTool", "line")
               }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === "line" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "line" ? "bg-pink-500/20 text-pink-500 ring-1 ring-pink-500/50" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Linha"
               data-testid="button-tool-line"
             >
@@ -277,7 +277,7 @@ export default function Vistas2D() {
                 updateViewSetting(activeView, "drawingTool", "circle")
               }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === "circle" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "circle" ? "bg-pink-500/20 text-pink-500 ring-1 ring-pink-500/50" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Círculo"
               data-testid="button-tool-circle"
             >
@@ -291,7 +291,7 @@ export default function Vistas2D() {
                 updateViewSetting(activeView, "drawingTool", "circle-filled")
               }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === "circle-filled" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "circle-filled" ? "bg-pink-500/20 text-pink-500 ring-1 ring-pink-500/50" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Círculo Preenchido"
               data-testid="button-tool-circle-filled"
             >
@@ -305,7 +305,7 @@ export default function Vistas2D() {
                 updateViewSetting(activeView, "drawingTool", "text")
               }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === "text" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "text" ? "bg-pink-500/20 text-pink-500 ring-1 ring-pink-500/50" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Texto"
               data-testid="button-tool-text"
             >
@@ -319,7 +319,7 @@ export default function Vistas2D() {
                 updateViewSetting(activeView, "drawingTool", "ruler")
               }
               disabled={!activeView}
-              className={`h-8 w-8 ${currentSettings?.drawingTool === "ruler" ? "bg-slate-700" : ""} ${!activeView ? "opacity-50" : ""}`}
+              className={`h-8 w-8 ${currentSettings?.drawingTool === "ruler" ? "bg-pink-500/20 text-pink-500 ring-1 ring-pink-500/50" : ""} ${!activeView ? "opacity-50" : ""}`}
               title="Régua"
               data-testid="button-tool-ruler"
             >
@@ -416,6 +416,26 @@ export default function Vistas2D() {
                     </select>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeView && currentSettings && !['select', 'eraser'].includes(currentSettings.drawingTool) && (
+              <div className="flex items-center gap-3 px-3 py-1.5 bg-white dark:bg-slate-800/50 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm" data-testid="pen-preview">
+                <span className="text-[10px] uppercase text-gray-400 dark:text-slate-500 font-bold">Preview:</span>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="rounded-full" 
+                    style={{ 
+                      width: `${Math.max(currentSettings.drawingSize * 2, 6)}px`, 
+                      height: `${Math.max(currentSettings.drawingSize * 2, 6)}px`,
+                      backgroundColor: currentSettings.drawingColor,
+                      border: '1px solid rgba(0,0,0,0.1)'
+                    }} 
+                  />
+                  <span className="text-xs text-gray-500 dark:text-slate-400">
+                    {currentSettings.drawingSize}px • {currentSettings.drawingTool}
+                  </span>
+                </div>
               </div>
             )}
           </div>

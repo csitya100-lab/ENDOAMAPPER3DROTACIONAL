@@ -1,0 +1,39 @@
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+});
+
+export async function generateFindings(lesions: Array<{
+  name: string;
+  location: string;
+  severity: string;
+}>) {
+  const superficialCount = lesions.filter(l => l.severity === 'superficial').length;
+  const deepCount = lesions.filter(l => l.severity === 'deep').length;
+  
+  const lesionDescriptions = lesions.map(l => 
+    `- ${l.name}: ${l.location} (${l.severity === 'superficial' ? 'superficial' : 'profunda'})`
+  ).join('\n');
+
+  const prompt = `Você é um médico especialista em endometriose. Com base nos achados do mapeamento cirúrgico abaixo, gere um texto descritivo médico profissional em português brasileiro para a seção "Achados" de um relatório cirúrgico.
+
+Dados do mapeamento:
+- Total de lesões: ${lesions.length}
+- Lesões superficiais: ${superficialCount}
+- Lesões profundas (infiltrativas): ${deepCount}
+
+Lesões identificadas:
+${lesionDescriptions}
+
+Gere um parágrafo descritivo médico conciso (3-5 frases) descrevendo os achados, mencionando localização, severidade e padrão de distribuição das lesões. Use terminologia médica adequada. Não inclua recomendações de tratamento, apenas descreva os achados.`;
+
+  const response = await openai.chat.completions.create({
+    model: "gemini-2.5-flash",
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 8192,
+  });
+
+  return response.choices[0]?.message?.content || "Não foi possível gerar os achados.";
+}

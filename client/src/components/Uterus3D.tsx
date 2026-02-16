@@ -18,7 +18,7 @@ interface Uterus3DProps {
   onLesionCountChange?: (count: number) => void;
   onLesionsUpdate?: (lesions: Lesion[]) => void;
   readOnly?: boolean;
-  interactionMode?: 'add' | 'edit';
+  interactionMode?: 'add' | 'edit' | 'navigate';
   selectedLesionId?: string | null;
   onSelectLesion?: (id: string | null) => void;
 }

@@ -64,7 +64,11 @@ export default function Landing() {
 
       <main className="max-w-5xl mx-auto px-8 py-12 ml-16">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-pink-400 to-rose-500 bg-clip-text text-transparent">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-pink-100 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 rounded-full text-sm font-medium mb-4">
+            <Stethoscope className="w-4 h-4" />
+            Ferramenta Médica Profissional
+          </div>
+          <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-pink-400 to-rose-500 bg-clip-text text-transparent">
             Sistema de Mapeamento de Lesões
           </h2>
           <p className="text-gray-600 dark:text-slate-400 text-lg max-w-2xl mx-auto">
@@ -76,7 +80,8 @@ export default function Landing() {
         <div className="grid md:grid-cols-3 gap-6 mb-16">
           <div 
             onClick={() => setLocation('/3d')}
-            className="bg-white dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-slate-700 hover:border-pink-500/50 transition-all cursor-pointer group shadow-sm"
+            className="animate-fade-in-up bg-white dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-slate-700 hover:border-pink-500/50 transition-all cursor-pointer group shadow-sm"
+            style={{ animationDelay: '0ms' }}
             data-testid="card-3d"
           >
             <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -98,7 +103,8 @@ export default function Landing() {
 
           <div 
             onClick={() => setLocation('/vistas-2d')}
-            className="bg-white dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-slate-700 hover:border-pink-500/50 transition-all cursor-pointer group shadow-sm"
+            className="animate-fade-in-up bg-white dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-slate-700 hover:border-pink-500/50 transition-all cursor-pointer group shadow-sm"
+            style={{ animationDelay: '150ms' }}
             data-testid="card-2d"
           >
             <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -120,7 +126,8 @@ export default function Landing() {
 
           <div 
             onClick={() => setLocation('/preview-report')}
-            className="bg-white dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-slate-700 hover:border-pink-500/50 transition-all cursor-pointer group shadow-sm"
+            className="animate-fade-in-up bg-white dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-slate-700 hover:border-pink-500/50 transition-all cursor-pointer group shadow-sm"
+            style={{ animationDelay: '300ms' }}
             data-testid="card-report"
           >
             <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -141,7 +148,7 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800/30 rounded-xl p-8 border border-gray-200 dark:border-slate-700 shadow-sm">
+        <div className="animate-fade-in-up bg-white dark:bg-slate-800/30 rounded-xl p-8 border border-gray-200 dark:border-slate-700 shadow-sm" style={{ animationDelay: '600ms' }}>
           <h3 className="text-xl font-semibold mb-6 text-center">Como Usar</h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
@@ -170,8 +177,8 @@ export default function Landing() {
 
         <div className="text-center mt-12">
           <Button
-            onClick={() => setLocation('/vistas-2d')}
-            className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white px-8 py-6 text-lg font-semibold shadow-lg shadow-pink-500/30"
+            onClick={() => setLocation('/3d')}
+            className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white px-8 py-6 text-lg font-semibold shadow-lg shadow-pink-500/30 hover:scale-105 transition-transform"
             data-testid="button-start"
           >
             Começar Agora
@@ -184,6 +191,23 @@ export default function Landing() {
         <p>EndoMapper © {new Date().getFullYear()} — Sistema de Mapeamento de Endometriose</p>
         <p className="mt-1">Desenvolvido por Cláudio Sityá</p>
       </footer>
+
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.6s ease-out forwards;
+          opacity: 0;
+        }
+      `}</style>
     </div>
   );
 }

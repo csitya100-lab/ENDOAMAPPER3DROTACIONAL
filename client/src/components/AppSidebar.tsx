@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useThemeStore } from '@/lib/themeStore';
+import { useLesionStore } from '@/lib/lesionStore';
 
 interface NavItem {
   path: string;
@@ -45,9 +46,22 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+const WORKFLOW_STEPS = [
+  { route: '/3d', label: '3D' },
+  { route: '/vistas-2d', label: '2D' },
+  { route: '/preview-report', label: 'Relatório' },
+];
+
+function getWorkflowStep(location: string): number {
+  const idx = WORKFLOW_STEPS.findIndex(s => s.route === location);
+  return idx;
+}
+
 export default function AppSidebar() {
   const [location, setLocation] = useLocation();
   const { theme, toggleTheme } = useThemeStore();
+  const lesionCount = useLesionStore((s) => s.lesions.length);
+  const currentStep = getWorkflowStep(location);
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-16 bg-slate-900 dark:bg-slate-900 flex flex-col items-center py-4 z-50">
@@ -55,17 +69,21 @@ export default function AppSidebar() {
         <MapPin className="w-5 h-5 text-white" />
       </div>
 
-      <nav className="flex-1 flex flex-col items-center gap-1 w-full px-2">
+      <nav role="navigation" className="flex-1 flex flex-col items-center gap-1 w-full px-2">
         {NAV_ITEMS.map((item) => {
           const isActive = location === item.path;
+          const is3DItem = item.path === '/3d';
           return (
             <Tooltip key={item.path} delayDuration={100}>
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setLocation(item.path)}
                   data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  aria-label={item.description}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`
-                    w-full h-11 flex items-center justify-center rounded-lg transition-all duration-200
+                    relative w-full h-11 flex items-center justify-center rounded-lg transition-all duration-200
+                    focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:outline-none
                     ${isActive 
                       ? 'bg-pink-600 text-white shadow-lg shadow-pink-500/30' 
                       : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -73,6 +91,14 @@ export default function AppSidebar() {
                   `}
                 >
                   {item.icon}
+                  {is3DItem && lesionCount > 0 && (
+                    <span
+                      data-testid="badge-lesion-count"
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center"
+                    >
+                      {lesionCount}
+                    </span>
+                  )}
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
@@ -84,12 +110,49 @@ export default function AppSidebar() {
         })}
       </nav>
 
+      <div className="flex flex-col items-center gap-1 w-full px-2 py-3" data-testid="flow-progress">
+        {WORKFLOW_STEPS.map((step, idx) => {
+          const isCompleted = currentStep > idx;
+          const isCurrentStep = currentStep === idx;
+          const isFuture = currentStep < 0 || currentStep < idx;
+
+          return (
+            <div key={step.route} className="flex flex-col items-center">
+              {idx > 0 && (
+                <div
+                  className={`w-0.5 h-3 ${isCompleted ? 'bg-green-500' : 'bg-slate-700'}`}
+                />
+              )}
+              <div
+                className={`
+                  w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all
+                  ${isCompleted
+                    ? 'bg-green-500 text-white'
+                    : isCurrentStep
+                      ? 'bg-pink-500 text-white ring-2 ring-pink-400/50'
+                      : 'bg-slate-700 text-slate-400'
+                  }
+                `}
+              >
+                {idx + 1}
+              </div>
+              {idx < WORKFLOW_STEPS.length - 1 && (
+                <div
+                  className={`w-0.5 h-3 ${isCompleted ? 'bg-green-500' : 'bg-slate-700'}`}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
       <div className="flex flex-col items-center gap-1 w-full px-2 pt-4 border-t border-slate-800">
         <Tooltip delayDuration={100}>
           <TooltipTrigger asChild>
             <button 
               onClick={toggleTheme}
-              className="w-full h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+              aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+              className="w-full h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:outline-none"
               data-testid="nav-theme"
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -105,7 +168,8 @@ export default function AppSidebar() {
           <TooltipTrigger asChild>
             <button 
               onClick={() => setLocation('/')}
-              className="w-full h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+              aria-label="Ajuda e instruções de uso"
+              className="w-full h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:outline-none"
               data-testid="nav-help"
             >
               <HelpCircle className="w-5 h-5" />

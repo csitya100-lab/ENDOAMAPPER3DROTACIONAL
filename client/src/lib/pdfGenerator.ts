@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { toast } from 'sonner';
 import { PdfImage } from './reportStore';
 
 const A4_WIDTH = 210;
@@ -202,7 +203,7 @@ export function generatePdfReport(
   metadata?: { patientName?: string; examDate?: string; patientId?: string }
 ): void {
   if (images.length === 0) {
-    alert('Nenhuma imagem adicionada ao relatório.');
+    toast.warning('Nenhuma imagem adicionada ao relatório.');
     return;
   }
 

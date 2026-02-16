@@ -6,9 +6,63 @@ A medical visualization application for mapping endometriosis lesions using inte
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+Preferred communication style: Simple, everyday language (Portuguese).
 Menu sidebar: Uses short labels "3D" and "2D" instead of full descriptive names for navigation items.
 Minimalist UI: Removed thickness slider, export buttons, and unnecessary features.
+
+## Recent Changes (Feb 2026 - UI/UX Improvements)
+
+### Toast Notification System
+- Replaced all `alert()` calls with sonner toast notifications (success, warning, error variants)
+- Added undo functionality for clearing lesions (5-second toast with "Desfazer" button)
+- Sonner Toaster component fixed to use app's own themeStore instead of next-themes
+
+### Sidebar Navigation Enhancements
+- Flow progress indicator (3D → 2D → Relatório) with visual step tracker
+- Badge with lesion count on the 3D nav button
+- Accessibility improvements: aria-label, aria-current, focus-visible rings
+
+### Toolbar 3D Reorganization
+- Navigation/Marking mode toggle (Navegar/Marcar) to prevent accidental lesion creation
+- Buttons grouped into categories with visual separators (Mode | Severity | Captures | Export | Clear)
+- interactionMode prop passed to Uterus3D component
+
+### Anatomy Panel
+- Elements grouped by category (Órgãos Reprodutivos, Ligamentos, Estruturas Adjacentes)
+- Category icons (Heart, Workflow, Shield) from lucide-react
+- Improved hover/active states and show/hide buttons
+
+### Landing Page
+- CTA "Começar Agora" navigates to /3d (was /vistas-2d)
+- CSS animations (fadeInUp) on feature cards with staggered delays
+- Subtitle badge "Ferramenta Médica Profissional" above heading
+- Heading size increased to text-5xl
+
+### 2D Tools
+- Active tool highlighting with pink accent (bg-pink-500/20 text-pink-500 ring-1)
+- Pen size/color preview indicator
+
+### Report Drag-and-Drop
+- Improved visual feedback with directional border indicators
+- Better grip handle styling with pink hover
+- Enhanced instruction text with icon
+
+### Gemini AI Integration
+- POST /api/generate-findings endpoint using Gemini 2.5 Flash (OpenAI-compatible)
+- Generates medical report "Achados" section from lesion data
+- UI button in PreviewReport with loading state and purple-themed display
+- Uses Replit AI Integrations (no API key needed)
+
+### Dark Mode Consistency
+- Full dark mode support in Home/3D view (header, sidebar, controls, anatomy panel)
+- Dark mode in AppLayout
+- Dark mode in PreviewReport
+- All pages now support consistent dark/light theme switching
+
+### Page Transitions & Lazy Loading
+- React.lazy() + Suspense for all page routes
+- PageTransition component with fade + slide animations (150ms exit, 200ms enter)
+- PageLoader fallback component with spinner
 
 ## System Architecture
 

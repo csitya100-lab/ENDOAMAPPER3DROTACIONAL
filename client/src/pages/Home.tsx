@@ -7,7 +7,7 @@ import { useReportStore } from '@/lib/reportStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2, FileText, Download, Camera, Share2 } from 'lucide-react';
-import { export3DModelAsHtml, exportCompleteReport } from '@/lib/export3DHtml';
+import { export3DModelAsHtml } from '@/lib/export3DHtml';
 import { getAnatomyLabel } from '@/lib/anatomyStore';
 import { saveCaseToDb, isSupabaseConfigured } from '@/lib/caseDb';
 import AppLayout from '@/components/AppLayout';
@@ -38,7 +38,6 @@ export default function Home() {
   };
 
   const [isExporting, setIsExporting] = useState(false);
-  const [isExportingComplete, setIsExportingComplete] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveAndShare = async () => {
@@ -81,23 +80,6 @@ export default function Home() {
       alert('Erro ao exportar o modelo 3D. Tente novamente.');
     } finally {
       setIsExporting(false);
-    }
-  };
-
-  const handleExportComplete = async () => {
-    if (lesions.length === 0) {
-      alert('Adicione pelo menos uma lesão antes de exportar.');
-      return;
-    }
-    setIsExportingComplete(true);
-    try {
-      const images2D = useReportStore.getState().draftImages2D;
-      await exportCompleteReport(lesions, images2D);
-    } catch (error) {
-      console.error('Erro ao exportar:', error);
-      alert('Erro ao exportar o relatório. Tente novamente.');
-    } finally {
-      setIsExportingComplete(false);
     }
   };
 
@@ -340,17 +322,6 @@ export default function Home() {
               >
                 <Download className="w-3.5 h-3.5 mr-1.5" />
                 {isExporting ? 'Exportando...' : 'Exportar 3D'}
-              </Button>
-
-              <Button 
-                size="sm" 
-                onClick={handleExportComplete}
-                disabled={isExportingComplete}
-                className="text-xs h-9 bg-orange-600 text-white hover:bg-orange-700 border border-orange-500"
-                data-testid="button-export-complete"
-              >
-                <FileText className="w-3.5 h-3.5 mr-1.5" />
-                {isExportingComplete ? 'Exportando...' : 'Relatório HTML'}
               </Button>
 
               <Button 

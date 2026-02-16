@@ -10,6 +10,7 @@ export type AnatomyElement =
   | 'bladder'
   | 'rectum'
   | 'intestine'
+  | 'vagina'
   | 'fallopianTubes';
 
 export interface AnatomyElementInfo {
@@ -30,6 +31,7 @@ interface AnatomyStore {
 export const ANATOMY_ELEMENTS: AnatomyElementInfo[] = [
   { id: 'uterus', label: 'Útero', color: '#DD8A96', visible: true },
   { id: 'cervix', label: 'Colo do Útero', color: '#C47A86', visible: true },
+  { id: 'vagina', label: 'Vagina', color: '#E8B4B8', visible: true },
   { id: 'ovaries', label: 'Ovários', color: '#E8B0A0', visible: true },
   { id: 'fallopianTubes', label: 'Tubas Uterinas', color: '#E8A090', visible: true },
   { id: 'uterosacrals', label: 'Lig. Útero-sacros', color: '#C49080', visible: true },
@@ -43,6 +45,7 @@ export const ANATOMY_ELEMENTS: AnatomyElementInfo[] = [
 const initialVisibility: Record<AnatomyElement, boolean> = {
   uterus: true,
   cervix: true,
+  vagina: true,
   ovaries: true,
   fallopianTubes: true,
   uterosacrals: true,

@@ -145,6 +145,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     bladder: [],
     rectum: [],
     intestine: [],
+    vagina: [],
   });
   
   const anatomyVisibility = useAnatomyStore((state) => state.visibility);
@@ -679,6 +680,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         bladder: [],
         rectum: [],
         intestine: [],
+        vagina: [],
       };
     };
     
@@ -777,7 +779,12 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
                 let clearcoat = isIOSDevice ? 0 : 0.1;
                 let envMapIntensity = 0.5;
                 
-                if (r > 0.8 && g > 0.8 && b < 0.4) {
+                if (meshNameLow.includes('vagina')) {
+                    newColor = new THREE.Color(0xE8B4B8);
+                    roughness = 0.55;
+                    metalness = 0.02;
+                }
+                else if (r > 0.8 && g > 0.8 && b < 0.4) {
                     newColor = new THREE.Color(0xFFD700);
                 }
                 else if (r < 0.4 && g > 0.7 && b > 0.8) {
@@ -1119,6 +1126,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         const meshNameToAnatomy: Record<string, AnatomyElement> = {
           'uterus': 'uterus',
           'cervix': 'cervix',
+          'vagina': 'vagina',
           'leftOvary': 'ovaries',
           'rightOvary': 'ovaries',
           'bladder': 'bladder',

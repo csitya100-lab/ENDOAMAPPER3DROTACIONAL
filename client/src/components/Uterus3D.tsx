@@ -2,71 +2,13 @@ import { useEffect, useRef, forwardRef, useImperativeHandle, useState, useCallba
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { useLesionStore, Lesion, Severity, MarkerType } from '@/lib/lesionStore';
-import { useReportStore, Report } from '@/lib/reportStore';
+import { useReportStore } from '@/lib/reportStore';
 import { useAnatomyStore, AnatomyElement } from '@/lib/anatomyStore';
 import { Camera } from 'lucide-react';
-
-const isIOS = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-};
-
-const isMobile = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-};
-
-const MODEL_CACHE_KEY = 'endomapper_model_v1';
-const MODEL_LOAD_TIMEOUT = 15000;
-const MODEL_DB_NAME = 'EndoMapperDB';
-const MODEL_STORE_NAME = 'models';
-
-const openModelDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(MODEL_DB_NAME, 1);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(MODEL_STORE_NAME)) {
-        db.createObjectStore(MODEL_STORE_NAME);
-      }
-    };
-  });
-};
-
-const getCachedModel = async (): Promise<ArrayBuffer | null> => {
-  try {
-    const db = await openModelDB();
-    return new Promise((resolve) => {
-      const tx = db.transaction(MODEL_STORE_NAME, 'readonly');
-      const store = tx.objectStore(MODEL_STORE_NAME);
-      const request = store.get(MODEL_CACHE_KEY);
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => resolve(null);
-    });
-  } catch {
-    return null;
-  }
-};
-
-const cacheModel = async (data: ArrayBuffer): Promise<void> => {
-  try {
-    const db = await openModelDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(MODEL_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(MODEL_STORE_NAME);
-      const request = store.put(data, MODEL_CACHE_KEY);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  } catch {
-    console.warn('Failed to cache model');
-  }
-};
+import { isIOS, isMobile, MODEL_LOAD_TIMEOUT, getCachedModel, cacheModel } from '@/lib/modelLoader';
+import { createProgrammaticAnatomy } from '@/lib/anatomyCreator';
+import { processGLBModel } from '@/lib/meshAnalyzer';
 
 interface Uterus3DProps {
   severity?: Severity;
@@ -87,9 +29,8 @@ export interface Uterus3DRef {
   captureScreenshot: () => string | null;
 }
 
-const COLORS = {
+const COLORS: Record<string, number> = {
   superficial: 0xef4444,
-  moderate: 0xf97316,
   deep: 0x3b82f6
 };
 
@@ -301,8 +242,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     });
   };
 
-  const captureViewScreenshot = useCallback((viewIndex: number, targetView: keyof Report["images2D"]) => {
-    console.log(`captureViewScreenshot chamado: viewIndex=${viewIndex}, targetView=${targetView}`);
+  const captureViewScreenshot = useCallback((viewIndex: number, targetView: string) => {
     const renderer = rendererRef.current;
     const scene = sceneRef.current;
     const view = viewsRef.current[viewIndex];
@@ -378,7 +318,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         }
         ctx.putImageData(imageData, 0, 0);
         const imageDataUrl = canvas.toDataURL('image/png');
-        console.log(`Imagem capturada para ${targetView}, tamanho: ${imageDataUrl.length} bytes`);
         setDraftImage(targetView, imageDataUrl);
       }
     } catch (e) {
@@ -719,479 +658,33 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
 
     loadTimeout = setTimeout(() => {
       if (isMounted && loadingState === 'loading') {
-        console.warn('Model load timeout - using fallback');
         createFallbackModel();
       }
     }, MODEL_LOAD_TIMEOUT);
 
     const processModel = (gltf: any) => {
-        if (!isMounted) return;
-        if (loadTimeout) clearTimeout(loadTimeout);
-        
-        // Reset anatomy meshes before populating
-        resetAnatomyMeshes();
-        
-        const model = gltf.scene;
-        
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        
-        model.position.x += (model.position.x - center.x);
-        model.position.y += (model.position.y - center.y);
-        model.position.z += (model.position.z - center.z);
-        
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 4 / maxDim;
-        model.scale.set(scale, scale, scale);
-
-        model.traverse((child: any) => {
-            if ((child as THREE.Mesh).isMesh && child !== model) {
-                const mesh = child as THREE.Mesh;
-                
-                const meshNameLow = mesh.name.toLowerCase();
-                if (meshNameLow.includes('sacro') || 
-                    meshNameLow.includes('ligament') || 
-                    meshNameLow.includes('uterosacral') ||
-                    meshNameLow.includes('round')) {
-                  mesh.visible = false;
-                  return;
-                }
-
-                let originalColor = new THREE.Color(0xffffff);
-                let originalMat = mesh.material;
-                if (Array.isArray(originalMat)) {
-                    originalMat = originalMat[0];
-                }
-                if (originalMat instanceof THREE.MeshStandardMaterial || originalMat instanceof THREE.MeshPhongMaterial) {
-                    originalColor = (originalMat as any).color.clone();
-                }
-                
-                const r = originalColor.r;
-                const g = originalColor.g;
-                const b = originalColor.b;
-                
-                let newColor = new THREE.Color(0xDD8A96);
-                let roughness = 0.45;
-                let metalness = 0.05;
-                let clearcoat = isIOSDevice ? 0 : 0.1;
-                let envMapIntensity = 0.5;
-                
-                if (r > 0.8 && g > 0.8 && b < 0.4) {
-                    newColor = new THREE.Color(0xFFD700);
-                }
-                else if (r < 0.4 && g > 0.7 && b > 0.8) {
-                    newColor = new THREE.Color(0x87CEEB);
-                }
-                else if (r > 0.7 && g > 0.4 && b > 0.3 && r - g > 0.2) {
-                    newColor = new THREE.Color(0xD4956F);
-                }
-                else if (r > 0.6 && g > 0.4 && b > 0.3 && r - g < 0.3) {
-                    newColor = new THREE.Color(0xC49080);
-                    roughness = 0.50;
-                    clearcoat = isIOSDevice ? 0 : 0.08;
-                }
-                else if (r > 0.8 && g < 0.7 && b < 0.7 && r - g < 0.3) {
-                    newColor = new THREE.Color(0xE8B4B8);
-                    roughness = 0.55;
-                    metalness = 0.02;
-                    clearcoat = isIOSDevice ? 0 : 0.05;
-                    envMapIntensity = 0.3;
-                }
-                
-                let newMaterial: THREE.Material;
-                if (isIOSDevice || isMobileDevice) {
-                    newMaterial = new THREE.MeshStandardMaterial({
-                        color: newColor,
-                        roughness: roughness,
-                        metalness: metalness,
-                        side: THREE.DoubleSide
-                    });
-                } else {
-                    newMaterial = new THREE.MeshPhysicalMaterial({
-                        color: newColor,
-                        roughness: roughness,
-                        metalness: metalness,
-                        clearcoat: clearcoat,
-                        envMapIntensity: envMapIntensity,
-                        side: THREE.DoubleSide
-                    });
-                }
-                
-                mesh.material = newMaterial;
-                if (!isIOSDevice && !isMobileDevice) {
-                    mesh.castShadow = true;
-                    mesh.receiveShadow = true;
-                }
-            }
-        });
-        
-        anatomyGroup.add(model);
-        
-        // Add uterosacral ligaments - positioned at uterus body/cervix junction
-        const ligamentMaterial = new THREE.MeshStandardMaterial({
-          color: 0xC49080,
-          roughness: 0.55,
-          metalness: 0.02,
-          side: THREE.DoubleSide
-        });
-        
-        // Right uterosacral ligament - from body/cervix junction going posteriorly (negative Z) and laterally
-        const rightLigamentCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0.3, -0.5, -0.1),
-          new THREE.Vector3(0.6, -0.8, -0.7),
-          new THREE.Vector3(0.9, -1.2, -1.3),
-          new THREE.Vector3(1.0, -1.5, -1.8),
-        ]);
-        const rightLigamentGeo = new THREE.TubeGeometry(rightLigamentCurve, 20, 0.08, 8, false);
-        const rightLigament = new THREE.Mesh(rightLigamentGeo, ligamentMaterial);
-        rightLigament.castShadow = true;
-        rightLigament.receiveShadow = true;
-        rightLigament.userData.anatomyType = 'uterosacrals';
-        anatomyGroup.add(rightLigament);
-        anatomyMeshesRef.current.uterosacrals.push(rightLigament);
-        
-        // Left uterosacral ligament - mirror of right (posterior direction)
-        const leftLigamentCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-0.3, -0.5, -0.1),
-          new THREE.Vector3(-0.6, -0.8, -0.7),
-          new THREE.Vector3(-0.9, -1.2, -1.3),
-          new THREE.Vector3(-1.0, -1.5, -1.8),
-        ]);
-        const leftLigamentGeo = new THREE.TubeGeometry(leftLigamentCurve, 20, 0.08, 8, false);
-        const leftLigament = new THREE.Mesh(leftLigamentGeo, ligamentMaterial);
-        leftLigament.castShadow = true;
-        leftLigament.receiveShadow = true;
-        leftLigament.userData.anatomyType = 'uterosacrals';
-        anatomyGroup.add(leftLigament);
-        anatomyMeshesRef.current.uterosacrals.push(leftLigament);
-        
-        // Add ureters - thin tubes running laterally near the uterus
-        const ureterMaterial = new THREE.MeshStandardMaterial({
-          color: 0xFFE4B5,
-          roughness: 0.6,
-          metalness: 0.0,
-          side: THREE.DoubleSide
-        });
-        
-        const rightUreterCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(1.8, 1.5, -0.6),
-          new THREE.Vector3(1.5, 0.5, -0.5),
-          new THREE.Vector3(1.0, -0.3, -0.2),
-          new THREE.Vector3(0.6, -0.8, 0.1),
-          new THREE.Vector3(0.4, -1.1, 0.3),
-        ]);
-        const rightUreterGeo = new THREE.TubeGeometry(rightUreterCurve, 24, 0.04, 8, false);
-        const rightUreter = new THREE.Mesh(rightUreterGeo, ureterMaterial);
-        rightUreter.castShadow = true;
-        rightUreter.receiveShadow = true;
-        rightUreter.userData.anatomyType = 'ureters';
-        anatomyGroup.add(rightUreter);
-        anatomyMeshesRef.current.ureters.push(rightUreter);
-        
-        const leftUreterCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-1.8, 1.5, -0.6),
-          new THREE.Vector3(-1.5, 0.5, -0.5),
-          new THREE.Vector3(-1.0, -0.3, -0.2),
-          new THREE.Vector3(-0.6, -0.8, 0.1),
-          new THREE.Vector3(-0.4, -1.1, 0.3),
-        ]);
-        const leftUreterGeo = new THREE.TubeGeometry(leftUreterCurve, 24, 0.04, 8, false);
-        const leftUreter = new THREE.Mesh(leftUreterGeo, ureterMaterial);
-        leftUreter.castShadow = true;
-        leftUreter.receiveShadow = true;
-        leftUreter.userData.anatomyType = 'ureters';
-        anatomyGroup.add(leftUreter);
-        anatomyMeshesRef.current.ureters.push(leftUreter);
-        
-        const roundLigamentMaterial = new THREE.MeshStandardMaterial({
-          color: 0xD4956F,
-          roughness: 0.55,
-          metalness: 0.02,
-          side: THREE.DoubleSide
-        });
-        
-        const rightRoundCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0.3, 1.45, 0.15),
-          new THREE.Vector3(0.7, 1.35, 0.45),
-          new THREE.Vector3(1.2, 1.0, 0.8),
-          new THREE.Vector3(1.8, 0.5, 1.15),
-          new THREE.Vector3(2.4, 0.1, 1.5),
-        ]);
-        const rightRoundGeo = new THREE.TubeGeometry(rightRoundCurve, 24, 0.045, 8, false);
-        const rightRound = new THREE.Mesh(rightRoundGeo, roundLigamentMaterial);
-        rightRound.castShadow = true;
-        rightRound.receiveShadow = true;
-        rightRound.userData.anatomyType = 'roundLigaments';
-        anatomyGroup.add(rightRound);
-        anatomyMeshesRef.current.roundLigaments.push(rightRound);
-        
-        const leftRoundCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-0.3, 1.45, 0.15),
-          new THREE.Vector3(-0.7, 1.35, 0.45),
-          new THREE.Vector3(-1.2, 1.0, 0.8),
-          new THREE.Vector3(-1.8, 0.5, 1.15),
-          new THREE.Vector3(-2.4, 0.1, 1.5),
-        ]);
-        const leftRoundGeo = new THREE.TubeGeometry(leftRoundCurve, 24, 0.045, 8, false);
-        const leftRound = new THREE.Mesh(leftRoundGeo, roundLigamentMaterial);
-        leftRound.castShadow = true;
-        leftRound.receiveShadow = true;
-        leftRound.userData.anatomyType = 'roundLigaments';
-        anatomyGroup.add(leftRound);
-        anatomyMeshesRef.current.roundLigaments.push(leftRound);
-        
-        // Fallopian tubes (tubas uterinas) - positioned at cornual region, extending laterally
-        // Anatomically: intramural → isthmus → ampulla → infundibulum with fimbriae
-        const fallopianTubeMaterial = new THREE.MeshStandardMaterial({
-          color: 0xE8A090,
-          roughness: 0.5,
-          metalness: 0.02,
-          side: THREE.DoubleSide
-        });
-        
-        // Fimbriae material - slightly different color for the finger-like ends
-        const fimbriaeMaterial = new THREE.MeshStandardMaterial({
-          color: 0xF0B0A0,
-          roughness: 0.45,
-          metalness: 0.01,
-          side: THREE.DoubleSide
-        });
-        
-        // Right fallopian tube - from cornual region extending laterally with slight posterior curve
-        // Proportional to uterus: tubes are ~10-12cm, uterus body ~7-8cm
-        const rightTubeCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0.3, 1.55, 0.0),      // Dentro da parede uterina (cornual)
-          new THREE.Vector3(0.7, 1.58, -0.02),    // Emergindo da parede
-          new THREE.Vector3(1.2, 1.55, -0.06),    // Istmo
-          new THREE.Vector3(1.7, 1.48, -0.16),    // Início da ampola
-          new THREE.Vector3(2.1, 1.38, -0.30),    // Ampola
-          new THREE.Vector3(2.45, 1.28, -0.46),   // Fim da ampola / início do infundíbulo
-          new THREE.Vector3(2.65, 1.18, -0.60),   // Infundíbulo - curva em direção ao ovário
-        ]);
-        
-        // Variable radius for the tube - narrower at isthmus, wider at ampulla
-        const rightTubeGeo = new THREE.TubeGeometry(rightTubeCurve, 32, 0.06, 8, false);
-        const rightTube = new THREE.Mesh(rightTubeGeo, fallopianTubeMaterial);
-        rightTube.castShadow = true;
-        rightTube.receiveShadow = true;
-        rightTube.userData.anatomyType = 'fallopianTubes';
-        anatomyGroup.add(rightTube);
-        anatomyMeshesRef.current.fallopianTubes.push(rightTube);
-        
-        // Right fimbriae - finger-like projections at the end of the tube
-        const rightFimbriaeGroup = new THREE.Group();
-        const fimbriaeBasePos = new THREE.Vector3(2.65, 1.18, -0.60);
-        const fimbriaeCount = 6;
-        for (let i = 0; i < fimbriaeCount; i++) {
-          const angle = (i / fimbriaeCount) * Math.PI * 0.8 - Math.PI * 0.4; // Spread around the opening
-          const fimbriaCurve = new THREE.CatmullRomCurve3([
-            fimbriaeBasePos.clone(),
-            new THREE.Vector3(
-              fimbriaeBasePos.x + 0.15 + Math.random() * 0.1,
-              fimbriaeBasePos.y + Math.sin(angle) * 0.2,
-              fimbriaeBasePos.z - 0.1 + Math.cos(angle) * 0.15
-            ),
-            new THREE.Vector3(
-              fimbriaeBasePos.x + 0.25 + Math.random() * 0.1,
-              fimbriaeBasePos.y + Math.sin(angle) * 0.35,
-              fimbriaeBasePos.z - 0.15 + Math.cos(angle) * 0.25
-            ),
-          ]);
-          const fimbriaGeo = new THREE.TubeGeometry(fimbriaCurve, 8, 0.015, 6, false);
-          const fimbria = new THREE.Mesh(fimbriaGeo, fimbriaeMaterial);
-          fimbria.castShadow = true;
-          fimbria.receiveShadow = true;
-          rightFimbriaeGroup.add(fimbria);
-        }
-        rightFimbriaeGroup.userData.anatomyType = 'fallopianTubes';
-        anatomyGroup.add(rightFimbriaeGroup);
-        anatomyMeshesRef.current.fallopianTubes.push(rightFimbriaeGroup);
-        
-        // Left fallopian tube - mirror of right
-        const leftTubeCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-0.3, 1.55, 0.0),     // Dentro da parede uterina (cornual)
-          new THREE.Vector3(-0.7, 1.58, -0.02),   // Emergindo da parede
-          new THREE.Vector3(-1.2, 1.55, -0.06),   // Istmo
-          new THREE.Vector3(-1.7, 1.48, -0.16),   // Início da ampola
-          new THREE.Vector3(-2.1, 1.38, -0.30),   // Ampola
-          new THREE.Vector3(-2.45, 1.28, -0.46),  // Fim da ampola / início do infundíbulo
-          new THREE.Vector3(-2.65, 1.18, -0.60),  // Infundíbulo - curva em direção ao ovário
-        ]);
-        
-        const leftTubeGeo = new THREE.TubeGeometry(leftTubeCurve, 32, 0.06, 8, false);
-        const leftTube = new THREE.Mesh(leftTubeGeo, fallopianTubeMaterial);
-        leftTube.castShadow = true;
-        leftTube.receiveShadow = true;
-        leftTube.userData.anatomyType = 'fallopianTubes';
-        anatomyGroup.add(leftTube);
-        anatomyMeshesRef.current.fallopianTubes.push(leftTube);
-        
-        // Left fimbriae - finger-like projections at the end of the tube
-        const leftFimbriaeGroup = new THREE.Group();
-        const leftFimbriaeBasePos = new THREE.Vector3(-2.65, 1.18, -0.60);
-        for (let i = 0; i < fimbriaeCount; i++) {
-          const angle = (i / fimbriaeCount) * Math.PI * 0.8 - Math.PI * 0.4;
-          const fimbriaCurve = new THREE.CatmullRomCurve3([
-            leftFimbriaeBasePos.clone(),
-            new THREE.Vector3(
-              leftFimbriaeBasePos.x - 0.15 - Math.random() * 0.1,
-              leftFimbriaeBasePos.y + Math.sin(angle) * 0.2,
-              leftFimbriaeBasePos.z - 0.1 + Math.cos(angle) * 0.15
-            ),
-            new THREE.Vector3(
-              leftFimbriaeBasePos.x - 0.25 - Math.random() * 0.1,
-              leftFimbriaeBasePos.y + Math.sin(angle) * 0.35,
-              leftFimbriaeBasePos.z - 0.15 + Math.cos(angle) * 0.25
-            ),
-          ]);
-          const fimbriaGeo = new THREE.TubeGeometry(fimbriaCurve, 8, 0.015, 6, false);
-          const fimbria = new THREE.Mesh(fimbriaGeo, fimbriaeMaterial);
-          fimbria.castShadow = true;
-          fimbria.receiveShadow = true;
-          leftFimbriaeGroup.add(fimbria);
-        }
-        leftFimbriaeGroup.userData.anatomyType = 'fallopianTubes';
-        anatomyGroup.add(leftFimbriaeGroup);
-        anatomyMeshesRef.current.fallopianTubes.push(leftFimbriaeGroup);
-        
-        // Identify bladder by position (most anterior mesh - highest Z value)
-        // Filter out utero-ovarian and cardinal ligaments (elongated tubular meshes)
-        const allMeshes: THREE.Mesh[] = [];
-        model.traverse((child: any) => {
-          if ((child as THREE.Mesh).isMesh) {
-            allMeshes.push(child as THREE.Mesh);
-          }
-        });
-        
-        // Analyze each mesh to identify ligaments vs organs
-        // Ligaments are elongated (high aspect ratio), organs are more spherical
-        const meshAnalysis: { mesh: THREE.Mesh; isLigament: boolean; centerZ: number; centerX: number; volume: number; aspectRatio: number; isBeige: boolean; isLateral: boolean }[] = [];
-        
-        allMeshes.forEach((mesh) => {
-          if (!mesh.visible) return;
-          mesh.geometry.computeBoundingBox();
-          const box = mesh.geometry.boundingBox;
-          if (box) {
-            const sizeX = box.max.x - box.min.x;
-            const sizeY = box.max.y - box.min.y;
-            const sizeZ = box.max.z - box.min.z;
-            const centerX = (box.min.x + box.max.x) / 2;
-            const centerZ = (box.min.z + box.max.z) / 2;
-            const volume = sizeX * sizeY * sizeZ;
-            
-            // Calculate aspect ratio - ligaments are elongated (max dimension >> min dimension)
-            const dims = [sizeX, sizeY, sizeZ].sort((a, b) => b - a);
-            const aspectRatio = dims[0] / Math.max(dims[2], 0.01);
-            
-            // Get mesh color
-            const material = mesh.material as THREE.MeshStandardMaterial;
-            const r = material?.color?.r ?? 0;
-            const g = material?.color?.g ?? 0;
-            const b = material?.color?.b ?? 0;
-            
-            // Utero-ovarian ligaments: lateral position + specific volume range
-            // Looking at data: volume ~2.664, centerX ~±1.94
-            const isBeige = g > 0.30 && r > g; // relaxed beige detection
-            const isVeryLateral = Math.abs(centerX) > 1.5; // far from center
-            const isLateral = Math.abs(centerX) > 0.5;
-            const isUteroOvarianVolume = volume > 2.0 && volume < 4.0; // volume ~2.664
-            
-            // Utero-ovarian ligament: very lateral + specific volume
-            const isUteroOvarianLigament = isVeryLateral && isUteroOvarianVolume;
-            
-            // Cardinal ligaments: volume ~2.744, centered (centerX ~0)
-            const isCardinalVolume = volume > 2.5 && volume < 3.0;
-            const isCentered = Math.abs(centerX) < 0.5;
-            const isCardinalLigament = isCardinalVolume && isCentered;
-            
-            // Also hide very small structures
-            const isSmallLigament = volume < 0.5;
-            
-            const isLigament = isUteroOvarianLigament || isCardinalLigament || isSmallLigament;
-            
-            meshAnalysis.push({ mesh, isLigament, centerZ, centerX, volume, aspectRatio, isBeige, isLateral });
-          }
-        });
-        
-        const meshNameToAnatomy: Record<string, AnatomyElement> = {
-          'uterus': 'uterus',
-          'cervix': 'cervix',
-          'leftOvary': 'ovaries',
-          'rightOvary': 'ovaries',
-          'bladder': 'bladder',
-          'rectum': 'rectum',
-          'intestine': 'intestine',
-          'leftUterosacrallLigament': 'uterosacrals',
-          'rightUterosacrallLigament': 'uterosacrals',
-        };
-
-        meshAnalysis.forEach(({ mesh, isLigament, centerX }) => {
-          const mappedType = meshNameToAnatomy[mesh.name];
-          if (mappedType) {
-            mesh.visible = true;
-            mesh.userData.anatomyType = mappedType;
-            anatomyMeshesRef.current[mappedType].push(mesh);
-          } else if (isLigament) {
-            mesh.visible = false;
-          } else if (Math.abs(centerX) > 1.2 && mesh.geometry.boundingBox) {
-            mesh.visible = true;
-            const box = mesh.geometry.boundingBox;
-            const vol = (box.max.x - box.min.x) * (box.max.y - box.min.y) * (box.max.z - box.min.z);
-            if (vol < 0.5) {
-              mesh.userData.anatomyType = 'ureters';
-              anatomyMeshesRef.current.ureters.push(mesh);
-            } else {
-              mesh.userData.anatomyType = 'ovaries';
-              anatomyMeshesRef.current.ovaries.push(mesh);
-            }
-          } else {
-            mesh.visible = true;
-            mesh.userData.anatomyType = 'uterus';
-            anatomyMeshesRef.current.uterus.push(mesh);
-          }
-        });
-        
-        // DEBUG: Log all mesh names, userData, and volumes for identification
-        console.log('=== DEBUG: ALL MESHES IN MODEL ===');
-        allMeshes.forEach((mesh, index) => {
-          mesh.geometry.computeBoundingBox();
-          const box = mesh.geometry.boundingBox;
-          const volume = box ? (box.max.x - box.min.x) * (box.max.y - box.min.y) * (box.max.z - box.min.z) : 0;
-          console.log(`Mesh ${index}:`, {
-            name: mesh.name,
-            userData: mesh.userData,
-            volume: volume.toFixed(3),
-            parent: mesh.parent?.name || 'none'
-          });
-        });
-        console.log('=== END DEBUG ===');
-        
-        console.log('Mesh analysis:', meshAnalysis.map(m => ({
-          isLigament: m.isLigament,
-          volume: m.volume.toFixed(3),
-          centerX: m.centerX.toFixed(2),
-          centerZ: m.centerZ.toFixed(2),
-          isBeige: m.isBeige,
-          isLateral: m.isLateral
-        })));
-        
-        console.log('Anatomy meshes found:', Object.fromEntries(
-          Object.entries(anatomyMeshesRef.current).map(([k, v]) => [k, v.length])
-        ));
-        
-        // Apply initial visibility state from store
-        applyVisibilityFromStore();
-        
-        setLoadingState('loaded');
-        setLoadingProgress(100);
-        
-        // Render existing lesions after model loads
-        updateAllMarkers();
+      if (!isMounted) return;
+      if (loadTimeout) clearTimeout(loadTimeout);
+      
+      resetAnatomyMeshes();
+      
+      const model = gltf.scene;
+      
+      processGLBModel(model, anatomyGroup, anatomyMeshesRef.current, { isIOS: isIOSDevice, isMobile: isMobileDevice });
+      
+      createProgrammaticAnatomy(anatomyGroup, anatomyMeshesRef.current);
+      
+      applyVisibilityFromStore();
+      
+      setLoadingState('loaded');
+      setLoadingProgress(100);
+      
+      updateAllMarkers();
     };
 
+
     const loader = new GLTFLoader();
-    
+
     const loadModelWithCache = async () => {
       try {
         const cachedData = await getCachedModel();
@@ -1199,7 +692,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         if (cachedData) {
           setLoadingProgress(50);
           loader.parse(cachedData, '', processModel, (error) => {
-            console.warn('Cached model parse failed, fetching fresh:', error);
             loadFreshModel();
           });
         } else {
@@ -1258,7 +750,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           loader.parse(buffer, '', processModel, (error) => {
             if (!isMounted) return;
             if (loadTimeout) clearTimeout(loadTimeout);
-            console.error('Error parsing model:', error);
             createFallbackModel();
             setErrorMessage('Não foi possível processar o modelo 3D');
           });
@@ -1266,7 +757,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         .catch((error) => {
           if (!isMounted) return;
           if (loadTimeout) clearTimeout(loadTimeout);
-          console.error('Error fetching model:', error);
           createFallbackModel();
           setErrorMessage('Não foi possível carregar o modelo 3D');
         });

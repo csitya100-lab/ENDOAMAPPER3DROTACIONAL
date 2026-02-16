@@ -51,7 +51,12 @@ Minimalist UI: Removed thickness slider, export buttons, and unnecessary feature
    - Right column (40%): 2D views (sagittal, coronal, posterior) + 3D captures gallery
    - Footer: Lesion summary with severity colors (Superficial=Rosa, Profunda=Amarelo)
 
-### 3D Model Loading Optimizations (Jan 2026)
+### 3D Module Architecture (Feb 2026 Refactor)
+- **Shared Modules** (extracted from Uterus3D.tsx ~1716→~1207 lines):
+  - `client/src/lib/modelLoader.ts`: IndexedDB caching, device detection (isIOS/isMobile), model loading with progress
+  - `client/src/lib/anatomyCreator.ts`: Programmatic anatomy structures (uterosacral ligaments, ureters, round ligaments, fallopian tubes with fimbriae)
+  - `client/src/lib/meshAnalyzer.ts`: GLB model processing, mesh hiding (ligaments), material application, anatomy classification
+- **PublicReport.tsx**: Uses shared modules (processGLBModel + createProgrammaticAnatomy) for consistent 3D rendering
 - **Device Detection**: Automatic detection of iOS and mobile devices
 - **WebGL Optimizations for Mobile**:
   - Reduced pixel ratio (max 2x on iOS)

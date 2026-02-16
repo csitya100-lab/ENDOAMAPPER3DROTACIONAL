@@ -103,7 +103,7 @@ export default function Home() {
   };
 
   const handleGenerateReport = () => {
-    const hasAnyCapture = draftImages2D.sagittal || draftImages2D.coronal || draftImages2D.posterior || draftImages3D.length > 0;
+    const hasAnyCapture = draftImages2D['sagittal-avf'] || draftImages2D['sagittal-rvf'] || draftImages2D['coronal'] || draftImages2D['posterior'] || draftImages3D.length > 0;
     if (!hasAnyCapture) {
       const proceed = confirm('Nenhuma imagem foi capturada ainda. Use os botões de câmera nas vistas para capturar. Deseja continuar mesmo assim?');
       if (!proceed) return;
@@ -114,7 +114,11 @@ export default function Home() {
       patientId: `PAC-${Date.now().toString(36).toUpperCase()}`,
       examDate: examInfo.date,
       examType: 'Mapeamento EndoMapper',
-      images2D: draftImages2D,
+      images2D: {
+        sagittal: draftImages2D['sagittal-avf'] || draftImages2D['sagittal-rvf'] || "",
+        coronal: draftImages2D['coronal'] || "",
+        posterior: draftImages2D['posterior'] || "",
+      },
       imageNotes: {
         sagittal: "",
         coronal: "",
@@ -130,7 +134,6 @@ export default function Home() {
       })),
     });
 
-    console.log('Relatório criado com ID:', reportId);
     clearDraftImages2D();
     clearDraftImages3D();
     setLocation(`/relatorio/${reportId}`);

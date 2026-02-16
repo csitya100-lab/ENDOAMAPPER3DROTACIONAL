@@ -6,6 +6,9 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useReportStore, Report } from "@/lib/reportStore";
 import { Severity } from "@/lib/lesionStore";
+import { processGLBModel } from '@/lib/meshAnalyzer';
+import { createProgrammaticAnatomy } from '@/lib/anatomyCreator';
+import { AnatomyMeshesMap } from '@/lib/anatomyCreator';
 
 const SEVERITY_COLORS: Record<
   Severity,
@@ -59,7 +62,7 @@ export default function PublicReport() {
     const canvas = canvasRef.current;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf8fafc);
+    scene.background = new THREE.Color(0x1e293b);
 
     const camera = new THREE.PerspectiveCamera(
       45,
@@ -73,7 +76,6 @@ export default function PublicReport() {
     try {
       renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     } catch (e) {
-      console.warn("WebGL not available");
       return;
     }
     renderer.setSize(container.clientWidth, container.clientHeight);
@@ -86,12 +88,16 @@ export default function PublicReport() {
     controls.minDistance = 2;
     controls.maxDistance = 10;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xFFF5E1, 0.7);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 5, 5);
+    const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1.3);
+    directionalLight.position.set(8, 8, 5);
     scene.add(directionalLight);
+
+    const fillLight = new THREE.DirectionalLight(0xD3D3D3, 0.4);
+    fillLight.position.set(-8, 3, 5);
+    scene.add(fillLight);
 
     let animationId: number;
 
@@ -100,29 +106,18 @@ export default function PublicReport() {
       "/model.glb",
       (gltf) => {
         const model = gltf.scene;
-        model.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            mesh.material = new THREE.MeshStandardMaterial({
-              color: 0xffb6c1,
-              roughness: 0.5,
-              metalness: 0.1,
-              transparent: true,
-              opacity: 0.85,
-            });
-          }
-        });
 
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        model.position.sub(center);
+        const anatomyGroup = new THREE.Group();
+        const anatomyMeshes: AnatomyMeshesMap = {
+          uterus: [], cervix: [], ovaries: [], fallopianTubes: [],
+          uterosacrals: [], roundLigaments: [], ureters: [],
+          bladder: [], rectum: [], intestine: [],
+        };
 
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 2.5 / maxDim;
-        model.scale.setScalar(scale);
+        processGLBModel(model, anatomyGroup, anatomyMeshes, { isIOS: false, isMobile: false });
+        createProgrammaticAnatomy(anatomyGroup, anatomyMeshes);
 
-        scene.add(model);
+        scene.add(anatomyGroup);
 
         report.lesions.forEach((lesion) => {
           const color = SEVERITY_COLORS[lesion.severity].hex;
@@ -134,16 +129,15 @@ export default function PublicReport() {
           });
           const sphere = new THREE.Mesh(geometry, material);
           sphere.position.set(
-            lesion.position.x * scale,
-            lesion.position.y * scale,
-            lesion.position.z * scale,
+            lesion.position.x,
+            lesion.position.y,
+            lesion.position.z,
           );
-          scene.add(sphere);
+          anatomyGroup.add(sphere);
         });
       },
       undefined,
       (error) => {
-        console.error("Error loading model:", error);
         const geometry = new THREE.SphereGeometry(1, 32, 32);
         const material = new THREE.MeshStandardMaterial({ color: 0xffb6c1 });
         const sphere = new THREE.Mesh(geometry, material);
@@ -159,9 +153,9 @@ export default function PublicReport() {
           });
           const marker = new THREE.Mesh(markerGeometry, markerMaterial);
           marker.position.set(
-            lesion.position.x * 0.5,
-            lesion.position.y * 0.5,
-            lesion.position.z * 0.5,
+            lesion.position.x,
+            lesion.position.y,
+            lesion.position.z,
           );
           scene.add(marker);
         });

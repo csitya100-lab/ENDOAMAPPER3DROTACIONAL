@@ -47,16 +47,8 @@ export interface PdfImage {
 }
 
 interface ReportState {
-  draftImages2D: {
-    sagittal: string;
-    coronal: string;
-    posterior: string;
-  };
-  draftImageNotes: {
-    sagittal: string;
-    coronal: string;
-    posterior: string;
-  };
+  draftImages2D: Record<string, string>;
+  draftImageNotes: Record<string, string>;
   draftImages3D: Image3D[];
   reports: Record<string, Report>;
   hydrated: boolean;
@@ -70,19 +62,11 @@ interface ReportState {
   setExamDate: (date: string) => void;
   setPatientId: (id: string) => void;
 
-  selectedViews: {
-    sagittal: boolean;
-    coronal: boolean;
-    posterior: boolean;
-  };
+  selectedViews: Record<string, boolean>;
 
-  setDraftImages2D: (images: {
-    sagittal: string;
-    coronal: string;
-    posterior: string;
-  }) => void;
-  setDraftImage: (view: keyof Report["images2D"], imageData: string) => void;
-  setDraftImageNote: (view: keyof Report["images2D"], note: string) => void;
+  setDraftImages2D: (images: Record<string, string>) => void;
+  setDraftImage: (view: string, imageData: string) => void;
+  setDraftImageNote: (view: string, note: string) => void;
   clearDraftImages2D: () => void;
   
   addDraftImage3D: (imageData: string) => void;
@@ -100,12 +84,8 @@ interface ReportState {
   updatePdfImageObservation: (index: number, observation: string) => void;
   reorderPdfImages: (fromIndex: number, toIndex: number) => void;
 
-  toggleViewSelection: (view: keyof Report["images2D"]) => void;
-  setSelectedViews: (views: {
-    sagittal: boolean;
-    coronal: boolean;
-    posterior: boolean;
-  }) => void;
+  toggleViewSelection: (view: string) => void;
+  setSelectedViews: (views: Record<string, boolean>) => void;
 }
 
 let isHydrated = false;
@@ -138,12 +118,14 @@ export const useReportStore = create<ReportState>()(
   persist(
     (set, get) => ({
       draftImages2D: {
-        sagittal: "",
+        'sagittal-avf': "",
+        'sagittal-rvf': "",
         coronal: "",
         posterior: "",
       },
       draftImageNotes: {
-        sagittal: "",
+        'sagittal-avf': "",
+        'sagittal-rvf': "",
         coronal: "",
         posterior: "",
       },
@@ -160,7 +142,8 @@ export const useReportStore = create<ReportState>()(
       setPatientId: (id: string) => set({ patientId: id }),
 
       selectedViews: {
-        sagittal: false,
+        'sagittal-avf': false,
+        'sagittal-rvf': false,
         coronal: false,
         posterior: false,
       },
@@ -180,12 +163,14 @@ export const useReportStore = create<ReportState>()(
       clearDraftImages2D: () =>
         set({
           draftImages2D: {
-            sagittal: "",
+            'sagittal-avf': "",
+            'sagittal-rvf': "",
             coronal: "",
             posterior: "",
           },
           draftImageNotes: {
-            sagittal: "",
+            'sagittal-avf': "",
+            'sagittal-rvf': "",
             coronal: "",
             posterior: "",
           },
@@ -330,8 +315,11 @@ export const useReportStore = create<ReportState>()(
 );
 
 export const images2D = {
-  get sagittal() {
-    return useReportStore.getState().draftImages2D.sagittal;
+  get 'sagittal-avf'() {
+    return useReportStore.getState().draftImages2D['sagittal-avf'];
+  },
+  get 'sagittal-rvf'() {
+    return useReportStore.getState().draftImages2D['sagittal-rvf'];
   },
   get coronal() {
     return useReportStore.getState().draftImages2D.coronal;

@@ -4,9 +4,7 @@ import {
   Position3D, 
   project3DToView, 
   canvas2DTo3D, 
-  calculateCanvasBounds,
-  getViewLabel,
-  getViewColor 
+  calculateCanvasBounds
 } from '@shared/3d/projections';
 import { Lesion, Severity } from '@/lib/lesionStore';
 
@@ -40,7 +38,6 @@ interface Canvas2DProps {
 
 const SEVERITY_COLORS: Record<Severity, string> = {
   superficial: '#ef4444',
-  moderate: '#f97316',
   deep: '#3b82f6'
 };
 

@@ -136,11 +136,15 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
   const updateMarkersRef = useRef<(() => void) | null>(null);
   const anatomyMeshesRef = useRef<Record<AnatomyElement, THREE.Object3D[]>>({
     uterus: [],
+    cervix: [],
+    ovaries: [],
     fallopianTubes: [],
     uterosacrals: [],
     roundLigaments: [],
     ureters: [],
     bladder: [],
+    rectum: [],
+    intestine: [],
   });
   
   const anatomyVisibility = useAnatomyStore((state) => state.visibility);
@@ -286,13 +290,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     }
   }));
 
-  const createLesionInStorage = (position: { x: number; y: number; z: number }, sev: Severity) => {
+  const createLesionInStorage = (position: { x: number; y: number; z: number }, sev: Severity, location?: string) => {
     addLesion({
       position,
       severity: sev,
       size: currentMarkerSizeRef.current,
       color: currentMarkerColorRef.current,
-      markerType: currentMarkerTypeRef.current
+      markerType: currentMarkerTypeRef.current,
+      location
     });
   };
 
@@ -665,11 +670,15 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     const resetAnatomyMeshes = () => {
       anatomyMeshesRef.current = {
         uterus: [],
+        cervix: [],
+        ovaries: [],
         fallopianTubes: [],
         uterosacrals: [],
         roundLigaments: [],
         ureters: [],
         bladder: [],
+        rectum: [],
+        intestine: [],
       };
     };
     
@@ -1107,11 +1116,40 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           }
         });
         
-        // Show all meshes from the model as uterus (no filtering by volume)
-        meshAnalysis.forEach(({ mesh }) => {
+        const meshNameToAnatomy: Record<string, AnatomyElement> = {
+          'uterus': 'uterus',
+          'cervix': 'cervix',
+          'leftOvary': 'ovaries',
+          'rightOvary': 'ovaries',
+          'bladder': 'bladder',
+          'rectum': 'rectum',
+          'intestine': 'intestine',
+          'leftUterosacrallLigament': 'uterosacrals',
+          'rightUterosacrallLigament': 'uterosacrals',
+          'leftRoundLigament': 'roundLigaments',
+          'rightRoundLigament': 'roundLigaments',
+        };
+
+        meshAnalysis.forEach(({ mesh, centerX }) => {
           mesh.visible = true;
-          mesh.userData.anatomyType = 'uterus';
-          anatomyMeshesRef.current.uterus.push(mesh);
+          const mappedType = meshNameToAnatomy[mesh.name];
+          if (mappedType) {
+            mesh.userData.anatomyType = mappedType;
+            anatomyMeshesRef.current[mappedType].push(mesh);
+          } else if (Math.abs(centerX) > 1.2 && mesh.geometry.boundingBox) {
+            const box = mesh.geometry.boundingBox;
+            const vol = (box.max.x - box.min.x) * (box.max.y - box.min.y) * (box.max.z - box.min.z);
+            if (vol < 0.5) {
+              mesh.userData.anatomyType = 'ureters';
+              anatomyMeshesRef.current.ureters.push(mesh);
+            } else {
+              mesh.userData.anatomyType = 'ovaries';
+              anatomyMeshesRef.current.ovaries.push(mesh);
+            }
+          } else {
+            mesh.userData.anatomyType = 'uterus';
+            anatomyMeshesRef.current.uterus.push(mesh);
+          }
         });
         
         // DEBUG: Log all mesh names, userData, and volumes for identification
@@ -1138,15 +1176,9 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           isLateral: m.isLateral
         })));
         
-        // Log anatomy mesh counts for debugging
-        console.log('Anatomy meshes found:', {
-          uterus: anatomyMeshesRef.current.uterus.length,
-          fallopianTubes: anatomyMeshesRef.current.fallopianTubes.length,
-          uterosacrals: anatomyMeshesRef.current.uterosacrals.length,
-          roundLigaments: anatomyMeshesRef.current.roundLigaments.length,
-          ureters: anatomyMeshesRef.current.ureters.length,
-          bladder: anatomyMeshesRef.current.bladder.length,
-        });
+        console.log('Anatomy meshes found:', Object.fromEntries(
+          Object.entries(anatomyMeshesRef.current).map(([k, v]) => [k, v.length])
+        ));
         
         // Apply initial visibility state from store
         applyVisibilityFromStore();
@@ -1304,7 +1336,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
-    function convertScreenToWorldCoords(event: PointerEvent, viewIdx: number): THREE.Vector3 | null {
+    function convertScreenToWorldCoords(event: PointerEvent, viewIdx: number): { point: THREE.Vector3; anatomyType: string } | null {
       const view = views[viewIdx];
       const rect = view.element.getBoundingClientRect();
       
@@ -1313,16 +1345,12 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
 
       raycaster.setFromCamera(mouse, view.camera);
 
-      // Use actual model intersection for ALL views to ensure correct depth
-      // This solves the issue of posterior clicks mapping to anterior surfaces
-      // because the ray originates from the specific camera position (e.g., behind the model)
       const intersects = raycaster.intersectObjects(anatomyGroup.children, true);
       
       if (intersects.length > 0) {
-        // Return the first hit point (closest to camera)
-        // For posterior view, this will be the back surface
-        // For anterior view, this will be the front surface
-        return intersects[0].point;
+        const hitMesh = intersects[0].object;
+        const anatomyType = hitMesh.userData?.anatomyType || 'uterus';
+        return { point: intersects[0].point, anatomyType };
       }
       
       return null;
@@ -1370,12 +1398,12 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       
       if (event.button === 2) {
         if (isOrthographic) {
-          // Right click in 2D views: Insertion
-          const worldPos = convertScreenToWorldCoords(event, viewIdx);
-          if (worldPos) {
+          const hit = convertScreenToWorldCoords(event, viewIdx);
+          if (hit) {
             createLesionInStorage(
-              { x: worldPos.x, y: worldPos.y, z: worldPos.z },
-              currentSeverityRef.current
+              { x: hit.point.x, y: hit.point.y, z: hit.point.z },
+              currentSeverityRef.current,
+              hit.anatomyType
             );
             onSelectLesion?.(null);
           }
@@ -1425,12 +1453,12 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       } else {
         // Clicked empty space with LEFT BUTTON
         if (!isOrthographic) {
-          // In 3D Perspective: Create new lesion
-          const worldPos = convertScreenToWorldCoords(event, viewIdx);
-          if (worldPos) {
+          const hit = convertScreenToWorldCoords(event, viewIdx);
+          if (hit) {
             createLesionInStorage(
-              { x: worldPos.x, y: worldPos.y, z: worldPos.z },
-              currentSeverityRef.current
+              { x: hit.point.x, y: hit.point.y, z: hit.point.z },
+              currentSeverityRef.current,
+              hit.anatomyType
             );
             onSelectLesion?.(null);
           }
@@ -1457,10 +1485,11 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       if (now - lastMoveTime < MOVE_THROTTLE_MS) return;
       lastMoveTime = now;
 
-      const worldPos = convertScreenToWorldCoords(event, viewIdx);
-      if (worldPos && dragStateRef.current.lesionId) {
+      const hit = convertScreenToWorldCoords(event, viewIdx);
+      if (hit && dragStateRef.current.lesionId) {
         useLesionStore.getState().updateLesion(dragStateRef.current.lesionId, { 
-          position: { x: worldPos.x, y: worldPos.y, z: worldPos.z } 
+          position: { x: hit.point.x, y: hit.point.y, z: hit.point.z },
+          location: hit.anatomyType
         });
         updateAllMarkers();
       }

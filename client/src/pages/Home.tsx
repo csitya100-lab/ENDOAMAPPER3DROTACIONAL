@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Circle, RotateCcw, Plus, Clock, CheckCircle, AlertCircle, Settings2, FileText, Download, Camera, Share2 } from 'lucide-react';
 import { export3DModelAsHtml } from '@/lib/export3DHtml';
+import { getAnatomyLabel } from '@/lib/anatomyStore';
 import { saveCaseToDb, isSupabaseConfigured } from '@/lib/caseDb';
 import AppLayout from '@/components/AppLayout';
 import { Slider } from '@/components/ui/slider';
@@ -123,7 +124,7 @@ export default function Home() {
       lesions: lesions.map((l, idx) => ({
         id: l.id,
         name: `Lesão ${String.fromCharCode(65 + idx)}`,
-        location: l.location || (l.severity === 'superficial' ? 'Região Superficial' : 'Região Profunda'),
+        location: l.location ? getAnatomyLabel(l.location) : (l.severity === 'superficial' ? 'Região Superficial' : 'Região Profunda'),
         severity: l.severity,
         position: l.position
       })),

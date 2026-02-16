@@ -779,7 +779,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
                 let clearcoat = isIOSDevice ? 0 : 0.1;
                 let envMapIntensity = 0.5;
                 
-                if (meshNameLow.includes('vagina')) {
+                if (meshNameLow.includes('vagina') || (r > 0.8 && r < 0.95 && g < 0.75 && b < 0.75)) {
                     newColor = new THREE.Color(0xE8B4B8);
                     roughness = 0.55;
                     metalness = 0.02;
@@ -1086,40 +1086,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
             const sizeY = box.max.y - box.min.y;
             const sizeZ = box.max.z - box.min.z;
             const centerX = (box.min.x + box.max.x) / 2;
+            const centerY = (box.min.y + box.max.y) / 2;
             const centerZ = (box.min.z + box.max.z) / 2;
             const volume = sizeX * sizeY * sizeZ;
             
-            // Calculate aspect ratio - ligaments are elongated (max dimension >> min dimension)
-            const dims = [sizeX, sizeY, sizeZ].sort((a, b) => b - a);
-            const aspectRatio = dims[0] / Math.max(dims[2], 0.01);
+            // Analyze each mesh to identify ligaments vs organs
+            const isVagina = (volume > 4.0 && volume < 9.0 && centerY < -1.5);
             
-            // Get mesh color
-            const material = mesh.material as THREE.MeshStandardMaterial;
-            const r = material?.color?.r ?? 0;
-            const g = material?.color?.g ?? 0;
-            const b = material?.color?.b ?? 0;
-            
-            // Utero-ovarian ligaments: lateral position + specific volume range
-            // Looking at data: volume ~2.664, centerX ~±1.94
-            const isBeige = g > 0.30 && r > g; // relaxed beige detection
-            const isVeryLateral = Math.abs(centerX) > 1.5; // far from center
-            const isLateral = Math.abs(centerX) > 0.5;
-            const isUteroOvarianVolume = volume > 2.0 && volume < 4.0; // volume ~2.664
-            
-            // Utero-ovarian ligament: very lateral + specific volume
-            const isUteroOvarianLigament = isVeryLateral && isUteroOvarianVolume;
-            
-            // Cardinal ligaments: volume ~2.744, centered (centerX ~0)
-            const isCardinalVolume = volume > 2.5 && volume < 3.0;
-            const isCentered = Math.abs(centerX) < 0.5;
-            const isCardinalLigament = isCardinalVolume && isCentered;
-            
-            // Also hide very small structures
-            const isSmallLigament = volume < 0.5;
-            
-            const isLigament = isUteroOvarianLigament || isCardinalLigament || isSmallLigament;
-            
-            meshAnalysis.push({ mesh, isLigament, centerZ, centerX, volume, aspectRatio, isBeige, isLateral });
+            meshAnalysis.push({ mesh, isLigament, centerZ, centerX, centerY, volume, isVagina, aspectRatio, isBeige, isLateral });
           }
         });
         
@@ -1127,6 +1101,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           'uterus': 'uterus',
           'cervix': 'cervix',
           'vagina': 'vagina',
+          'vaginal_vault': 'vagina',
           'leftOvary': 'ovaries',
           'rightOvary': 'ovaries',
           'bladder': 'bladder',
@@ -1136,29 +1111,29 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
           'rightUterosacrallLigament': 'uterosacrals',
         };
 
-        meshAnalysis.forEach(({ mesh, isLigament, centerX }) => {
+        meshAnalysis.forEach(({ mesh, isLigament, isVagina, centerX }) => {
           const mappedType = meshNameToAnatomy[mesh.name];
+          let finalType: AnatomyElement | null = null;
+
           if (mappedType) {
-            mesh.visible = true;
-            mesh.userData.anatomyType = mappedType;
-            anatomyMeshesRef.current[mappedType].push(mesh);
+            finalType = mappedType;
+          } else if (isVagina) {
+            finalType = 'vagina';
           } else if (isLigament) {
             mesh.visible = false;
           } else if (Math.abs(centerX) > 1.2 && mesh.geometry.boundingBox) {
-            mesh.visible = true;
             const box = mesh.geometry.boundingBox;
             const vol = (box.max.x - box.min.x) * (box.max.y - box.min.y) * (box.max.z - box.min.z);
-            if (vol < 0.5) {
-              mesh.userData.anatomyType = 'ureters';
-              anatomyMeshesRef.current.ureters.push(mesh);
-            } else {
-              mesh.userData.anatomyType = 'ovaries';
-              anatomyMeshesRef.current.ovaries.push(mesh);
-            }
+            finalType = vol < 0.5 ? 'ureters' : 'ovaries';
           } else {
-            mesh.visible = true;
-            mesh.userData.anatomyType = 'uterus';
-            anatomyMeshesRef.current.uterus.push(mesh);
+            finalType = 'uterus';
+          }
+
+          if (finalType) {
+            mesh.userData.anatomyType = finalType;
+            anatomyMeshesRef.current[finalType].push(mesh);
+            // Apply current visibility from store immediately
+            mesh.visible = anatomyVisibility[finalType] ?? true;
           }
         });
         

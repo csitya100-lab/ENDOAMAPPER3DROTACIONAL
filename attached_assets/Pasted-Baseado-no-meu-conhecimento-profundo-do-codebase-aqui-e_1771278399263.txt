@@ -1,0 +1,39 @@
+Baseado no meu conhecimento profundo do codebase, aqui estão melhorias organizadas por categoria. Escolha as que mais te interessam:
+
+🎮 UX / Interação
+1. Modo de interação explícito (Toggle Add/Navigate) Adicionar um toggle claro na toolbar entre "Modo Navegação" (rotação livre) e "Modo Marcação" (click cria lesão). Evita criações acidentais sem depender da detecção click-vs-drag.
+
+2. Tooltip de preview ao hover Antes de clicar para criar uma lesão, mostrar um indicador semi-transparente na posição onde o marcador será colocado (preview fantasma). Dá feedback visual antes de confirmar.
+
+3. Confirmação de exclusão com Undo Ao deletar uma lesão (double-click), mostrar um toast com botão "Desfazer" por 5s ao invés de deletar permanentemente sem aviso.
+
+4. Zoom com scroll nas vistas 2D Adicionar zoom com roda do mouse nas vistas 2D para anotações mais precisas. Atualmente o zoomLevel é fixo em 1.
+
+📊 Dados / Funcionalidade
+5. Exportar/Importar caso como JSON Salvar o mapeamento completo (lesões + desenhos 2D + metadados) como arquivo JSON local, sem precisar de Supabase. Permite backup e compartilhamento offline.
+
+6. Geração de relatório com IA (Gemini) Integrar Gemini para gerar automaticamente a seção de "Achados" do relatório com base nas lesões mapeadas (localização, severidade, contagem), gerando um texto descritivo médico.
+
+7. Histórico de sessões (Timeline) Salvar cada sessão de mapeamento no localStorage com timestamp, permitindo comparar a evolução das lesões entre consultas.
+
+8. Campos adicionais por lesão Adicionar campos como "tamanho estimado (mm)", "classificação ASRM", "observação individual" e "imagem de referência" a cada lesão.
+
+🎨 Visual / Design
+9. Heatmap de densidade no modelo 3D Colorir regiões do modelo com gradiente baseado na concentração de lesões: áreas com muitas lesões ficam mais intensas. Útil para visualizar padrões.
+
+10. Modo escuro completo na vista 3D O fundo da cena 3D e os overlays ainda são claros. Adaptar para o dark mode completo com fundo escuro, luzes ajustadas e UI coerente.
+
+11. Animação de transição ao navegar Adicionar transições suaves (fade/slide) ao mudar entre Landing → 3D → 2D → Relatório.
+
+⚡ Performance / Técnico
+12. Web Workers para processamento de modelo Mover o parsing do GLB para um Web Worker, evitando travamento da UI durante o carregamento do modelo 3D.
+
+13. Lazy loading de rotas Usar React.lazy() + Suspense para carregar /3d, /vistas-2d e /preview-report sob demanda, reduzindo o bundle inicial.
+
+14. PWA (Progressive Web App) Adicionar service worker + manifest para funcionar offline, instalável no celular. Ideal para uso em campo/consultório sem internet.
+
+🧪 Qualidade
+15. Testes E2E com Playwright Testes end-to-end cobrindo o fluxo completo: criar lesão → anotar 2D → gerar relatório → verificar PDF.
+
+16. Storybook para componentes isolados Documentar e testar visualmente os componentes (Canvas2D, AnatomyPanel, AppSidebar) de forma isolada.
+

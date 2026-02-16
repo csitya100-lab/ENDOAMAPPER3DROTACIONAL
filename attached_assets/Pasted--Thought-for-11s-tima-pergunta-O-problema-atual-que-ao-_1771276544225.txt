@@ -1,0 +1,56 @@
+
+
+Thought for 11s
+
+
+
+
+
+Ótima pergunta! O problema atual é que ao clicar com o botão esquerdo no modelo 3D, o marcador é criado imediatamente no pointerdown, impedindo a rotação. A solução é distinguir click (press + release sem mover) de drag (rotação).
+
+Vou implementar a lógica: só criar o marcador no pointerup se o mouse não se moveu significativamente durante o press:
+
+Analyzed
+viewInteraction.ts#L1-218
+Agora entendo o problema. Na linha 134-148, quando o botão esquerdo é clicado na vista 3D (!isOrthographic) e não acerta um marcador, a lesão é criada imediatamente no pointerdown. Isso impede a rotação com orbit controls.
+
+A solução: gravar a posição inicial no pointerdown, e só criar a lesão no pointerup se o mouse não se moveu (click real vs. drag para rotação).
+
+Edited
+viewInteraction.ts
++287
+-217
+Checked command status
+HMR aplicado sem erros. Vamos confirmar que os testes continuam passando:
+
+Ran background command
+Go to Terminal
+…\ENDOMAPPER-3D-ROTACIONAL > npx vitest run
+
+ ✓ client/src/__tests__/drawingEngine.test.ts (11 tests) 6ms
+ ✓ client/src/__tests__/lesionStore.test.ts (12 tests) 7ms                      
+ ✓ shared/3d/projections.test.ts (16 tests) 7ms
+ ✓ client/src/__tests__/drawingHistory.test.ts (14 tests) 4ms
+ ✓ client/src/__tests__/screenshotUtils.test.ts (5 tests) 3ms
+                                                    
+ Test Files  5 passed (5)                               
+      Tests  58 passed (58)              
+   Start at  17:23:51                                                          ironment 5.22s)                                                                  
+   Duration  1.52s (transform 221ms, setup 682ms, import 306ms, tests 26ms, envi
+
+Always run
+Exit code 0
+Checked command status
+✅ 58 testes passando. Aqui está o resumo da mudança:
+
+Como funciona agora
+Ação	Antes	Depois
+Clique esquerdo estático (press + soltar sem mover)	Criava marcador imediatamente no pointerdown	Cria marcador no pointerup — funciona igual
+Clique esquerdo + arrastar (rotação)	Criava marcador E depois rotacionava 😡	Só rotaciona — nenhum marcador criado ✅
+Clique em marcador existente	Seleciona + arrasta	Sem mudança
+Clique direito em vista ortográfica	Cria marcador	Sem mudança
+Duplo-clique em marcador	Remove marcador	Sem mudança
+Mecânica
+No pointerdown: grava a posição inicial do cursor (não cria nada)
+No pointermove: se o cursor se moveu mais de 5px, cancela o "pendingClick" (é rotação)
+No pointerup: se o cursor se moveu m

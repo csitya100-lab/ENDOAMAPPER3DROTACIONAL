@@ -875,12 +875,26 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       return null;
     };
 
+    // Track pointer state for click vs drag
+    const pointerStateRef = useRef({
+      startX: 0,
+      startY: 0,
+      isClickPending: false
+    });
+
     // Pointer down: Check if clicking on existing lesion or creating new one
     const handleViewClick = (viewIdx: number) => (event: PointerEvent) => {
       // Skip in read-only mode
       if (readOnlyRef.current) return;
       
       const isOrthographic = viewIdx > 0;
+
+      // Track start position for click vs drag
+      pointerStateRef.current = {
+        startX: event.clientX,
+        startY: event.clientY,
+        isClickPending: true
+      };
 
       // RULES:
       // Left click (0) -> Lesion interaction (select/add/move)
@@ -922,22 +936,6 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         views[viewIdx].controls.enabled = false;
         (event.target as HTMLElement).setPointerCapture(event.pointerId);
         event.preventDefault();
-      } else {
-        // Clicked empty space with LEFT BUTTON
-        if (!isOrthographic) {
-          const hit = convertScreenToWorldCoords(event, viewIdx);
-          if (hit) {
-            createLesionInStorage(
-              { x: hit.point.x, y: hit.point.y, z: hit.point.z },
-              currentSeverityRef.current,
-              hit.anatomyType
-            );
-            onSelectLesion?.(null);
-          }
-        } else {
-          // In 2D views: Clear selection if clicking empty space with LEFT BUTTON
-          onSelectLesion?.(null);
-        }
       }
     };
 
@@ -949,6 +947,17 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     const handleViewMove = (viewIdx: number) => (event: PointerEvent) => {
       if (readOnlyRef.current) return;
       
+      // Check for movement to cancel click
+      if (pointerStateRef.current.isClickPending) {
+        const dist = Math.sqrt(
+          Math.pow(event.clientX - pointerStateRef.current.startX, 2) + 
+          Math.pow(event.clientY - pointerStateRef.current.startY, 2)
+        );
+        if (dist > 5) {
+          pointerStateRef.current.isClickPending = false;
+        }
+      }
+
       // ONLY move if we are explicitly dragging a lesion in the current view
       if (!dragStateRef.current.isDragging || dragStateRef.current.viewIdx !== viewIdx) return;
 
@@ -967,9 +976,36 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       }
     };
 
-    // Pointer up: Stop dragging
+    // Pointer up: Stop dragging or create lesion if it was a click
     const handleViewUp = (viewIdx: number) => (event: PointerEvent) => {
       if (readOnlyRef.current) return;
+      
+      const isOrthographic = viewIdx > 0;
+
+      // If it was a click (not a drag) and not already dragging a lesion
+      if (pointerStateRef.current.isClickPending && !dragStateRef.current.isDragging && event.button === 0) {
+        const lesionId = detectLesionMarker(event, viewIdx);
+        
+        if (!lesionId) {
+          // Clicked empty space with LEFT BUTTON
+          if (!isOrthographic) {
+            const hit = convertScreenToWorldCoords(event, viewIdx);
+            if (hit) {
+              createLesionInStorage(
+                { x: hit.point.x, y: hit.point.y, z: hit.point.z },
+                currentSeverityRef.current,
+                hit.anatomyType
+              );
+              onSelectLesion?.(null);
+            }
+          } else {
+            // In 2D views: Clear selection if clicking empty space with LEFT BUTTON
+            onSelectLesion?.(null);
+          }
+        }
+      }
+
+      pointerStateRef.current.isClickPending = false;
       
       // Re-enable camera controls always on pointer up
       views[viewIdx].controls.enabled = true;

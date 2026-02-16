@@ -736,6 +736,13 @@ const Canvas2D = forwardRef<Canvas2DHandle, Canvas2DProps>(({
           {editMode ? 'Arraste para mover · Duplo-clique para editar' : 'Clique para selecionar'}
         </div>
       )}
+      {!hoveredLesionId && drawingTool === 'select' && (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none z-10">
+          <span className="text-[9px] text-slate-400 font-mono bg-black/60 px-2 py-1 rounded backdrop-blur-sm whitespace-nowrap">
+            Botão direito: adicionar lesão
+          </span>
+        </div>
+      )}
     </div>
   );
 });

@@ -1650,16 +1650,16 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
       <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-[2px] p-[2px] pointer-events-auto z-20">
         <div ref={viewMainRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden group">
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-pink-400 select-none z-10 backdrop-blur-sm">
-             3D PERSPECTIVE
+             3D PERSPECTIVA
            </div>
-           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-              <span className="text-[10px] text-white/30 font-mono tracking-widest bg-black/40 px-2 py-1 rounded">CLICK TO ADD LESION</span>
+           <div className="absolute bottom-2 left-2 right-2 flex justify-center pointer-events-none z-10">
+              <span className="text-[9px] text-white/50 font-mono bg-black/50 px-2 py-1 rounded backdrop-blur-sm">Esquerdo: adicionar lesão · Direito: rotacionar</span>
            </div>
         </div>
 
         <div ref={viewSagittalRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden group">
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-blue-400 select-none z-10 backdrop-blur-sm">
-             SAGITTAL (SIDE)
+             SAGITAL (LATERAL)
            </div>
            <button
              onClick={(e) => { e.stopPropagation(); captureViewScreenshot(1, 'sagittal'); }}
@@ -1669,14 +1669,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
            >
              <Camera className="w-4 h-4 text-white" />
            </button>
-           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-              <span className="text-[10px] text-white/30 font-mono tracking-widest bg-black/40 px-2 py-1 rounded">CLICK TO ADD LESION</span>
+           <div className="absolute bottom-2 left-2 right-2 flex justify-center pointer-events-none z-10">
+              <span className="text-[9px] text-white/50 font-mono bg-black/50 px-2 py-1 rounded backdrop-blur-sm">Direito: adicionar lesão</span>
            </div>
         </div>
 
         <div ref={viewCoronalRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden group">
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-green-400 select-none z-10 backdrop-blur-sm">
-             CORONAL (FRONT)
+             CORONAL (FRONTAL)
            </div>
            <button
              onClick={(e) => { e.stopPropagation(); captureViewScreenshot(2, 'coronal'); }}
@@ -1686,14 +1686,14 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
            >
              <Camera className="w-4 h-4 text-white" />
            </button>
-           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-              <span className="text-[10px] text-white/30 font-mono tracking-widest bg-black/40 px-2 py-1 rounded">CLICK TO ADD LESION</span>
+           <div className="absolute bottom-2 left-2 right-2 flex justify-center pointer-events-none z-10">
+              <span className="text-[9px] text-white/50 font-mono bg-black/50 px-2 py-1 rounded backdrop-blur-sm">Direito: adicionar lesão</span>
            </div>
         </div>
 
         <div ref={viewPosteriorRef} className="relative border border-white/10 pointer-events-auto bg-transparent overflow-hidden group">
            <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-mono text-yellow-400 select-none z-10 backdrop-blur-sm">
-             POSTERIOR (BACK)
+             POSTERIOR (TRÁS)
            </div>
            <button
              onClick={(e) => { e.stopPropagation(); captureViewScreenshot(3, 'posterior'); }}
@@ -1703,8 +1703,8 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
            >
              <Camera className="w-4 h-4 text-white" />
            </button>
-           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-              <span className="text-[10px] text-white/30 font-mono tracking-widest bg-black/40 px-2 py-1 rounded">CLICK TO ADD LESION</span>
+           <div className="absolute bottom-2 left-2 right-2 flex justify-center pointer-events-none z-10">
+              <span className="text-[9px] text-white/50 font-mono bg-black/50 px-2 py-1 rounded backdrop-blur-sm">Direito: adicionar lesão</span>
            </div>
         </div>
       </div>

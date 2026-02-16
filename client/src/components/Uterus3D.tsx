@@ -912,11 +912,11 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         });
         
         const rightRoundCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0.65, 1.45, 0.25),
-          new THREE.Vector3(0.9, 1.35, 0.5),
-          new THREE.Vector3(1.4, 1.0, 0.85),
-          new THREE.Vector3(2.0, 0.5, 1.2),
-          new THREE.Vector3(2.6, 0.1, 1.6),
+          new THREE.Vector3(0.3, 1.45, 0.15),
+          new THREE.Vector3(0.7, 1.35, 0.45),
+          new THREE.Vector3(1.2, 1.0, 0.8),
+          new THREE.Vector3(1.8, 0.5, 1.15),
+          new THREE.Vector3(2.4, 0.1, 1.5),
         ]);
         const rightRoundGeo = new THREE.TubeGeometry(rightRoundCurve, 24, 0.045, 8, false);
         const rightRound = new THREE.Mesh(rightRoundGeo, roundLigamentMaterial);
@@ -927,11 +927,11 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         anatomyMeshesRef.current.roundLigaments.push(rightRound);
         
         const leftRoundCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-0.65, 1.45, 0.25),
-          new THREE.Vector3(-0.9, 1.35, 0.5),
-          new THREE.Vector3(-1.4, 1.0, 0.85),
-          new THREE.Vector3(-2.0, 0.5, 1.2),
-          new THREE.Vector3(-2.6, 0.1, 1.6),
+          new THREE.Vector3(-0.3, 1.45, 0.15),
+          new THREE.Vector3(-0.7, 1.35, 0.45),
+          new THREE.Vector3(-1.2, 1.0, 0.8),
+          new THREE.Vector3(-1.8, 0.5, 1.15),
+          new THREE.Vector3(-2.4, 0.1, 1.5),
         ]);
         const leftRoundGeo = new THREE.TubeGeometry(leftRoundCurve, 24, 0.045, 8, false);
         const leftRound = new THREE.Mesh(leftRoundGeo, roundLigamentMaterial);
@@ -961,13 +961,13 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         // Right fallopian tube - from cornual region extending laterally with slight posterior curve
         // Proportional to uterus: tubes are ~10-12cm, uterus body ~7-8cm
         const rightTubeCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0.65, 1.5, 0.0),     // Cornual region - junto à parede uterina
-          new THREE.Vector3(0.95, 1.55, -0.03),   // Saindo da parede uterina
-          new THREE.Vector3(1.4, 1.55, -0.08),    // Istmo
-          new THREE.Vector3(1.8, 1.48, -0.18),    // Início da ampola
-          new THREE.Vector3(2.2, 1.38, -0.32),    // Ampola
-          new THREE.Vector3(2.55, 1.28, -0.48),   // Fim da ampola / início do infundíbulo
-          new THREE.Vector3(2.75, 1.18, -0.62),   // Infundíbulo - curva em direção ao ovário
+          new THREE.Vector3(0.3, 1.55, 0.0),      // Dentro da parede uterina (cornual)
+          new THREE.Vector3(0.7, 1.58, -0.02),    // Emergindo da parede
+          new THREE.Vector3(1.2, 1.55, -0.06),    // Istmo
+          new THREE.Vector3(1.7, 1.48, -0.16),    // Início da ampola
+          new THREE.Vector3(2.1, 1.38, -0.30),    // Ampola
+          new THREE.Vector3(2.45, 1.28, -0.46),   // Fim da ampola / início do infundíbulo
+          new THREE.Vector3(2.65, 1.18, -0.60),   // Infundíbulo - curva em direção ao ovário
         ]);
         
         // Variable radius for the tube - narrower at isthmus, wider at ampulla
@@ -981,7 +981,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         
         // Right fimbriae - finger-like projections at the end of the tube
         const rightFimbriaeGroup = new THREE.Group();
-        const fimbriaeBasePos = new THREE.Vector3(2.75, 1.18, -0.62);
+        const fimbriaeBasePos = new THREE.Vector3(2.65, 1.18, -0.60);
         const fimbriaeCount = 6;
         for (let i = 0; i < fimbriaeCount; i++) {
           const angle = (i / fimbriaeCount) * Math.PI * 0.8 - Math.PI * 0.4; // Spread around the opening
@@ -1010,13 +1010,13 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         
         // Left fallopian tube - mirror of right
         const leftTubeCurve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-0.65, 1.5, 0.0),    // Cornual region - junto à parede uterina
-          new THREE.Vector3(-0.95, 1.55, -0.03),  // Saindo da parede uterina
-          new THREE.Vector3(-1.4, 1.55, -0.08),   // Istmo
-          new THREE.Vector3(-1.8, 1.48, -0.18),   // Início da ampola
-          new THREE.Vector3(-2.2, 1.38, -0.32),   // Ampola
-          new THREE.Vector3(-2.55, 1.28, -0.48),  // Fim da ampola / início do infundíbulo
-          new THREE.Vector3(-2.75, 1.18, -0.62),  // Infundíbulo - curva em direção ao ovário
+          new THREE.Vector3(-0.3, 1.55, 0.0),     // Dentro da parede uterina (cornual)
+          new THREE.Vector3(-0.7, 1.58, -0.02),   // Emergindo da parede
+          new THREE.Vector3(-1.2, 1.55, -0.06),   // Istmo
+          new THREE.Vector3(-1.7, 1.48, -0.16),   // Início da ampola
+          new THREE.Vector3(-2.1, 1.38, -0.30),   // Ampola
+          new THREE.Vector3(-2.45, 1.28, -0.46),  // Fim da ampola / início do infundíbulo
+          new THREE.Vector3(-2.65, 1.18, -0.60),  // Infundíbulo - curva em direção ao ovário
         ]);
         
         const leftTubeGeo = new THREE.TubeGeometry(leftTubeCurve, 32, 0.06, 8, false);
@@ -1029,7 +1029,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         
         // Left fimbriae - finger-like projections at the end of the tube
         const leftFimbriaeGroup = new THREE.Group();
-        const leftFimbriaeBasePos = new THREE.Vector3(-2.75, 1.18, -0.62);
+        const leftFimbriaeBasePos = new THREE.Vector3(-2.65, 1.18, -0.60);
         for (let i = 0; i < fimbriaeCount; i++) {
           const angle = (i / fimbriaeCount) * Math.PI * 0.8 - Math.PI * 0.4;
           const fimbriaCurve = new THREE.CatmullRomCurve3([

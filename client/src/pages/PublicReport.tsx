@@ -3,8 +3,9 @@ import { useParams } from "wouter";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { ChevronLeft, ChevronRight, X, Printer } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Printer, FileDown, FileText } from "lucide-react";
 import { useReportStore, Report } from "@/lib/reportStore";
+import { exportToPDF, exportToWord } from "@/lib/reportExporter";
 import { Severity } from "@/lib/lesionStore";
 import { processGLBModel } from '@/lib/meshAnalyzer';
 import { createProgrammaticAnatomy } from '@/lib/anatomyCreator';
@@ -38,6 +39,7 @@ export default function PublicReport() {
   const [loading, setLoading] = useState(true);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<string | null>(null);
   const { getReport, hydrated } = useReportStore();
 
   useEffect(() => {
@@ -275,14 +277,42 @@ export default function PublicReport() {
             >
               {report.id}
             </p>
-            <button
-              onClick={() => window.print()}
-              className="no-print mt-2 flex items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              data-testid="button-print-report"
-            >
-              <Printer className="w-4 h-4" />
-              Imprimir / PDF
-            </button>
+            <div className="no-print mt-2 flex items-center gap-2 justify-end flex-wrap">
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                data-testid="button-print-report"
+              >
+                <Printer className="w-4 h-4" />
+                Imprimir
+              </button>
+              <button
+                onClick={async () => {
+                  setExporting("pdf");
+                  try { await exportToPDF(report); } catch (e) { console.error(e); }
+                  setExporting(null);
+                }}
+                disabled={exporting === "pdf"}
+                className="flex items-center gap-1.5 bg-pink-500 hover:bg-pink-600 disabled:opacity-60 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                data-testid="button-export-pdf"
+              >
+                <FileDown className="w-4 h-4" />
+                {exporting === "pdf" ? "Gerando..." : "PDF"}
+              </button>
+              <button
+                onClick={async () => {
+                  setExporting("word");
+                  try { await exportToWord(report); } catch (e) { console.error(e); }
+                  setExporting(null);
+                }}
+                disabled={exporting === "word"}
+                className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                data-testid="button-export-word"
+              >
+                <FileText className="w-4 h-4" />
+                {exporting === "word" ? "Gerando..." : "Word"}
+              </button>
+            </div>
           </div>
         </div>
       </header>

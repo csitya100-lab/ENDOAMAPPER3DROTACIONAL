@@ -61,16 +61,34 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  await setupAuth(app);
-  registerAuthRoutes(app);
+  const authDisabled = process.env.DISABLE_AUTH === "true";
+  if (authDisabled) {
+    app.get("/api/auth/user", (_req, res) => {
+      res.json({
+        id: "local-dev",
+        email: "local@example.com",
+        firstName: "Local",
+        lastName: "Dev",
+        profileImageUrl: "",
+      });
+    });
+  } else {
+    await setupAuth(app);
+    registerAuthRoutes(app);
+  }
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
+    console.error("Unhandled server error:", err);
+    res.status(status).json({
+      message,
+      ...(process.env.NODE_ENV === "development" && err?.stack
+        ? { stack: err.stack }
+        : {}),
+    });
   });
 
   // importantly only setup vite in development and after
@@ -88,14 +106,19 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
+  const host = process.env.HOST;
+  const listenOptions: {
+    port: number;
+    host?: string;
+    reusePort?: boolean;
+  } = { port };
+  if (host) {
+    listenOptions.host = host;
+  }
+  if (process.platform !== "win32") {
+    listenOptions.reusePort = true;
+  }
+  httpServer.listen(listenOptions, () => {
+    log(`serving on port ${port}`);
+  });
 })();

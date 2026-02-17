@@ -1188,7 +1188,7 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
              SAGITAL (LATERAL)
            </div>
            <button
-             onClick={(e) => { e.stopPropagation(); captureViewScreenshot(1, 'sagittal'); }}
+             onClick={(e) => { e.stopPropagation(); captureViewScreenshot(1, 'sagittal-avf'); }}
              className="absolute top-2 right-2 w-7 h-7 bg-blue-500/80 hover:bg-blue-500 rounded flex items-center justify-center z-10 transition-colors opacity-0 group-hover:opacity-100 pointer-events-auto"
              title="Capturar Sagittal"
              data-testid="button-capture-sagittal"

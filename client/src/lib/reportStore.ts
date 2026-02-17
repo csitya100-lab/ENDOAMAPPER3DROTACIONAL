@@ -106,7 +106,7 @@ export const useReportStore = create<ReportState>()(
       },
       draftImages3D: [],
       reports: {},
-      hydrated: false,
+      hydrated: true,
       pdfImages: [],
       patientName: "",
       examDate: "",
@@ -283,9 +283,6 @@ export const useReportStore = create<ReportState>()(
         patientId: state.patientId,
         reports: state.reports,
       }) as ReportState,
-      onRehydrateStorage: () => () => {
-        useReportStore.setState({ hydrated: true });
-      },
     }
   )
 );

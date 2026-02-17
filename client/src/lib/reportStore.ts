@@ -88,31 +88,6 @@ interface ReportState {
   setSelectedViews: (views: Record<string, boolean>) => void;
 }
 
-let isHydrated = false;
-
-const loadReportsFromStorage = (): Record<string, Report> => {
-  try {
-    const stored = localStorage.getItem("medicalReports");
-    if (stored) {
-      isHydrated = true;
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-    console.warn("Failed to load reports from localStorage:", e);
-  }
-  isHydrated = true;
-  return {};
-};
-
-const saveReportsToStorage = (reports: Record<string, Report>) => {
-  try {
-    localStorage.setItem("medicalReports", JSON.stringify(reports));
-  } catch (e) {
-    console.warn("Failed to save reports to localStorage:", e);
-  }
-};
-
-const initialReports = loadReportsFromStorage();
 
 export const useReportStore = create<ReportState>()(
   persist(
@@ -130,8 +105,8 @@ export const useReportStore = create<ReportState>()(
         posterior: "",
       },
       draftImages3D: [],
-      reports: initialReports,
-      hydrated: isHydrated,
+      reports: {},
+      hydrated: false,
       pdfImages: [],
       patientName: "",
       examDate: "",
@@ -213,11 +188,9 @@ export const useReportStore = create<ReportState>()(
           createdAt: new Date().toISOString(),
         };
 
-        set((state) => {
-          const updatedReports = { ...state.reports, [id]: newReport };
-          saveReportsToStorage(updatedReports);
-          return { reports: updatedReports };
-        });
+        set((state) => ({
+          reports: { ...state.reports, [id]: newReport },
+        }));
 
         return id;
       },
@@ -229,7 +202,6 @@ export const useReportStore = create<ReportState>()(
       deleteReport: (id) => {
         set((state) => {
           const { [id]: removed, ...rest } = state.reports;
-          saveReportsToStorage(rest);
           return { reports: rest };
         });
       },
@@ -309,7 +281,11 @@ export const useReportStore = create<ReportState>()(
         patientName: state.patientName,
         examDate: state.examDate,
         patientId: state.patientId,
+        reports: state.reports,
       }) as ReportState,
+      onRehydrateStorage: () => () => {
+        useReportStore.setState({ hydrated: true });
+      },
     }
   )
 );

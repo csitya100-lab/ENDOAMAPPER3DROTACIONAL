@@ -116,9 +116,14 @@ export default function Home() {
   };
 
   const handleGenerateReport = () => {
-    const hasAnyCapture = draftImages2D['sagittal-avf'] || draftImages2D['sagittal-rvf'] || draftImages2D['coronal'] || draftImages2D['posterior'] || draftImages3D.length > 0;
-    if (!hasAnyCapture) {
-      const proceed = confirm('Nenhuma imagem foi capturada ainda. Use os botões de câmera nas vistas para capturar. Deseja continuar mesmo assim?');
+    uterusRef.current?.captureAllViews();
+    
+    const currentImages2D = useReportStore.getState().draftImages2D;
+    const hasAny2D = currentImages2D['sagittal-avf'] || currentImages2D['sagittal-rvf'] || currentImages2D['coronal'] || currentImages2D['posterior'];
+    const hasAny3D = draftImages3D.length > 0;
+    
+    if (!hasAny2D && !hasAny3D) {
+      const proceed = confirm('Nenhuma imagem foi capturada. Deseja continuar mesmo assim?');
       if (!proceed) return;
     }
 
@@ -128,9 +133,9 @@ export default function Home() {
       examDate: examInfo.date,
       examType: 'Mapeamento EndoMapper',
       images2D: {
-        sagittal: draftImages2D['sagittal-avf'] || draftImages2D['sagittal-rvf'] || "",
-        coronal: draftImages2D['coronal'] || "",
-        posterior: draftImages2D['posterior'] || "",
+        sagittal: currentImages2D['sagittal-avf'] || currentImages2D['sagittal-rvf'] || "",
+        coronal: currentImages2D['coronal'] || "",
+        posterior: currentImages2D['posterior'] || "",
       },
       imageNotes: {
         sagittal: "",

@@ -6,6 +6,7 @@ import { useLesionStore, Lesion, Severity, MarkerType } from '@/lib/lesionStore'
 import { useReportStore } from '@/lib/reportStore';
 import { useAnatomyStore, AnatomyElement } from '@/lib/anatomyStore';
 import { Camera } from 'lucide-react';
+import { toast } from 'sonner';
 import { isIOS, isMobile, MODEL_LOAD_TIMEOUT, getCachedModel, cacheModel } from '@/lib/modelLoader';
 import { createProgrammaticAnatomy } from '@/lib/anatomyCreator';
 import { processGLBModel } from '@/lib/meshAnalyzer';
@@ -26,6 +27,7 @@ interface Uterus3DProps {
 export interface Uterus3DRef {
   addTestLesion: () => void;
   clearLesions: () => void;
+  captureAllViews: () => void;
   captureScreenshot: () => string | null;
 }
 
@@ -166,6 +168,11 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
     },
     clearLesions: () => {
       clearLesions();
+    },
+    captureAllViews: () => {
+      captureViewScreenshot(1, 'sagittal-avf');
+      captureViewScreenshot(2, 'coronal');
+      captureViewScreenshot(3, 'posterior');
     },
     captureScreenshot: () => {
       const renderer = rendererRef.current;
@@ -326,9 +333,16 @@ export const Uterus3D = forwardRef<Uterus3DRef, Uterus3DProps>(({
         ctx.putImageData(imageData, 0, 0);
         const imageDataUrl = canvas.toDataURL('image/png');
         setDraftImage(targetView, imageDataUrl);
+        const viewLabels: Record<string, string> = {
+          'sagittal-avf': 'Sagital',
+          'coronal': 'Coronal',
+          'posterior': 'Posterior',
+        };
+        toast.success(`Vista ${viewLabels[targetView] || targetView} capturada!`);
       }
     } catch (e) {
       console.error('Erro ao capturar vista:', e);
+      toast.error('Erro ao capturar vista');
     }
   }, [setDraftImage]);
 

@@ -7,33 +7,27 @@ interface PageTransitionProps {
 
 export default function PageTransition({ children }: PageTransitionProps) {
   const [location] = useLocation();
-  const [displayChildren, setDisplayChildren] = useState(children);
-  const [transitionStage, setTransitionStage] = useState<'enter' | 'exit'>('enter');
+  const [isVisible, setIsVisible] = useState(true);
   const prevLocation = useRef(location);
 
   useEffect(() => {
     if (location !== prevLocation.current) {
-      setTransitionStage('exit');
+      setIsVisible(false);
       const timeout = setTimeout(() => {
-        setDisplayChildren(children);
-        setTransitionStage('enter');
+        setIsVisible(true);
         prevLocation.current = location;
-      }, 150);
+      }, 100);
       return () => clearTimeout(timeout);
-    } else {
-      setDisplayChildren(children);
     }
-  }, [children, location]);
+  }, [location]);
 
   return (
     <div
-      className={`transition-all duration-200 ease-out ${
-        transitionStage === 'enter' 
-          ? 'opacity-100 translate-y-0' 
-          : 'opacity-0 translate-y-1'
+      className={`transition-opacity duration-200 ease-out ${
+        isVisible ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      {displayChildren}
+      {children}
     </div>
   );
 }

@@ -5,7 +5,8 @@ import { useLesionStore } from '@/lib/lesionStore';
 import { Uterus3D } from '@/components/Uterus3D';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Calendar, User, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, User, AlertCircle, Loader2, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { MousePointer2, Plus } from 'lucide-react';
 
@@ -17,7 +18,7 @@ export default function CaseViewer() {
   const [error, setError] = useState<string | null>(null);
   const [interactionMode, setInteractionMode] = useState<'add' | 'edit'>('add');
   const [selectedLesionId, setSelectedLesionId] = useState<string | null>(null);
-  const { setLesions, clearLesions } = useLesionStore();
+  const { lesions, setLesions, clearLesions } = useLesionStore();
 
   useEffect(() => {
     clearLesions();
@@ -54,6 +55,26 @@ export default function CaseViewer() {
       clearLesions();
     };
   }, [caseId, setLesions, clearLesions]);
+
+  const handleClearLesions = () => {
+    if (lesions.length === 0) {
+      toast.warning('Não há lesões para limpar.');
+      return;
+    }
+    const savedLesions = [...lesions];
+    clearLesions();
+    setSelectedLesionId(null);
+    toast('Todas as lesões foram removidas', {
+      action: {
+        label: 'Desfazer',
+        onClick: () => {
+          setLesions(savedLesions);
+          toast.success('Lesões restauradas');
+        },
+      },
+      duration: 5000,
+    });
+  };
 
   if (loading) {
     return (
@@ -124,6 +145,16 @@ export default function CaseViewer() {
                   Editar
                 </Button>
               </div>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleClearLesions}
+                className="h-8 px-3 text-xs gap-1.5 border-red-500/40 text-red-300 hover:bg-red-500/10"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Limpar
+              </Button>
 
               <div className="flex items-center gap-6 text-white/80 text-sm">
                 <div className="flex items-center gap-2">

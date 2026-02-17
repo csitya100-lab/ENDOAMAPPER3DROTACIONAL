@@ -3,13 +3,15 @@ import { useParams } from "wouter";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { ChevronLeft, ChevronRight, X, Printer, FileDown, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Printer, FileDown, FileText, PencilLine, Save, XCircle } from "lucide-react";
 import { useReportStore, Report } from "@/lib/reportStore";
 import { exportToPDF, exportToWord } from "@/lib/reportExporter";
 import { Severity } from "@/lib/lesionStore";
 import { processGLBModel } from '@/lib/meshAnalyzer';
 import { createProgrammaticAnatomy } from '@/lib/anatomyCreator';
 import { AnatomyMeshesMap } from '@/lib/anatomyCreator';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const SEVERITY_COLORS: Record<
   Severity,
@@ -40,7 +42,11 @@ export default function PublicReport() {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
-  const { getReport, hydrated } = useReportStore();
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftPatientName, setDraftPatientName] = useState("");
+  const [draftPatientId, setDraftPatientId] = useState("");
+  const [draftExamDate, setDraftExamDate] = useState("");
+  const { getReport, updateReport, hydrated } = useReportStore();
 
   useEffect(() => {
     if (!hydrated) return;
@@ -53,9 +59,40 @@ export default function PublicReport() {
     const storedReport = getReport(id);
     if (storedReport) {
       setReport(storedReport);
+      setDraftPatientName(storedReport.patientName);
+      setDraftPatientId(storedReport.patientId);
+      setDraftExamDate(storedReport.examDate);
     }
     setLoading(false);
   }, [id, getReport, hydrated]);
+
+  const startEditing = () => {
+    if (!report) return;
+    setDraftPatientName(report.patientName);
+    setDraftPatientId(report.patientId);
+    setDraftExamDate(report.examDate);
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    if (!report) return;
+    setDraftPatientName(report.patientName);
+    setDraftPatientId(report.patientId);
+    setDraftExamDate(report.examDate);
+    setIsEditing(false);
+  };
+
+  const saveEdits = () => {
+    if (!report) return;
+    const updated = {
+      patientName: draftPatientName.trim() || report.patientName,
+      patientId: draftPatientId.trim() || report.patientId,
+      examDate: draftExamDate.trim() || report.examDate,
+    };
+    updateReport(report.id, updated);
+    setReport((prev) => (prev ? { ...prev, ...updated } : prev));
+    setIsEditing(false);
+  };
 
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current || !report) return;
@@ -239,34 +276,61 @@ export default function PublicReport() {
               <p className="text-xs text-slate-800 uppercase tracking-wide">
                 Paciente
               </p>
-              <p
-                className="text-lg font-semibold text-slate-900"
-                data-testid="text-patient-name"
-              >
-                {report.patientName}
-              </p>
+              {isEditing ? (
+                <Input
+                  value={draftPatientName}
+                  onChange={(e) => setDraftPatientName(e.target.value)}
+                  className="mt-1 h-9 w-56"
+                  data-testid="input-patient-name"
+                />
+              ) : (
+                <p
+                  className="text-lg font-semibold text-slate-900"
+                  data-testid="text-patient-name"
+                >
+                  {report.patientName}
+                </p>
+              )}
             </div>
             <div>
               <p className="text-xs text-slate-800 uppercase tracking-wide">
                 Data do Exame
               </p>
-              <p
-                className="text-lg font-semibold text-slate-900"
-                data-testid="text-exam-date"
-              >
-                {report.examDate}
-              </p>
+              {isEditing ? (
+                <Input
+                  value={draftExamDate}
+                  onChange={(e) => setDraftExamDate(e.target.value)}
+                  className="mt-1 h-9 w-40"
+                  data-testid="input-exam-date"
+                />
+              ) : (
+                <p
+                  className="text-lg font-semibold text-slate-900"
+                  data-testid="text-exam-date"
+                >
+                  {report.examDate}
+                </p>
+              )}
             </div>
             <div>
               <p className="text-xs text-slate-800 uppercase tracking-wide">
                 ID
               </p>
-              <p
-                className="text-lg font-semibold text-slate-900"
-                data-testid="text-patient-id"
-              >
-                {report.patientId}
-              </p>
+              {isEditing ? (
+                <Input
+                  value={draftPatientId}
+                  onChange={(e) => setDraftPatientId(e.target.value)}
+                  className="mt-1 h-9 w-40"
+                  data-testid="input-patient-id"
+                />
+              ) : (
+                <p
+                  className="text-lg font-semibold text-slate-900"
+                  data-testid="text-patient-id"
+                >
+                  {report.patientId}
+                </p>
+              )}
             </div>
           </div>
           <div className="text-right">
@@ -278,6 +342,38 @@ export default function PublicReport() {
               {report.id}
             </p>
             <div className="no-print mt-2 flex items-center gap-2 justify-end flex-wrap">
+              {isEditing ? (
+                <>
+                  <Button
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={saveEdits}
+                    data-testid="button-save-report"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Salvar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={cancelEditing}
+                    data-testid="button-cancel-report"
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Cancelar
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={startEditing}
+                  data-testid="button-edit-report"
+                >
+                  <PencilLine className="w-4 h-4 mr-2" />
+                  Editar dados
+                </Button>
+              )}
               <button
                 onClick={() => window.print()}
                 className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg px-3 py-2 text-sm font-medium transition-colors"

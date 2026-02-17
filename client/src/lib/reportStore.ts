@@ -76,6 +76,7 @@ interface ReportState {
   
   createReport: (report: Omit<Report, "id" | "createdAt">) => string;
   getReport: (id: string) => Report | undefined;
+  updateReport: (id: string, updates: Partial<Report>) => void;
   deleteReport: (id: string) => void;
 
   addPdfImage: (image: PdfImage) => void;
@@ -197,6 +198,19 @@ export const useReportStore = create<ReportState>()(
 
       getReport: (id) => {
         return get().reports[id];
+      },
+
+      updateReport: (id, updates) => {
+        set((state) => {
+          const current = state.reports[id];
+          if (!current) return state;
+          return {
+            reports: {
+              ...state.reports,
+              [id]: { ...current, ...updates },
+            },
+          };
+        });
       },
 
       deleteReport: (id) => {

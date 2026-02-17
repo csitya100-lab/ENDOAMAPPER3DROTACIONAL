@@ -79,6 +79,13 @@
 
 /* Estilos de Impressão */
 @media print {
+  /* Hide non-printable elements */
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  /* Reset backgrounds for paper */
   body {
     background: white !important;
     color: #333 !important;
@@ -87,15 +94,20 @@
     line-height: 1.5 !important;
     margin: 0 !important;
     padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force colors to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   /* Ocultar elementos não imprimíveis */
-  header,
   .print\\:hidden,
-  button,
   textarea,
-  nav,
-  .no-print {
+  nav {
     display: none !important;
   }
 
@@ -114,6 +126,28 @@
     background: white !important;
   }
 
+  /* Hide the 3D canvas (won't render in print) */
+  canvas {
+    display: none !important;
+  }
+
+  /* Adjust layout for A4 */
+  .print-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Remove shadows and rounded corners for cleaner print */
+  .rounded-xl {
+    border-radius: 4px !important;
+  }
+
+  /* Ensure images print correctly */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+
   /* Configurações de página A4 */
   @page {
     size: A4;
@@ -127,6 +161,11 @@
 
   .page-break {
     page-break-before: always;
+  }
+
+  /* Page breaks */
+  .page-break-before {
+    page-break-before: always !important;
   }
 
   /* Cores para impressão */
@@ -145,5 +184,10 @@
 
   .bg-slate-50 {
     background-color: #f8fafc !important;
+  }
+
+  /* Hide scrollbars */
+  ::-webkit-scrollbar {
+    display: none !important;
   }
 }

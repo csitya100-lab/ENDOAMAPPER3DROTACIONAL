@@ -3,7 +3,7 @@ import { useParams } from "wouter";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Printer } from "lucide-react";
 import { useReportStore, Report } from "@/lib/reportStore";
 import { Severity } from "@/lib/lesionStore";
 import { processGLBModel } from '@/lib/meshAnalyzer';
@@ -275,6 +275,14 @@ export default function PublicReport() {
             >
               {report.id}
             </p>
+            <button
+              onClick={() => window.print()}
+              className="no-print mt-2 flex items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              data-testid="button-print-report"
+            >
+              <Printer className="w-4 h-4" />
+              Imprimir / PDF
+            </button>
           </div>
         </div>
       </header>
@@ -287,19 +295,22 @@ export default function PublicReport() {
                 <h2 className="text-sm font-semibold text-slate-700">
                   Modelo 3D
                 </h2>
-                <p className="text-xs text-slate-800">
+                <p className="text-xs text-slate-800 no-print">
                   Arraste para rotacionar, scroll para zoom
                 </p>
               </div>
               <div
                 ref={containerRef}
-                className="aspect-square lg:aspect-[4/3] w-full bg-slate-50"
+                className="aspect-square lg:aspect-[4/3] w-full bg-slate-50 print:hidden"
               >
                 <canvas
                   ref={canvasRef}
                   className="w-full h-full"
                   data-testid="canvas-3d-model"
                 />
+              </div>
+              <div className="hidden print:block p-8 text-center text-slate-500 text-sm border border-slate-200 rounded">
+                Modelo 3D interativo - disponível na versão digital
               </div>
             </div>
           </div>
@@ -379,21 +390,21 @@ export default function PublicReport() {
                       <>
                         <button
                           onClick={prevPhoto}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
+                          className="no-print absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
                           data-testid="button-prev-3d"
                         >
                           <ChevronLeft className="w-5 h-5 text-slate-700" />
                         </button>
                         <button
                           onClick={nextPhoto}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
+                          className="no-print absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
                           data-testid="button-next-3d"
                         >
                           <ChevronRight className="w-5 h-5 text-slate-700" />
                         </button>
                       </>
                     )}
-                    <div className="flex justify-center gap-1.5 mt-3">
+                    <div className="no-print flex justify-center gap-1.5 mt-3">
                       {images3D.map((_, idx) => (
                         <button
                           key={idx}
@@ -484,7 +495,7 @@ export default function PublicReport() {
 
       {expandedPhoto && (
         <div
-          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          className="no-print fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
           onClick={() => setExpandedPhoto(null)}
           data-testid="modal-expanded-photo"
         >
